@@ -57,6 +57,8 @@ public class Customer {
 
     private String twoFactorCode;                  // código 2FA vigente
     private LocalDateTime twoFactorCodeExpiration;  // expiración del código 2FA
+
+    @Column(nullable = false)
     private int twoFactorFailedAttempts = 0;
 
     private String passwordResetToken;                   // token de recuperación de contraseña
