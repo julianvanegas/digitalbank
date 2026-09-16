@@ -63,3 +63,4 @@ build/
 !example.env
 
 .DStore
+.github/
