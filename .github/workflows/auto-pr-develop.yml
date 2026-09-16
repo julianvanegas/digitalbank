@@ -1,0 +1,41 @@
+name: Auto Create PR to Develop
+
+on:
+  push:
+    branches:
+      - 'feature/*'
+      - 'userstory/*'
+      - 'task/*'
+      - 'bugfix/*'
+
+jobs:
+  create-pr:
+    name: Crear Pull Request
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write 
+      contents: read
+    
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Ejecutar GitHub CLI para crear el PR
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # 1. Verifica si ya existe un PR abierto para esta rama hacia develop
+          PR_EXISTS=$(gh pr list --head ${{ github.ref_name }} --base develop --state open --json number --jq 'length')
+          
+          # 2. Si no existe, crea el Pull Request
+          if [ "$PR_EXISTS" -eq "0" ]; then
+            gh pr create \
+              --base develop \
+              --head ${{ github.ref_name }} \
+              --title "Auto PR: ${{ github.ref_name }}" \
+              --body-file .github/pull_request_template.md
+              
+            echo "✅ Pull Request creado exitosamente."
+          else
+            echo "ℹ️ Ya existe un Pull Request abierto para esta rama."
+          fi
