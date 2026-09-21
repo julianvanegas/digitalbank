@@ -13,12 +13,13 @@ import com.udea.digitalbank.customer.repository.CustomerRepository;
 import com.udea.digitalbank.customer.repository.DocumentTypeRepository;
 import com.udea.digitalbank.shared.exception.customer.CustomerNotFoundException;
 import com.udea.digitalbank.shared.exception.customer.DuplicateCustomerException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.Period;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -106,14 +107,12 @@ public class CustomerService {
     }
 
     @Transactional(readOnly = true)
-    public List<CustomerResponse> getAllCustomers() {
-        List<Customer> customers = customerRepository.findAll();
+    public Page<CustomerResponse> getAllCustomers(Pageable pageable) {
+        Page<Customer> customers = customerRepository.findAll(pageable);
         Map<Long, UserView> users = authFacade
                 .getUsers(customers.stream().map(Customer::getUserId).toList())
                 .stream().collect(Collectors.toMap(UserView::id, Function.identity()));
-        return customers.stream()
-                .map(c -> customerMapper.toResponse(c, users.get(c.getUserId())))
-                .toList();
+        return customers.map(c -> customerMapper.toResponse(c, users.get(c.getUserId())));
     }
 
     // Solo se debe llamar desde un endpoint protegido con @PreAuthorize("hasRole('ADMIN')")

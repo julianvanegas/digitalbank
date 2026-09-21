@@ -1,21 +1,22 @@
 package com.udea.digitalbank.customer.controller;
 
-import com.udea.digitalbank.auth.api.UserStatusEnum;
+import com.udea.digitalbank.customer.dto.ChangeStatusRequest;
 import com.udea.digitalbank.customer.dto.CreateCustomerRequest;
 import com.udea.digitalbank.customer.dto.CustomerResponse;
 import com.udea.digitalbank.customer.dto.UpdateProfileRequest;
 import com.udea.digitalbank.customer.service.CustomerService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @RestController
-@RequestMapping("/api/customers")
+@RequestMapping("/api/v1/customers")
 public class CustomerController {
     private final CustomerService customerService;
 
@@ -48,8 +49,9 @@ public class CustomerController {
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<CustomerResponse>> getAllCustomers() {
-        return ResponseEntity.ok(customerService.getAllCustomers());
+    public ResponseEntity<Page<CustomerResponse>> getAllCustomers(
+            @PageableDefault(size = 20, sort = {"lastNames", "id"}) Pageable pageable) {
+        return ResponseEntity.ok(customerService.getAllCustomers(pageable));
     }
 
     @GetMapping("/{id}")
@@ -60,8 +62,9 @@ public class CustomerController {
 
     @PatchMapping("/{id}/status")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> changeStatus(@PathVariable Long id, @RequestParam String status) {
-        customerService.changeStatus(id, UserStatusEnum.valueOf(status.trim().toUpperCase()));
+    public ResponseEntity<Void> changeStatus(@PathVariable Long id,
+                                             @Valid @RequestBody ChangeStatusRequest request) {
+        customerService.changeStatus(id, request.getStatus());
         return ResponseEntity.noContent().build();
     }
 }
