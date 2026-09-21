@@ -1,5 +1,6 @@
 package com.udea.digitalbank.shared.exception;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -22,6 +23,22 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.CONFLICT, ex.getMessage());
     }
 
+    @ExceptionHandler(AccountNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleAccountNotFound(AccountNotFoundException ex) {
+        return build(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
+
+    @ExceptionHandler(DuplicateAccountException.class)
+    public ResponseEntity<ErrorResponse> handleDuplicateAccount(DuplicateAccountException ex) {
+        return build(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
+    // Carrera entre dos altas con el mismo email o documento: la restricción única de la base gana
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleIntegrity(DataIntegrityViolationException ex) {
+        return build(HttpStatus.CONFLICT, "Ya existe un registro con esos datos");
+    }
+
     @ExceptionHandler(InvalidCredentialsException.class)
     public ResponseEntity<ErrorResponse> handleInvalidCredentials(InvalidCredentialsException ex) {
         return build(HttpStatus.UNAUTHORIZED, ex.getMessage());
@@ -32,8 +49,8 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.FORBIDDEN, ex.getMessage());
     }
 
-    @ExceptionHandler(InvalidTwoFactorCodeException.class)
-    public ResponseEntity<ErrorResponse> handleInvalidTwoFactor(InvalidTwoFactorCodeException ex) {
+    @ExceptionHandler(InvalidVerificationCodeException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidVerificationCode(InvalidVerificationCodeException ex) {
         return build(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 

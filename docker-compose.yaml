@@ -42,6 +42,7 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:-postgres}
       JWT_SECRET: ${JWT_SECRET:-change-this-to-random-secret}
       JWT_EXPIRATION_MS: ${JWT_EXPIRATION_MS:-3600000}
+      VERIFICATION_HMAC_SECRET: ${VERIFICATION_HMAC_SECRET:-change-this-to-another-random-secret}
       MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
       MAIL_PORT: ${MAIL_PORT:-587}
       MAIL_USERNAME: ${MAIL_USERNAME:-email@gmail.com}
