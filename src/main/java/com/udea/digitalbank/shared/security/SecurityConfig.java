@@ -1,5 +1,6 @@
 package com.udea.digitalbank.shared.security;
 
+import com.udea.digitalbank.shared.exception.SecurityErrorHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -22,10 +23,15 @@ import java.util.List;
 public class SecurityConfig {
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http, List<SecurityModule> modules) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, List<SecurityModule> modules,
+                                                   SecurityErrorHandler errorHandler) throws Exception {
         http
                 .csrf(csrf -> csrf.disable()) // API stateless, sin sesión de navegador que proteger con CSRF
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                // 401 sin token o con token inválido, 403 sin permiso; ambos con el formato ErrorResponse
+                .exceptionHandling(errors -> errors
+                        .authenticationEntryPoint(errorHandler)
+                        .accessDeniedHandler(errorHandler))
                 .authorizeHttpRequests(auth -> {
                     modules.stream().flatMap(m -> m.publicRoutes().stream()).forEach(route -> {
                         if (route.method() == null) {
@@ -36,6 +42,9 @@ public class SecurityConfig {
                     });
                     auth.requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
+                        // Ruta interna de errores de Spring: si exigiera autenticación, un error de un endpoint
+                        // público llegaría al cliente anónimo como 403. No expone trazas, solo el cuerpo de error.
+                        .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated();
                 });
 
