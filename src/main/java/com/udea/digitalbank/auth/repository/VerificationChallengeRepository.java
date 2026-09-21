@@ -20,13 +20,13 @@ public interface VerificationChallengeRepository extends JpaRepository<Verificat
     Optional<VerificationChallenge> lockByIdAndPurpose(@Param("id") UUID id, @Param("purpose") String purpose);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("select c from VerificationChallenge c where c.userAccountId = :accountId and c.purpose.code = :purpose")
-    Optional<VerificationChallenge> lockByAccountAndPurpose(@Param("accountId") Long accountId,
+    @Query("select c from VerificationChallenge c where c.userId = :userId and c.purpose.code = :purpose")
+    Optional<VerificationChallenge> lockByUserAndPurpose(@Param("userId") Long userId,
                                                             @Param("purpose") String purpose);
 
     @Modifying
-    @Query("delete from VerificationChallenge c where c.userAccountId = :accountId and c.purpose.code = :purpose")
-    void deleteByAccountAndPurpose(@Param("accountId") Long accountId, @Param("purpose") String purpose);
+    @Query("delete from VerificationChallenge c where c.userId = :userId and c.purpose.code = :purpose")
+    void deleteByUserAndPurpose(@Param("userId") Long userId, @Param("purpose") String purpose);
 
     @Modifying
     @Query("delete from VerificationChallenge c where c.expiresAt < :now")

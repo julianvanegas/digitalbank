@@ -26,9 +26,9 @@ public class JwtUtil {
 
     // el jti sirve para invalidar sesiones anteriores (ver AuthService.verifyTwoFactor)
     // issuedAt y expiresAt vienen de fuera para que el token y la fila de auth_session coincidan
-    public String generateToken(Long accountId, String role, String jti, Date issuedAt, Date expiresAt) {
+    public String generateToken(Long userId, String role, String jti, Date issuedAt, Date expiresAt) {
         return Jwts.builder()
-                .subject(String.valueOf(accountId))
+                .subject(String.valueOf(userId))
                 .claim("role", role)
                 .id(jti)
                 .issuedAt(issuedAt)

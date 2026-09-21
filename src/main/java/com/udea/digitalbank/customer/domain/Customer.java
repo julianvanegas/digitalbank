@@ -8,7 +8,7 @@ import lombok.Setter;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-// Solo datos personales: credenciales, estado y sesión viven en auth (user_account)
+// Solo datos personales: credenciales, estado y sesión viven en auth (users)
 @Entity
 @Table(name = "customers")
 @Getter
@@ -24,14 +24,17 @@ public class Customer {
 
     // Sin @ManyToOne hacia auth para mantener los módulos desacoplados
     @Column(nullable = false, unique = true)
-    private Long userAccountId;
+    private Long userId;
 
-    // Junto con userAccountId forma la FK compuesta que impide que un ADMIN tenga fila aquí
+    // Junto con userId forma la FK compuesta que impide que un ADMIN tenga fila aquí
     @Column(nullable = false, updatable = false)
     private Short roleId = CUSTOMER_ROLE_ID;
 
-    @Column(nullable = false)
-    private String name;
+    @Column(nullable = false, length = 100)
+    private String firstNames;
+
+    @Column(nullable = false, length = 100)
+    private String lastNames;
 
     @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "document_type_id", nullable = false)
@@ -40,7 +43,7 @@ public class Customer {
     @Column(nullable = false, unique = true)
     private String documentNumber;
 
-    @Column(nullable = false, length = 30)
+    @Column(nullable = false, length = 16)
     private String phone;
 
     @Column(nullable = false)

@@ -25,7 +25,7 @@ public class VerificationChallenge {
     private UUID id;
 
     @Column(nullable = false)
-    private Long userAccountId;
+    private Long userId;
 
     @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "purpose_id", nullable = false)

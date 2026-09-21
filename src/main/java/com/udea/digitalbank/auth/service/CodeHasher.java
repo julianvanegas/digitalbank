@@ -25,20 +25,20 @@ public class CodeHasher {
         this.key = secret.getBytes(StandardCharsets.UTF_8);
     }
 
-    // La cuenta y el propósito van en el mensaje: el mismo código produce hashes distintos por reto
-    public String hash(Long accountId, short purposeId, String code) {
+    // El usuario y el propósito van en el mensaje: el mismo código produce hashes distintos por reto
+    public String hash(Long userId, short purposeId, String code) {
         try {
             Mac mac = Mac.getInstance(ALGORITHM);
             mac.init(new SecretKeySpec(key, ALGORITHM));
-            byte[] digest = mac.doFinal((accountId + ":" + purposeId + ":" + code).getBytes(StandardCharsets.UTF_8));
+            byte[] digest = mac.doFinal((userId + ":" + purposeId + ":" + code).getBytes(StandardCharsets.UTF_8));
             return HexFormat.of().formatHex(digest);
         } catch (GeneralSecurityException e) {
             throw new IllegalStateException("No se pudo calcular el HMAC del código", e);
         }
     }
 
-    public boolean matches(Long accountId, short purposeId, String code, String expectedHash) {
-        String actual = hash(accountId, purposeId, code);
+    public boolean matches(Long userId, short purposeId, String code, String expectedHash) {
+        String actual = hash(userId, purposeId, code);
         return MessageDigest.isEqual(
                 actual.getBytes(StandardCharsets.UTF_8), expectedHash.getBytes(StandardCharsets.UTF_8));
     }

@@ -1,5 +1,6 @@
 package com.udea.digitalbank.auth.domain;
 
+import com.udea.digitalbank.auth.api.UserStatusEnum;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -10,14 +11,18 @@ import org.hibernate.annotations.Immutable;
 
 @Entity
 @Immutable
-@Table(name = "category")
+@Table(name = "user_status")
 @Getter
 @NoArgsConstructor
-public class Category {
+public class UserStatus {
 
     @Id
     private Short id;
 
     @Column(nullable = false, unique = true, length = 30)
     private String code;
+
+    public boolean is(UserStatusEnum expected) {
+        return code.equals(expected.name());
+    }
 }

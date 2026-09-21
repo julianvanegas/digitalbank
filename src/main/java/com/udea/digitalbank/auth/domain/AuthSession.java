@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
-// Única sesión vigente de cada cuenta: un login nuevo sobrescribe la fila
+// Única sesión vigente de cada usuario: un login nuevo sobrescribe la fila
 @Entity
 @Table(name = "auth_session")
 @Getter
@@ -19,7 +19,7 @@ import java.time.LocalDateTime;
 public class AuthSession {
 
     @Id
-    private Long userAccountId;
+    private Long userId;
 
     @Column(nullable = false, unique = true)
     private String jti;

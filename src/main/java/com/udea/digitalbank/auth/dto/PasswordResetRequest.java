@@ -1,8 +1,8 @@
 package com.udea.digitalbank.auth.dto;
 
+import com.udea.digitalbank.shared.utils.Password;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
 import lombok.Data;
 
 @Data
@@ -13,10 +13,6 @@ public class PasswordResetRequest {
     @NotBlank
     private String code;
 
-    @NotBlank
-    @Pattern(
-            regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&#_-]).{8,16}$",
-            message = "La contraseña debe tener 8-16 caracteres, mayúscula, minúscula, número y carácter especial"
-    )
+    @NotBlank @Password
     private String password;
 }

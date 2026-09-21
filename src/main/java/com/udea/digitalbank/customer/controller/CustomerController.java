@@ -1,6 +1,6 @@
 package com.udea.digitalbank.customer.controller;
 
-import com.udea.digitalbank.auth.domain.StatusCode;
+import com.udea.digitalbank.auth.api.UserStatusEnum;
 import com.udea.digitalbank.customer.dto.CreateCustomerRequest;
 import com.udea.digitalbank.customer.dto.CustomerResponse;
 import com.udea.digitalbank.customer.dto.UpdateProfileRequest;
@@ -23,7 +23,7 @@ public class CustomerController {
         this.customerService = customerService;
     }
 
-    // Público (ver SecurityConfig): crea el cliente y su cuenta en un solo request
+    // Público (ver SecurityConfig): crea el cliente y su usuario en un solo request
     @PostMapping
     public ResponseEntity<CustomerResponse> create(@Valid @RequestBody CreateCustomerRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(customerService.create(request));
@@ -32,17 +32,18 @@ public class CustomerController {
     @GetMapping("/profile")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<CustomerResponse> myProfile(Authentication auth) {
-        // El principal es el id de la cuenta (sub del JWT)
-        Long accountId = (Long) auth.getPrincipal();
-        return ResponseEntity.ok(customerService.getProfile(accountId));
+        // El principal es el id del usuario (sub del JWT)
+        Long userId = (Long) auth.getPrincipal();
+        return ResponseEntity.ok(customerService.getProfile(userId));
     }
 
     @PutMapping("/profile")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<CustomerResponse> updateProfile(Authentication auth,
                                                            @Valid @RequestBody UpdateProfileRequest request) {
-        Long accountId = (Long) auth.getPrincipal();
-        return ResponseEntity.ok(customerService.updateProfile(accountId, request.getName(), request.getPhone()));
+        Long userId = (Long) auth.getPrincipal();
+        return ResponseEntity.ok(customerService.updateProfile(
+                userId, request.getFirstNames(), request.getLastNames(), request.getPhone()));
     }
 
     @GetMapping
@@ -60,7 +61,7 @@ public class CustomerController {
     @PatchMapping("/{id}/status")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> changeStatus(@PathVariable Long id, @RequestParam String status) {
-        customerService.changeStatus(id, StatusCode.valueOf(status.trim().toUpperCase()));
+        customerService.changeStatus(id, UserStatusEnum.valueOf(status.trim().toUpperCase()));
         return ResponseEntity.noContent().build();
     }
 }

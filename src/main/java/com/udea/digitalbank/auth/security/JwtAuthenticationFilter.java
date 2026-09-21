@@ -1,9 +1,7 @@
 package com.udea.digitalbank.auth.security;
 
-import com.udea.digitalbank.auth.domain.StatusCode;
-import com.udea.digitalbank.auth.domain.AuthSession;
-import com.udea.digitalbank.auth.repository.AuthSessionRepository;
-import com.udea.digitalbank.auth.repository.UserAccountRepository;
+import com.udea.digitalbank.auth.service.SessionService;
+import com.udea.digitalbank.auth.service.UserStatusService;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -16,23 +14,21 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
-    private final AuthSessionRepository sessionRepository;
-    private final UserAccountRepository accountRepository;
+    private final SessionService sessionService;
+    private final UserStatusService userStatusService;
 
     public JwtAuthenticationFilter(JwtUtil jwtUtil,
-                                   AuthSessionRepository sessionRepository,
-                                   UserAccountRepository accountRepository) {
+                                   SessionService sessionService,
+                                   UserStatusService userStatusService) {
         this.jwtUtil = jwtUtil;
-        this.sessionRepository = sessionRepository;
-        this.accountRepository = accountRepository;
+        this.sessionService = sessionService;
+        this.userStatusService = userStatusService;
     }
 
     @Override
@@ -55,28 +51,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         Claims claims = jwtUtil.parseClaims(token);
-        Long accountId = Long.valueOf(claims.getSubject());
+        Long userId = Long.valueOf(claims.getSubject());
         String role = claims.get("role", String.class);
         String jti = claims.getId();
 
-        // Sesión única: el token solo vale si su jti es el de la fila de la cuenta, sigue vigente
-        // y la cuenta está ACTIVE. Logout, reset de contraseña, bloqueo o inactividad borran la fila.
-        Optional<AuthSession> session = sessionRepository.findById(accountId);
-        boolean sessionValid = session.isPresent()
-                && jti != null
-                && jti.equals(session.get().getJti())
-                && session.get().getExpiresAt().isAfter(LocalDateTime.now());
-        boolean accountActive = sessionValid && accountRepository.findById(accountId)
-                .map(a -> a.getStatus().is(StatusCode.ACTIVE))
-                .orElse(false);
+        // Sesión única: el token solo vale si es la sesión vigente del usuario y el usuario está ACTIVE
+        boolean userActive = sessionService.isValid(userId, jti) && userStatusService.isActive(userId);
 
-        if (!accountActive) {
+        if (!userActive) {
             filterChain.doFilter(request, response);
             return;
         }
 
         var authentication = new UsernamePasswordAuthenticationToken(
-                accountId,
+                userId,
                 null,
                 List.of(new SimpleGrantedAuthority("ROLE_" + role))
         );

@@ -10,9 +10,12 @@ import java.time.LocalDateTime;
 
 public interface AuthSessionRepository extends JpaRepository<AuthSession, Long> {
 
+    // Consulta a la base (no findById): un DELETE masivo previo no actualiza la caché de la transacción
+    boolean existsByUserIdAndJtiAndExpiresAtAfter(Long userId, String jti, LocalDateTime now);
+
     @Modifying
-    @Query("delete from AuthSession s where s.userAccountId = :accountId")
-    void deleteByAccount(@Param("accountId") Long accountId);
+    @Query("delete from AuthSession s where s.userId = :userId")
+    void deleteByUser(@Param("userId") Long userId);
 
     @Modifying
     @Query("delete from AuthSession s where s.expiresAt < :now")
