@@ -1,6 +1,7 @@
 package com.udea.digitalbank.shared.security;
 
 import com.udea.digitalbank.shared.exception.SecurityErrorHandler;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -11,7 +12,9 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Reglas comunes a toda la API. Las rutas públicas y el mecanismo de autenticación los aporta
@@ -21,6 +24,9 @@ import java.util.List;
 @EnableWebSecurity
 @EnableMethodSecurity // habilita @PreAuthorize("hasRole('ADMIN')") en los controllers
 public class SecurityConfig {
+
+    @Value("${cors.allowed-origins}")
+    private String allowedOrigins;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, List<SecurityModule> modules,
@@ -58,7 +64,10 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:3000"));
+        configuration.setAllowedOrigins(Arrays.stream(allowedOrigins.split(","))
+            .map(String::trim)
+            .filter(origin -> !origin.isEmpty())
+            .collect(Collectors.toList()));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
