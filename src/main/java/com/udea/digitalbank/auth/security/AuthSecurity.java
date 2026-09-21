@@ -27,16 +27,16 @@ public class AuthSecurity implements SecurityModule {
         return new BCryptPasswordEncoder();
     }
 
-    // /api/auth/logout no está aquí a propósito: exige autenticación
+    // /api/v1/auth/logout no está aquí a propósito: exige autenticación
     @Override
     public List<PublicRoute> publicRoutes() {
         return List.of(
-                PublicRoute.post("/api/auth/login"),
-                PublicRoute.post("/api/auth/verify-2fa"),
-                PublicRoute.post("/api/auth/verify-email"),
-                PublicRoute.post("/api/auth/resend-verification"),
-                PublicRoute.post("/api/auth/recover-password"),
-                PublicRoute.post("/api/auth/reset-password"));
+                PublicRoute.post("/api/v1/auth/login"),
+                PublicRoute.post("/api/v1/auth/verify-2fa"),
+                PublicRoute.post("/api/v1/auth/verify-email"),
+                PublicRoute.post("/api/v1/auth/resend-verification"),
+                PublicRoute.post("/api/v1/auth/recover-password"),
+                PublicRoute.post("/api/v1/auth/reset-password"));
     }
 
     @Override

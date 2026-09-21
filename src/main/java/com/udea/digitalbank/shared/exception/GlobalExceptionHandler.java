@@ -98,7 +98,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return body(HttpStatus.BAD_REQUEST, headers, MALFORMED_REQUEST);
     }
 
-    // Parámetro de ruta o de consulta de tipo incorrecto (p. ej. /api/customers/abc)
+    // Parámetro de ruta o de consulta de tipo incorrecto (p. ej. /api/v1/customers/abc)
     @Override
     protected ResponseEntity<Object> handleTypeMismatch(TypeMismatchException ex, HttpHeaders headers,
                                                         HttpStatusCode status, WebRequest request) {
