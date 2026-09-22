@@ -44,10 +44,8 @@ services:
       JWT_EXPIRATION_MS: ${JWT_EXPIRATION_MS:-3600000}
       VERIFICATION_HMAC_SECRET: ${VERIFICATION_HMAC_SECRET:-dev-only-hmac-secret-change-this-value-0002}
       VERIFICATION_RESEND_INTERVAL_SECONDS: ${VERIFICATION_RESEND_INTERVAL_SECONDS:-60}
-      MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
-      MAIL_PORT: ${MAIL_PORT:-587}
-      MAIL_USERNAME: ${MAIL_USERNAME:-email@gmail.com}
-      MAIL_PASSWORD: ${MAIL_PASSWORD:-password}
+      RESEND_API_KEY: ${RESEND_API_KEY:-re_xxxxxxxxx}
+      RESEND_FROM: ${RESEND_FROM:-DigitalBank <onboarding@resend.dev>}
     networks:
       - digitalbank-net
 
