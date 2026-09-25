@@ -1,4 +1,4 @@
-name: Auto Create PR to Develop
+name: Auto Create PR
 
 on:
   push:
@@ -7,6 +7,8 @@ on:
       - 'userstory/*'
       - 'task/*'
       - 'bugfix/*'
+      - 'hotfix/*'
+      - 'quality'
 
 jobs:
   create-pr:
@@ -20,22 +22,35 @@ jobs:
       - name: Checkout del código
         uses: actions/checkout@v4
 
+      - name: Determinar rama destino
+        id: target
+        run: |
+          # Define la rama base (destino) dependiendo de la rama de origen
+          if [[ "${{ github.ref_name }}" == hotfix/* ]]; then
+            echo "base_branch=quality" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref_name }}" == "quality" ]]; then
+            echo "base_branch=develop" >> $GITHUB_OUTPUT
+          else
+            echo "base_branch=develop" >> $GITHUB_OUTPUT
+          fi
+
       - name: Ejecutar GitHub CLI para crear el PR
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BASE_BRANCH: ${{ steps.target.outputs.base_branch }}
         run: |
-          # 1. Verifica si ya existe un PR abierto para esta rama hacia develop
-          PR_EXISTS=$(gh pr list --head ${{ github.ref_name }} --base develop --state open --json number --jq 'length')
+          # 1. Verifica si ya existe un PR abierto para esta rama hacia la rama base designada
+          PR_EXISTS=$(gh pr list --head ${{ github.ref_name }} --base $BASE_BRANCH --state open --json number --jq 'length')
           
           # 2. Si no existe, crea el Pull Request
           if [ "$PR_EXISTS" -eq "0" ]; then
             gh pr create \
-              --base develop \
+              --base $BASE_BRANCH \
               --head ${{ github.ref_name }} \
-              --title "Auto PR: ${{ github.ref_name }}" \
+              --title "Auto PR: ${{ github.ref_name }} to $BASE_BRANCH" \
               --body-file .github/pull_request_template.md
               
-            echo "✅ Pull Request creado exitosamente."
+            echo "✅ Pull Request creado exitosamente hacia $BASE_BRANCH."
           else
-            echo "ℹ️ Ya existe un Pull Request abierto para esta rama."
+            echo "ℹ️ Ya existe un Pull Request abierto para esta rama hacia $BASE_BRANCH."
           fi
