@@ -1,7 +1,5 @@
 # Registros de Decisiones de Arquitectura (ADR)
 
-DigitalBank — Backend · Universidad de Antioquia
-
 Este directorio reúne las decisiones de arquitectura significativas del backend de DigitalBank: por qué se tomaron, qué alternativas se descartaron y qué consecuencias aceptó el equipo al tomarlas.
 
 **Cada ADR es inmutable.** Si una decisión cambia, no se edita el registro existente: se añade uno nuevo que lo reemplaza y el anterior pasa a estado `superseded`. Lo único que se modifica sobre un ADR ya publicado es su estado.
