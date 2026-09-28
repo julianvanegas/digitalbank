@@ -11,7 +11,8 @@ import java.util.UUID;
 
 // Solo datos personales: credenciales, estado y sesión viven en auth (users)
 @Entity
-@Table(name = "customers")
+@Table(name = "customers",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"document_type_id", "document_number"}))
 @Getter
 @Setter
 @NoArgsConstructor
@@ -20,8 +21,8 @@ public class Customer {
     private static final short CUSTOMER_ROLE_ID = 1;
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
     // Sin @ManyToOne hacia auth para mantener los módulos desacoplados
     @Column(nullable = false, unique = true)
@@ -41,7 +42,7 @@ public class Customer {
     @JoinColumn(name = "document_type_id", nullable = false)
     private DocumentType documentType;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false, length = 20)
     private String documentNumber;
 
     @Column(nullable = false, length = 16)

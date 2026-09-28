@@ -7,7 +7,7 @@ import java.util.UUID;
 
 @Data
 public class CustomerResponse {
-    private Long id;
+    private UUID id;
     private String firstNames;
     private String lastNames;
     private DocumentTypeResponse documentType;

@@ -19,7 +19,7 @@ public class CreateCustomerRequest {
     @NotNull
     private Short documentTypeId;
 
-    @NotBlank @Size(max = 255)
+    @NotBlank @Size(max = 20)
     private String documentNumber;
 
     @NotBlank @Phone

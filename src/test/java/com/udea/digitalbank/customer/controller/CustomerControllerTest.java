@@ -65,7 +65,7 @@ class CustomerControllerTest {
         request.setPassword("Passw0rd!");
 
         CustomerResponse expected = new CustomerResponse();
-        expected.setId(1L);
+        expected.setId(UUID.randomUUID());
         when(customerService.create(request)).thenReturn(expected);
 
         // Act
@@ -137,30 +137,32 @@ class CustomerControllerTest {
     @DisplayName("getCustomer - delega el id y responde 200")
     void getCustomer_deberiaDelegarIdYResponder200() {
         // Arrange
+        UUID customerId = UUID.randomUUID();
         CustomerResponse expected = new CustomerResponse();
-        expected.setId(5L);
-        when(customerService.getCustomer(5L)).thenReturn(expected);
+        expected.setId(customerId);
+        when(customerService.getCustomer(customerId)).thenReturn(expected);
 
         // Act
-        ResponseEntity<CustomerResponse> response = controller.getCustomer(5L);
+        ResponseEntity<CustomerResponse> response = controller.getCustomer(customerId);
 
         // Assert
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody().getId()).isEqualTo(5L);
+        assertThat(response.getBody().getId()).isEqualTo(customerId);
     }
 
     @Test
     @DisplayName("changeStatus - delega id y nuevo estado, responde 204")
     void changeStatus_deberiaDelegarIdYEstadoYResponder204() {
         // Arrange
+        UUID customerId = UUID.randomUUID();
         ChangeStatusRequest request = new ChangeStatusRequest();
         request.setStatus(UserStatusEnum.BLOCKED);
 
         // Act
-        ResponseEntity<Void> response = controller.changeStatus(5L, request);
+        ResponseEntity<Void> response = controller.changeStatus(customerId, request);
 
         // Assert
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
-        verify(customerService).changeStatus(5L, UserStatusEnum.BLOCKED);
+        verify(customerService).changeStatus(customerId, UserStatusEnum.BLOCKED);
     }
 }

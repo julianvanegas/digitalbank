@@ -58,13 +58,13 @@ public class CustomerController {
 
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<CustomerResponse> getCustomer(@PathVariable Long id) {
+    public ResponseEntity<CustomerResponse> getCustomer(@PathVariable UUID id) {
         return ResponseEntity.ok(customerService.getCustomer(id));
     }
 
     @PatchMapping("/{id}/status")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> changeStatus(@PathVariable Long id,
+    public ResponseEntity<Void> changeStatus(@PathVariable UUID id,
                                              @Valid @RequestBody ChangeStatusRequest request) {
         customerService.changeStatus(id, request.getStatus());
         return ResponseEntity.noContent().build();

@@ -24,6 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class CustomerMapperTest {
 
     private static final UUID USER_ID = UUID.randomUUID();
+    private static final UUID CUSTOMER_ID = UUID.randomUUID();
 
     private CustomerMapper mapper;
 
@@ -32,16 +33,16 @@ class CustomerMapperTest {
         mapper = Mappers.getMapper(CustomerMapper.class);
     }
 
-    private DocumentType buildDocumentType(short id, String name) {
+    private DocumentType buildDocumentType(short id, String code) {
         DocumentType documentType = new DocumentType();
         ReflectionTestUtils.setField(documentType, "id", id);
-        ReflectionTestUtils.setField(documentType, "name", name);
+        ReflectionTestUtils.setField(documentType, "code", code);
         return documentType;
     }
 
     private Customer buildCustomer() {
         Customer customer = new Customer();
-        customer.setId(1L);
+        customer.setId(CUSTOMER_ID);
         customer.setUserId(USER_ID);
         customer.setFirstNames("Ana");
         customer.setLastNames("Torres");
@@ -63,7 +64,7 @@ class CustomerMapperTest {
         CustomerResponse response = mapper.toResponse(customer, user);
 
         // Assert: datos del perfil
-        assertThat(response.getId()).isEqualTo(1L);
+        assertThat(response.getId()).isEqualTo(CUSTOMER_ID);
         assertThat(response.getFirstNames()).isEqualTo("Ana");
         assertThat(response.getLastNames()).isEqualTo("Torres");
         assertThat(response.getDocumentNumber()).isEqualTo("123456789");

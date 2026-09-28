@@ -11,7 +11,7 @@ import org.hibernate.annotations.Immutable;
 // Catálogo de solo lectura de los documentos con los que se identifica un cliente
 @Entity
 @Immutable
-@Table(name = "document_type")
+@Table(name = "document_types")
 @Getter
 @NoArgsConstructor
 public class DocumentType {
@@ -19,6 +19,6 @@ public class DocumentType {
     @Id
     private Short id;
 
-    @Column(nullable = false, unique = true, length = 50)
-    private String name;
+    @Column(nullable = false, unique = true, length = 30)
+    private String code;
 }

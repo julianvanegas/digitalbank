@@ -57,7 +57,7 @@ public class CustomerService {
                 .orElseThrow(() -> new IllegalArgumentException(
                         "Tipo de documento inexistente: " + request.getDocumentTypeId()));
 
-        if (customerRepository.existsByDocumentNumber(request.getDocumentNumber())) {
+        if (customerRepository.existsByDocumentTypeIdAndDocumentNumber(documentType.getId(), request.getDocumentNumber())) {
             throw new DuplicateCustomerException("Ya existe un cliente registrado con ese número de documento");
         }
 
@@ -86,7 +86,7 @@ public class CustomerService {
     }
 
     @Transactional(readOnly = true)
-    public CustomerResponse getCustomer(Long customerId) {
+    public CustomerResponse getCustomer(UUID customerId) {
         return toResponse(findByIdOrThrow(customerId));
     }
 
@@ -119,7 +119,7 @@ public class CustomerService {
     // Solo se debe llamar desde un endpoint protegido con @PreAuthorize("hasRole('ADMIN')")
     // auth valida que el estado exista en el catálogo user_status
     @Transactional
-    public void changeStatus(Long customerId, UserStatusEnum statusEnum) {
+    public void changeStatus(UUID customerId, UserStatusEnum statusEnum) {
         Customer customer = findByIdOrThrow(customerId);
         authFacade.changeStatus(customer.getUserId(), statusEnum);
     }
@@ -128,7 +128,7 @@ public class CustomerService {
         return customerMapper.toResponse(customer, authFacade.getUser(customer.getUserId()));
     }
 
-    private Customer findByIdOrThrow(Long customerId) {
+    private Customer findByIdOrThrow(UUID customerId) {
         return customerRepository.findById(customerId)
                 .orElseThrow(() -> new CustomerNotFoundException("Cliente no encontrado: " + customerId));
     }

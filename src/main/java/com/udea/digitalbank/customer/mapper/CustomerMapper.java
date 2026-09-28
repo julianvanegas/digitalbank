@@ -19,6 +19,7 @@ public interface CustomerMapper {
     @Mapping(target = "status", source = "user.status")
     CustomerResponse toResponse(Customer customer, UserView user);
 
+    @Mapping(target = "name", source = "code")
     DocumentTypeResponse toResponse(DocumentType documentType);
     // el mapeo CreateCustomerRequest -> Customer se realiza en el servicio: la contraseña la procesa auth
 }

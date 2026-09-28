@@ -72,7 +72,7 @@ class CustomerServiceTest {
         // DocumentType no expone setters (@Getter + @NoArgsConstructor + campos final por catálogo),
         // por lo que se accede por reflexión solo para armar el fixture de la prueba.
         setField(documentType, "id", (short) 1);
-        setField(documentType, "name", "Cédula de ciudadanía");
+        setField(documentType, "code", "Cédula de ciudadanía");
         return documentType;
     }
 
@@ -101,7 +101,7 @@ class CustomerServiceTest {
 
             when(documentTypeRepository.findById(request.getDocumentTypeId()))
                     .thenReturn(Optional.of(documentType));
-            when(customerRepository.existsByDocumentNumber(request.getDocumentNumber()))
+            when(customerRepository.existsByDocumentTypeIdAndDocumentNumber(documentType.getId(), request.getDocumentNumber()))
                     .thenReturn(false);
             when(authFacade.createUser(request.getEmail(), request.getPassword(), RoleEnum.CUSTOMER))
                     .thenReturn(userView);
@@ -139,7 +139,7 @@ class CustomerServiceTest {
 
             when(documentTypeRepository.findById(request.getDocumentTypeId()))
                     .thenReturn(Optional.of(documentType));
-            when(customerRepository.existsByDocumentNumber(request.getDocumentNumber()))
+            when(customerRepository.existsByDocumentTypeIdAndDocumentNumber(documentType.getId(), request.getDocumentNumber()))
                     .thenReturn(false);
             when(authFacade.createUser(request.getEmail(), request.getPassword(), RoleEnum.CUSTOMER))
                     .thenReturn(userView);
@@ -196,7 +196,7 @@ class CustomerServiceTest {
             DocumentType documentType = buildDocumentType();
             when(documentTypeRepository.findById(request.getDocumentTypeId()))
                     .thenReturn(Optional.of(documentType));
-            when(customerRepository.existsByDocumentNumber(request.getDocumentNumber()))
+            when(customerRepository.existsByDocumentTypeIdAndDocumentNumber(documentType.getId(), request.getDocumentNumber()))
                     .thenReturn(true);
 
             // Act
@@ -217,7 +217,7 @@ class CustomerServiceTest {
             DocumentType documentType = buildDocumentType();
             when(documentTypeRepository.findById(request.getDocumentTypeId()))
                     .thenReturn(Optional.of(documentType));
-            when(customerRepository.existsByDocumentNumber(request.getDocumentNumber()))
+            when(customerRepository.existsByDocumentTypeIdAndDocumentNumber(documentType.getId(), request.getDocumentNumber()))
                     .thenReturn(false);
             when(authFacade.createUser(request.getEmail(), request.getPassword(), RoleEnum.CUSTOMER))
                     .thenThrow(new DuplicateUserException("Ya existe un usuario registrado con ese email"));
