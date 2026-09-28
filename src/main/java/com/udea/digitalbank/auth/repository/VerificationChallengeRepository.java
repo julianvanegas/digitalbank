@@ -16,17 +16,17 @@ public interface VerificationChallengeRepository extends JpaRepository<Verificat
 
     // Bloqueo de escritura: evita que intentos en paralelo se salten el conteo de fallos
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("select c from VerificationChallenge c where c.id = :id and c.purpose.code = :purpose")
+    @Query("select c from VerificationChallenge c where c.id = :id and c.purpose.purpose = :purpose")
     Optional<VerificationChallenge> lockByIdAndPurpose(@Param("id") UUID id, @Param("purpose") String purpose);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("select c from VerificationChallenge c where c.userId = :userId and c.purpose.code = :purpose")
-    Optional<VerificationChallenge> lockByUserAndPurpose(@Param("userId") Long userId,
+    @Query("select c from VerificationChallenge c where c.userId = :userId and c.purpose.purpose = :purpose")
+    Optional<VerificationChallenge> lockByUserAndPurpose(@Param("userId") UUID userId,
                                                             @Param("purpose") String purpose);
 
     @Modifying
-    @Query("delete from VerificationChallenge c where c.userId = :userId and c.purpose.code = :purpose")
-    void deleteByUserAndPurpose(@Param("userId") Long userId, @Param("purpose") String purpose);
+    @Query("delete from VerificationChallenge c where c.userId = :userId and c.purpose.purpose = :purpose")
+    void deleteByUserAndPurpose(@Param("userId") UUID userId, @Param("purpose") String purpose);
 
     @Modifying
     @Query("delete from VerificationChallenge c where c.expiresAt < :now")

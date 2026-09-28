@@ -16,6 +16,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
@@ -65,8 +66,8 @@ class VerificationServiceTest {
     private static ChallengePurpose buildPurpose(short id, String code, int ttlMinutes, int maxAttempts) {
         ChallengePurpose purpose = new ChallengePurpose();
         setField(purpose, "id", id);
-        setField(purpose, "code", code);
-        setField(purpose, "ttlMinutes", ttlMinutes);
+        setField(purpose, "purpose", code);
+        setField(purpose, "ttl", Duration.ofMinutes(ttlMinutes));
         setField(purpose, "maxAttempts", maxAttempts);
         return purpose;
     }
@@ -81,7 +82,7 @@ class VerificationServiceTest {
         }
     }
 
-    private static VerificationChallenge buildChallenge(UUID id, Long userId, ChallengePurpose purpose,
+    private static VerificationChallenge buildChallenge(UUID id, UUID userId, ChallengePurpose purpose,
                                                         String codeHash, LocalDateTime expiresAt,
                                                         int failedAttempts) {
         VerificationChallenge challenge = new VerificationChallenge();
@@ -90,7 +91,7 @@ class VerificationServiceTest {
         challenge.setPurpose(purpose);
         challenge.setCodeHash(codeHash);
         challenge.setExpiresAt(expiresAt);
-        challenge.setFailedAttempts(failedAttempts);
+        challenge.setFailedAttempts((short) failedAttempts);
         return challenge;
     }
 
@@ -102,11 +103,12 @@ class VerificationServiceTest {
         @DisplayName("Genera un reto nuevo con la vigencia del propósito y elimina el anterior")
         void deberiaGenerarUnRetoConLaVigenciaDelProposito() {
             // Arrange
+            UUID userId = UUID.randomUUID();
             User user = new User();
-            user.setId(7L);
+            user.setId(userId);
             ChallengePurpose purpose = buildPurpose((short) 1, "LOGIN", 5, 3);
             when(catalogs.purpose(PurposeEnum.LOGIN)).thenReturn(purpose);
-            when(codeHasher.hash(eq(7L), eq((short) 1), anyString())).thenReturn("hash-simulado");
+            when(codeHasher.hash(eq(userId), eq((short) 1), anyString())).thenReturn("hash-simulado");
 
             LocalDateTime before = LocalDateTime.now();
 
@@ -114,12 +116,12 @@ class VerificationServiceTest {
             IssuedChallenge issued = verificationService.issue(user, PurposeEnum.LOGIN);
 
             // Assert
-            verify(challengeRepository).deleteByUserAndPurpose(7L, "LOGIN");
+            verify(challengeRepository).deleteByUserAndPurpose(userId, "LOGIN");
             ArgumentCaptor<VerificationChallenge> captor = ArgumentCaptor.forClass(VerificationChallenge.class);
             verify(challengeRepository).save(captor.capture());
             VerificationChallenge saved = captor.getValue();
 
-            assertThat(saved.getUserId()).isEqualTo(7L);
+            assertThat(saved.getUserId()).isEqualTo(userId);
             assertThat(saved.getCodeHash()).isEqualTo("hash-simulado");
             assertThat(saved.getExpiresAt()).isCloseTo(before.plusMinutes(5), within(2, java.time.temporal.ChronoUnit.SECONDS));
             assertThat(issued.code()).matches("\\d{6}"); // código numérico de 6 dígitos
@@ -133,22 +135,23 @@ class VerificationServiceTest {
     class VerifyById {
 
         private final ChallengePurpose loginPurpose = buildPurpose((short) 1, "LOGIN", 5, 3);
+        private final UUID userId = UUID.randomUUID();
 
         @Test
         @DisplayName("CA02/CA08 - Código correcto y vigente: se acepta y se invalida para reutilizarlo (uso único)")
         void deberiaAceptarUnCodigoCorrectoYVigente() {
             // Arrange
             UUID challengeId = UUID.randomUUID();
-            VerificationChallenge challenge = buildChallenge(challengeId, 42L, loginPurpose,
+            VerificationChallenge challenge = buildChallenge(challengeId, userId, loginPurpose,
                     "hash-esperado", LocalDateTime.now().plusMinutes(2), 0);
             when(challengeRepository.lockByIdAndPurpose(challengeId, "LOGIN")).thenReturn(Optional.of(challenge));
-            when(codeHasher.matches(42L, (short) 1, "123456", "hash-esperado")).thenReturn(true);
+            when(codeHasher.matches(userId, (short) 1, "123456", "hash-esperado")).thenReturn(true);
 
             // Act
-            Long userId = verificationService.verifyById(challengeId, PurposeEnum.LOGIN, "123456");
+            UUID verifiedUserId = verificationService.verifyById(challengeId, PurposeEnum.LOGIN, "123456");
 
             // Assert
-            assertThat(userId).isEqualTo(42L);
+            assertThat(verifiedUserId).isEqualTo(userId);
             verify(challengeRepository).delete(challenge); // CA09: al consumirse, queda inválido para un futuro uso
             verify(challengeRepository, never()).save(any());
         }
@@ -158,7 +161,7 @@ class VerificationServiceTest {
         void deberiaRechazarUnCodigoExpirado() {
             // Arrange
             UUID challengeId = UUID.randomUUID();
-            VerificationChallenge challenge = buildChallenge(challengeId, 42L, loginPurpose,
+            VerificationChallenge challenge = buildChallenge(challengeId, userId, loginPurpose,
                     "hash-esperado", LocalDateTime.now().minusSeconds(1), 0); // ya vencido
             when(challengeRepository.lockByIdAndPurpose(challengeId, "LOGIN")).thenReturn(Optional.of(challenge));
 
@@ -176,17 +179,17 @@ class VerificationServiceTest {
         void deberiaRegistrarElIntentoSinInvalidarElRetoAunNoAlcanzaElLimite() {
             // Arrange: ya tiene 1 intento fallido, el límite son 3
             UUID challengeId = UUID.randomUUID();
-            VerificationChallenge challenge = buildChallenge(challengeId, 42L, loginPurpose,
+            VerificationChallenge challenge = buildChallenge(challengeId, userId, loginPurpose,
                     "hash-esperado", LocalDateTime.now().plusMinutes(2), 1);
             when(challengeRepository.lockByIdAndPurpose(challengeId, "LOGIN")).thenReturn(Optional.of(challenge));
-            when(codeHasher.matches(42L, (short) 1, "000000", "hash-esperado")).thenReturn(false);
+            when(codeHasher.matches(userId, (short) 1, "000000", "hash-esperado")).thenReturn(false);
 
             // Act
             Throwable thrown = catchThrowable(() -> verificationService.verifyById(challengeId, PurposeEnum.LOGIN, "000000"));
 
             // Assert
             assertThat(thrown).isInstanceOf(InvalidVerificationCodeException.class);
-            assertThat(challenge.getFailedAttempts()).isEqualTo(2);
+            assertThat(challenge.getFailedAttempts()).isEqualTo((short) 2);
             verify(challengeRepository).save(challenge);
             verify(challengeRepository, never()).delete(any());
         }
@@ -196,10 +199,10 @@ class VerificationServiceTest {
         void deberiaInvalidarElRetoEnElTercerIntentoIncorrecto() {
             // Arrange: ya tiene 2 intentos fallidos, este sería el tercero
             UUID challengeId = UUID.randomUUID();
-            VerificationChallenge challenge = buildChallenge(challengeId, 42L, loginPurpose,
+            VerificationChallenge challenge = buildChallenge(challengeId, userId, loginPurpose,
                     "hash-esperado", LocalDateTime.now().plusMinutes(2), 2);
             when(challengeRepository.lockByIdAndPurpose(challengeId, "LOGIN")).thenReturn(Optional.of(challenge));
-            when(codeHasher.matches(42L, (short) 1, "000000", "hash-esperado")).thenReturn(false);
+            when(codeHasher.matches(userId, (short) 1, "000000", "hash-esperado")).thenReturn(false);
 
             // Act
             Throwable thrown = catchThrowable(() -> verificationService.verifyById(challengeId, PurposeEnum.LOGIN, "000000"));
@@ -250,22 +253,23 @@ class VerificationServiceTest {
         @DisplayName("CA03 - Código de recuperación válido: se acepta y permite continuar")
         void deberiaAceptarUnCodigoDeRecuperacionValido() {
             // Arrange
+            UUID userId = UUID.randomUUID();
             User user = new User();
-            user.setId(9L);
+            user.setId(userId);
             user.setEmail("cliente@example.com");
             UUID challengeId = UUID.randomUUID();
-            VerificationChallenge challenge = buildChallenge(challengeId, 9L, resetPurpose,
+            VerificationChallenge challenge = buildChallenge(challengeId, userId, resetPurpose,
                     "hash-esperado", LocalDateTime.now().plusMinutes(3), 0);
 
             when(userRepository.findByEmail("cliente@example.com")).thenReturn(Optional.of(user));
-            when(challengeRepository.lockByUserAndPurpose(9L, "PASSWORD_RESET")).thenReturn(Optional.of(challenge));
-            when(codeHasher.matches(9L, (short) 3, "654321", "hash-esperado")).thenReturn(true);
+            when(challengeRepository.lockByUserAndPurpose(userId, "PASSWORD_RESET")).thenReturn(Optional.of(challenge));
+            when(codeHasher.matches(userId, (short) 3, "654321", "hash-esperado")).thenReturn(true);
 
             // Act
-            Long userId = verificationService.verifyByEmail("cliente@example.com", PurposeEnum.PASSWORD_RESET, "654321");
+            UUID verifiedUserId = verificationService.verifyByEmail("cliente@example.com", PurposeEnum.PASSWORD_RESET, "654321");
 
             // Assert
-            assertThat(userId).isEqualTo(9L);
+            assertThat(verifiedUserId).isEqualTo(userId);
             verify(challengeRepository).delete(challenge);
         }
     }

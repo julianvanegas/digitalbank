@@ -127,14 +127,15 @@ class AuthControllerTest {
     @DisplayName("logout - HU04: obtiene el userId del principal autenticado y responde 204")
     void logout_deberiaUsarPrincipalYResponder204() {
         // Arrange
-        when(authentication.getPrincipal()).thenReturn(42L);
+        UUID userId = UUID.randomUUID();
+        when(authentication.getPrincipal()).thenReturn(userId);
 
         // Act
         ResponseEntity<Void> response = controller.logout(authentication);
 
         // Assert
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
-        verify(authService).logout(42L);
+        verify(authService).logout(userId);
     }
 
     @Test

@@ -17,6 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
@@ -63,13 +64,15 @@ class SessionServiceTest {
         @DisplayName("Abre la sesión (sobrescribiendo cualquier anterior) y devuelve el token firmado")
         void deberiaAbrirLaSesionYDevolverElToken() {
             // Arrange
+            UUID userId = UUID.randomUUID();
+            String jti = UUID.randomUUID().toString();
             User user = new User();
-            user.setId(5L);
+            user.setId(userId);
             user.setRole(buildRole("CUSTOMER"));
 
             when(jwtUtil.getExpirationMs()).thenReturn(900_000L); // 15 minutos
-            when(jwtUtil.generateJti()).thenReturn("jti-abc");
-            when(jwtUtil.generateToken(eq(5L), eq("CUSTOMER"), eq("jti-abc"), any(Date.class), any(Date.class)))
+            when(jwtUtil.generateJti()).thenReturn(jti);
+            when(jwtUtil.generateToken(eq(userId), eq("CUSTOMER"), eq(jti), any(Date.class), any(Date.class)))
                     .thenReturn("token-firmado");
 
             LocalDateTime before = LocalDateTime.now();
@@ -84,8 +87,8 @@ class SessionServiceTest {
             // del mismo usuario queda sobrescrita por el propio UPSERT/merge de JPA.
             verify(sessionRepository).save(captor.capture());
             AuthSession saved = captor.getValue();
-            assertThat(saved.getUserId()).isEqualTo(5L);
-            assertThat(saved.getJti()).isEqualTo("jti-abc");
+            assertThat(saved.getUserId()).isEqualTo(userId);
+            assertThat(saved.getJti()).isEqualTo(UUID.fromString(jti));
             assertThat(saved.getIssuedAt()).isCloseTo(before, within(2, ChronoUnit.SECONDS));
             assertThat(saved.getExpiresAt()).isCloseTo(before.plusSeconds(900), within(2, ChronoUnit.SECONDS));
         }
@@ -99,7 +102,7 @@ class SessionServiceTest {
         @DisplayName("Elimina la sesión activa del usuario")
         void deberiaEliminarLaSesionDelUsuario() {
             // Arrange
-            Long userId = 5L;
+            UUID userId = UUID.randomUUID();
 
             // Act
             sessionService.revoke(userId);
@@ -117,29 +120,35 @@ class SessionServiceTest {
         @DisplayName("CA07 - Token vigente: la sesión se considera válida")
         void deberiaConsiderarValidaUnaSesionVigente() {
             // Arrange
-            when(sessionRepository.existsByUserIdAndJtiAndExpiresAtAfter(eq(5L), eq("jti-abc"), any(LocalDateTime.class)))
+            UUID userId = UUID.randomUUID();
+            String jti = UUID.randomUUID().toString();
+            when(sessionRepository.existsByUserIdAndJtiAndExpiresAtAfter(
+                    eq(userId), eq(UUID.fromString(jti)), any(LocalDateTime.class)))
                     .thenReturn(true);
 
             // Act & Assert
-            assertThat(sessionService.isValid(5L, "jti-abc")).isTrue();
+            assertThat(sessionService.isValid(userId, jti)).isTrue();
         }
 
         @Test
         @DisplayName("CA09/CA10 - Sesión cerrada, expirada o con jti distinto: se considera inválida")
         void deberiaConsiderarInvalidaUnaSesionQueNoCoincideOYaExpiro() {
             // Arrange
-            when(sessionRepository.existsByUserIdAndJtiAndExpiresAtAfter(eq(5L), eq("jti-viejo"), any(LocalDateTime.class)))
+            UUID userId = UUID.randomUUID();
+            String jti = UUID.randomUUID().toString();
+            when(sessionRepository.existsByUserIdAndJtiAndExpiresAtAfter(
+                    eq(userId), eq(UUID.fromString(jti)), any(LocalDateTime.class)))
                     .thenReturn(false);
 
             // Act & Assert
-            assertThat(sessionService.isValid(5L, "jti-viejo")).isFalse();
+            assertThat(sessionService.isValid(userId, jti)).isFalse();
         }
 
         @Test
         @DisplayName("Un jti nulo se rechaza sin necesidad de consultar la base de datos")
         void deberiaRechazarUnJtiNuloSinConsultarElRepositorio() {
             // Act & Assert
-            assertThat(sessionService.isValid(5L, null)).isFalse();
+            assertThat(sessionService.isValid(UUID.randomUUID(), null)).isFalse();
             verifyNoInteractions(sessionRepository);
         }
     }

@@ -8,9 +8,11 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.Immutable;
 
+import java.time.Duration;
+
 @Entity
 @Immutable
-@Table(name = "challenge_purpose")
+@Table(name = "challenge_purposes")
 @Getter
 @NoArgsConstructor
 public class ChallengePurpose {
@@ -18,11 +20,12 @@ public class ChallengePurpose {
     @Id
     private Short id;
 
+    // Se mantiene como "purpose" por decisión de diseño del modelo, aunque los demás catálogos usan "code"
     @Column(nullable = false, unique = true, length = 30)
-    private String code;
+    private String purpose;
 
     @Column(nullable = false)
-    private int ttlMinutes;
+    private Duration ttl;
 
     @Column(nullable = false)
     private int maxAttempts;

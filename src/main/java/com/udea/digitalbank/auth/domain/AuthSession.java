@@ -9,20 +9,21 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 // Única sesión vigente de cada usuario: un login nuevo sobrescribe la fila
 @Entity
-@Table(name = "auth_session")
+@Table(name = "auth_sessions")
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
 public class AuthSession {
 
     @Id
-    private Long userId;
+    private UUID userId;
 
-    @Column(nullable = false, unique = true)
-    private String jti;
+    @Column(nullable = false)
+    private UUID jti;
 
     @Column(nullable = false)
     private LocalDateTime issuedAt;

@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.Date;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -46,13 +47,14 @@ class JwtUtilTest {
             // Arrange
             Date issuedAt = new Date();
             Date expiresAt = new Date(issuedAt.getTime() + 900_000L);
+            UUID userId = UUID.randomUUID();
 
             // Act
-            String token = jwtUtil.generateToken(42L, "CUSTOMER", "jti-123", issuedAt, expiresAt);
+            String token = jwtUtil.generateToken(userId, "CUSTOMER", "jti-123", issuedAt, expiresAt);
             var claims = jwtUtil.parseClaims(token);
 
             // Assert
-            assertThat(claims.getSubject()).isEqualTo("42");
+            assertThat(claims.getSubject()).isEqualTo(userId.toString());
             assertThat(claims.get("role", String.class)).isEqualTo("CUSTOMER");
             assertThat(claims.getId()).isEqualTo("jti-123");
         }
@@ -80,7 +82,7 @@ class JwtUtilTest {
             // Arrange
             Date issuedAt = new Date();
             Date expiresAt = new Date(issuedAt.getTime() + 900_000L);
-            String token = jwtUtil.generateToken(1L, "CUSTOMER", "jti-1", issuedAt, expiresAt);
+            String token = jwtUtil.generateToken(UUID.randomUUID(), "CUSTOMER", "jti-1", issuedAt, expiresAt);
 
             // Act & Assert
             assertThat(jwtUtil.isValid(token)).isTrue();
@@ -92,7 +94,7 @@ class JwtUtilTest {
             // Arrange: se genera ya vencido (expiró hace 1 minuto)
             Date issuedAt = new Date(System.currentTimeMillis() - 120_000L);
             Date expiresAt = new Date(System.currentTimeMillis() - 60_000L);
-            String token = jwtUtil.generateToken(1L, "CUSTOMER", "jti-1", issuedAt, expiresAt);
+            String token = jwtUtil.generateToken(UUID.randomUUID(), "CUSTOMER", "jti-1", issuedAt, expiresAt);
 
             // Act & Assert
             assertThat(jwtUtil.isValid(token)).isFalse();
@@ -107,7 +109,7 @@ class JwtUtilTest {
             setField(otraInstancia, "expirationMs", 900_000L);
             Date issuedAt = new Date();
             Date expiresAt = new Date(issuedAt.getTime() + 900_000L);
-            String tokenFalsificado = otraInstancia.generateToken(1L, "CUSTOMER", "jti-1", issuedAt, expiresAt);
+            String tokenFalsificado = otraInstancia.generateToken(UUID.randomUUID(), "CUSTOMER", "jti-1", issuedAt, expiresAt);
 
             // Act & Assert
             assertThat(jwtUtil.isValid(tokenFalsificado)).isFalse();

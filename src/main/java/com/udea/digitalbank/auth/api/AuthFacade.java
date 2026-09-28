@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Única puerta de entrada de otros módulos a auth.
@@ -68,19 +69,19 @@ public class AuthFacade {
     }
 
     @Transactional
-    public void changeStatus(Long userId, UserStatusEnum statusEnum) {
+    public void changeStatus(UUID userId, UserStatusEnum statusEnum) {
         userStatusService.changeStatus(userId, statusEnum);
     }
 
     @Transactional(readOnly = true)
-    public UserView getUser(Long userId) {
+    public UserView getUser(UUID userId) {
         return userRepository.findById(userId)
                 .map(AuthFacade::toView)
                 .orElseThrow(() -> new UserNotFoundException("Usuario no encontrado: " + userId));
     }
 
     @Transactional(readOnly = true)
-    public List<UserView> getUsers(Collection<Long> userIds) {
+    public List<UserView> getUsers(Collection<UUID> userIds) {
         return userRepository.findAllById(userIds).stream().map(AuthFacade::toView).toList();
     }
 

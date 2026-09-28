@@ -21,9 +21,9 @@ import org.springframework.security.core.Authentication;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -80,31 +80,33 @@ class CustomerControllerTest {
     @DisplayName("myProfile - HU06: usa el userId del principal autenticado y responde 200")
     void myProfile_deberiaUsarPrincipalYResponder200() {
         // Arrange
-        when(authentication.getPrincipal()).thenReturn(10L);
+        UUID userId = UUID.randomUUID();
+        when(authentication.getPrincipal()).thenReturn(userId);
         CustomerResponse expected = new CustomerResponse();
-        expected.setUserId(10L);
-        when(customerService.getProfile(10L)).thenReturn(expected);
+        expected.setUserId(userId);
+        when(customerService.getProfile(userId)).thenReturn(expected);
 
         // Act
         ResponseEntity<CustomerResponse> response = controller.myProfile(authentication);
 
         // Assert
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody().getUserId()).isEqualTo(10L);
+        assertThat(response.getBody().getUserId()).isEqualTo(userId);
     }
 
     @Test
     @DisplayName("updateProfile - HU07: delega userId y los 3 campos editables, responde 200")
     void updateProfile_deberiaDelegarCamposYResponder200() {
         // Arrange
-        when(authentication.getPrincipal()).thenReturn(10L);
+        UUID userId = UUID.randomUUID();
+        when(authentication.getPrincipal()).thenReturn(userId);
         UpdateProfileRequest request = new UpdateProfileRequest();
         request.setFirstNames("Nuevo Nombre");
         request.setLastNames("Nuevo Apellido");
         request.setPhone("+573111111111");
 
         CustomerResponse expected = new CustomerResponse();
-        when(customerService.updateProfile(10L, "Nuevo Nombre", "Nuevo Apellido", "+573111111111"))
+        when(customerService.updateProfile(userId, "Nuevo Nombre", "Nuevo Apellido", "+573111111111"))
                 .thenReturn(expected);
 
         // Act
@@ -112,7 +114,7 @@ class CustomerControllerTest {
 
         // Assert
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        verify(customerService).updateProfile(10L, "Nuevo Nombre", "Nuevo Apellido", "+573111111111");
+        verify(customerService).updateProfile(userId, "Nuevo Nombre", "Nuevo Apellido", "+573111111111");
     }
 
     @Test

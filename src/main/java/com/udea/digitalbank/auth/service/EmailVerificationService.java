@@ -8,6 +8,8 @@ import com.udea.digitalbank.shared.exception.auth.InvalidVerificationCodeExcepti
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.UUID;
+
 /** Confirmación del email de un usuario recién creado. */
 @Service
 public class EmailVerificationService {
@@ -29,7 +31,7 @@ public class EmailVerificationService {
 
     @Transactional(noRollbackFor = InvalidVerificationCodeException.class)
     public void verifyEmail(String email, String code) {
-        Long userId = verificationService.verifyByEmail(email, PurposeEnum.EMAIL_CONFIRMATION, code);
+        UUID userId = verificationService.verifyByEmail(email, PurposeEnum.EMAIL_CONFIRMATION, code);
         User user = userRepository.findById(userId).orElseThrow();
         // Solo confirma usuarios pendientes; no reactiva un usuario bloqueado o inactivo
         if (user.getStatus().is(UserStatusEnum.PENDING_VERIFICATION)) {

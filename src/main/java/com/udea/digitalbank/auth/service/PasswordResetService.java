@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 /** Recuperación de contraseña: pedir el código y cambiarla con él. */
 @Service
@@ -41,11 +42,11 @@ public class PasswordResetService {
 
     @Transactional(noRollbackFor = InvalidVerificationCodeException.class)
     public void resetPassword(String email, String code, String newPassword) {
-        Long userId = verificationService.verifyByEmail(email, PurposeEnum.PASSWORD_RESET, code);
+        UUID userId = verificationService.verifyByEmail(email, PurposeEnum.PASSWORD_RESET, code);
         User user = userRepository.findById(userId).orElseThrow();
         user.setPasswordHash(passwordEncoder.encode(newPassword));
         user.setPasswordChangedAt(LocalDateTime.now());
-        user.setFailedAttempts(0);
+        user.setFailedAttempts((short) 0);
         userRepository.save(user);
         sessionService.revoke(userId);
     }

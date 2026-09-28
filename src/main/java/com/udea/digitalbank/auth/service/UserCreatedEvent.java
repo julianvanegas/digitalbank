@@ -1,4 +1,6 @@
 package com.udea.digitalbank.auth.service;
 
-public record UserCreatedEvent(Long userId) {
+import java.util.UUID;
+
+public record UserCreatedEvent(UUID userId) {
 }

@@ -9,6 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import java.util.HexFormat;
+import java.util.UUID;
 
 /**
  * HMAC-SHA256 con clave del servidor. Un SHA-256 simple no protege un código de 6 dígitos:
@@ -26,7 +27,7 @@ public class CodeHasher {
     }
 
     // El usuario y el propósito van en el mensaje: el mismo código produce hashes distintos por reto
-    public String hash(Long userId, short purposeId, String code) {
+    public String hash(UUID userId, short purposeId, String code) {
         try {
             Mac mac = Mac.getInstance(ALGORITHM);
             mac.init(new SecretKeySpec(key, ALGORITHM));
@@ -37,7 +38,7 @@ public class CodeHasher {
         }
     }
 
-    public boolean matches(Long userId, short purposeId, String code, String expectedHash) {
+    public boolean matches(UUID userId, short purposeId, String code, String expectedHash) {
         String actual = hash(userId, purposeId, code);
         return MessageDigest.isEqual(
                 actual.getBytes(StandardCharsets.UTF_8), expectedHash.getBytes(StandardCharsets.UTF_8));

@@ -8,13 +8,13 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -51,7 +51,7 @@ class PasswordResetServiceTest {
         void deberiaEmitirYEnviarElCodigoCuandoElCorreoEstaRegistrado() {
             // Arrange
             User user = new User();
-            user.setId(1L);
+            user.setId(UUID.randomUUID());
             user.setEmail("cliente@example.com");
             when(userRepository.findByEmail("cliente@example.com")).thenReturn(Optional.of(user));
 
@@ -84,10 +84,10 @@ class PasswordResetServiceTest {
         @DisplayName("CA12/CA19 - Código válido y contraseña válida: actualiza la contraseña y revoca la sesión")
         void deberiaActualizarLaContraseñaYRevocarLaSesionCuandoElCodigoEsValido() {
             // Arrange
-            Long userId = 10L;
+            UUID userId = UUID.randomUUID();
             User user = new User();
             user.setId(userId);
-            user.setFailedAttempts(2); // intentos previos de login, deben resetearse también aquí
+            user.setFailedAttempts((short) 2); // intentos previos de login, deben resetearse también aquí
 
             when(verificationService.verifyByEmail("cliente@example.com", PurposeEnum.PASSWORD_RESET, "654321"))
                     .thenReturn(userId);

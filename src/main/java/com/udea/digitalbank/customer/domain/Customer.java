@@ -7,6 +7,7 @@ import lombok.Setter;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 // Solo datos personales: credenciales, estado y sesión viven en auth (users)
 @Entity
@@ -24,7 +25,7 @@ public class Customer {
 
     // Sin @ManyToOne hacia auth para mantener los módulos desacoplados
     @Column(nullable = false, unique = true)
-    private Long userId;
+    private UUID userId;
 
     // Junto con userId forma la FK compuesta que impide que un ADMIN tenga fila aquí
     @Column(nullable = false, updatable = false)

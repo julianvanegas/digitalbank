@@ -48,7 +48,7 @@ public class Catalogs {
     void load() {
         roleRepository.findAll().forEach(r -> roles.put(r.getCode(), r));
         statusRepository.findAll().forEach(s -> statuses.put(s.getCode(), s));
-        purposeRepository.findAll().forEach(p -> purposes.put(p.getCode(), p));
+        purposeRepository.findAll().forEach(p -> purposes.put(p.getPurpose(), p));
         validate();
     }
 

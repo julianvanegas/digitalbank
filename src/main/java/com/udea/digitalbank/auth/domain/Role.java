@@ -10,7 +10,7 @@ import org.hibernate.annotations.Immutable;
 
 @Entity
 @Immutable
-@Table(name = "role")
+@Table(name = "roles")
 @Getter
 @NoArgsConstructor
 public class Role {
