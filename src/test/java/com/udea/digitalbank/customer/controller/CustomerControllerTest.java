@@ -21,9 +21,9 @@ import org.springframework.security.core.Authentication;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -65,7 +65,7 @@ class CustomerControllerTest {
         request.setPassword("Passw0rd!");
 
         CustomerResponse expected = new CustomerResponse();
-        expected.setId(1L);
+        expected.setId(UUID.randomUUID());
         when(customerService.create(request)).thenReturn(expected);
 
         // Act
@@ -80,31 +80,33 @@ class CustomerControllerTest {
     @DisplayName("myProfile - HU06: usa el userId del principal autenticado y responde 200")
     void myProfile_deberiaUsarPrincipalYResponder200() {
         // Arrange
-        when(authentication.getPrincipal()).thenReturn(10L);
+        UUID userId = UUID.randomUUID();
+        when(authentication.getPrincipal()).thenReturn(userId);
         CustomerResponse expected = new CustomerResponse();
-        expected.setUserId(10L);
-        when(customerService.getProfile(10L)).thenReturn(expected);
+        expected.setUserId(userId);
+        when(customerService.getProfile(userId)).thenReturn(expected);
 
         // Act
         ResponseEntity<CustomerResponse> response = controller.myProfile(authentication);
 
         // Assert
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody().getUserId()).isEqualTo(10L);
+        assertThat(response.getBody().getUserId()).isEqualTo(userId);
     }
 
     @Test
     @DisplayName("updateProfile - HU07: delega userId y los 3 campos editables, responde 200")
     void updateProfile_deberiaDelegarCamposYResponder200() {
         // Arrange
-        when(authentication.getPrincipal()).thenReturn(10L);
+        UUID userId = UUID.randomUUID();
+        when(authentication.getPrincipal()).thenReturn(userId);
         UpdateProfileRequest request = new UpdateProfileRequest();
         request.setFirstNames("Nuevo Nombre");
         request.setLastNames("Nuevo Apellido");
         request.setPhone("+573111111111");
 
         CustomerResponse expected = new CustomerResponse();
-        when(customerService.updateProfile(10L, "Nuevo Nombre", "Nuevo Apellido", "+573111111111"))
+        when(customerService.updateProfile(userId, "Nuevo Nombre", "Nuevo Apellido", "+573111111111"))
                 .thenReturn(expected);
 
         // Act
@@ -112,7 +114,7 @@ class CustomerControllerTest {
 
         // Assert
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        verify(customerService).updateProfile(10L, "Nuevo Nombre", "Nuevo Apellido", "+573111111111");
+        verify(customerService).updateProfile(userId, "Nuevo Nombre", "Nuevo Apellido", "+573111111111");
     }
 
     @Test
@@ -135,30 +137,32 @@ class CustomerControllerTest {
     @DisplayName("getCustomer - delega el id y responde 200")
     void getCustomer_deberiaDelegarIdYResponder200() {
         // Arrange
+        UUID customerId = UUID.randomUUID();
         CustomerResponse expected = new CustomerResponse();
-        expected.setId(5L);
-        when(customerService.getCustomer(5L)).thenReturn(expected);
+        expected.setId(customerId);
+        when(customerService.getCustomer(customerId)).thenReturn(expected);
 
         // Act
-        ResponseEntity<CustomerResponse> response = controller.getCustomer(5L);
+        ResponseEntity<CustomerResponse> response = controller.getCustomer(customerId);
 
         // Assert
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody().getId()).isEqualTo(5L);
+        assertThat(response.getBody().getId()).isEqualTo(customerId);
     }
 
     @Test
     @DisplayName("changeStatus - delega id y nuevo estado, responde 204")
     void changeStatus_deberiaDelegarIdYEstadoYResponder204() {
         // Arrange
+        UUID customerId = UUID.randomUUID();
         ChangeStatusRequest request = new ChangeStatusRequest();
         request.setStatus(UserStatusEnum.BLOCKED);
 
         // Act
-        ResponseEntity<Void> response = controller.changeStatus(5L, request);
+        ResponseEntity<Void> response = controller.changeStatus(customerId, request);
 
         // Assert
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
-        verify(customerService).changeStatus(5L, UserStatusEnum.BLOCKED);
+        verify(customerService).changeStatus(customerId, UserStatusEnum.BLOCKED);
     }
 }

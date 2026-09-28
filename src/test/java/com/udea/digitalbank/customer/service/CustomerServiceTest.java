@@ -24,6 +24,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -71,7 +72,7 @@ class CustomerServiceTest {
         // DocumentType no expone setters (@Getter + @NoArgsConstructor + campos final por catálogo),
         // por lo que se accede por reflexión solo para armar el fixture de la prueba.
         setField(documentType, "id", (short) 1);
-        setField(documentType, "name", "Cédula de ciudadanía");
+        setField(documentType, "code", "Cédula de ciudadanía");
         return documentType;
     }
 
@@ -95,12 +96,12 @@ class CustomerServiceTest {
             // Arrange
             CreateCustomerRequest request = buildValidRequest();
             DocumentType documentType = buildDocumentType();
-            UserView userView = new UserView(10L, request.getEmail(), "CUSTOMER", "PENDING_VERIFICATION");
+            UserView userView = new UserView(UUID.randomUUID(), request.getEmail(), "CUSTOMER", "PENDING_VERIFICATION");
             CustomerResponse expectedResponse = new CustomerResponse();
 
             when(documentTypeRepository.findById(request.getDocumentTypeId()))
                     .thenReturn(Optional.of(documentType));
-            when(customerRepository.existsByDocumentNumber(request.getDocumentNumber()))
+            when(customerRepository.existsByDocumentTypeIdAndDocumentNumber(documentType.getId(), request.getDocumentNumber()))
                     .thenReturn(false);
             when(authFacade.createUser(request.getEmail(), request.getPassword(), RoleEnum.CUSTOMER))
                     .thenReturn(userView);
@@ -133,12 +134,12 @@ class CustomerServiceTest {
             CreateCustomerRequest request = buildValidRequest();
             request.setBirthDate(LocalDate.now().minusYears(18)); // cumple 18 exactamente hoy
             DocumentType documentType = buildDocumentType();
-            UserView userView = new UserView(11L, request.getEmail(), "CUSTOMER", "PENDING_VERIFICATION");
+            UserView userView = new UserView(UUID.randomUUID(), request.getEmail(), "CUSTOMER", "PENDING_VERIFICATION");
             CustomerResponse expectedResponse = new CustomerResponse();
 
             when(documentTypeRepository.findById(request.getDocumentTypeId()))
                     .thenReturn(Optional.of(documentType));
-            when(customerRepository.existsByDocumentNumber(request.getDocumentNumber()))
+            when(customerRepository.existsByDocumentTypeIdAndDocumentNumber(documentType.getId(), request.getDocumentNumber()))
                     .thenReturn(false);
             when(authFacade.createUser(request.getEmail(), request.getPassword(), RoleEnum.CUSTOMER))
                     .thenReturn(userView);
@@ -195,7 +196,7 @@ class CustomerServiceTest {
             DocumentType documentType = buildDocumentType();
             when(documentTypeRepository.findById(request.getDocumentTypeId()))
                     .thenReturn(Optional.of(documentType));
-            when(customerRepository.existsByDocumentNumber(request.getDocumentNumber()))
+            when(customerRepository.existsByDocumentTypeIdAndDocumentNumber(documentType.getId(), request.getDocumentNumber()))
                     .thenReturn(true);
 
             // Act
@@ -216,7 +217,7 @@ class CustomerServiceTest {
             DocumentType documentType = buildDocumentType();
             when(documentTypeRepository.findById(request.getDocumentTypeId()))
                     .thenReturn(Optional.of(documentType));
-            when(customerRepository.existsByDocumentNumber(request.getDocumentNumber()))
+            when(customerRepository.existsByDocumentTypeIdAndDocumentNumber(documentType.getId(), request.getDocumentNumber()))
                     .thenReturn(false);
             when(authFacade.createUser(request.getEmail(), request.getPassword(), RoleEnum.CUSTOMER))
                     .thenThrow(new DuplicateUserException("Ya existe un usuario registrado con ese email"));
@@ -238,7 +239,7 @@ class CustomerServiceTest {
         @DisplayName("CA01 - Retorna el perfil del cliente autenticado")
         void deberiaRetornarElPerfilCuandoElClienteExiste() {
             // Arrange
-            Long userId = 5L;
+            UUID userId = UUID.randomUUID();
             Customer customer = new Customer();
             customer.setUserId(userId);
             UserView userView = new UserView(userId, "cliente@example.com", "CUSTOMER", "ACTIVE");
@@ -259,7 +260,7 @@ class CustomerServiceTest {
         @DisplayName("Rechaza la consulta cuando no existe un perfil para el usuario autenticado")
         void deberiaLanzarExcepcionCuandoElPerfilNoExiste() {
             // Arrange
-            Long userId = 99L;
+            UUID userId = UUID.randomUUID();
             when(customerRepository.findByUserId(userId)).thenReturn(Optional.empty());
 
             // Act & Assert
@@ -277,7 +278,7 @@ class CustomerServiceTest {
         @DisplayName("CA01 / CA04 - Actualiza solo el dato enviado y conserva los demás sin cambios")
         void deberiaActualizarSoloElCampoEnviadoYConservarLosDemas() {
             // Arrange
-            Long userId = 7L;
+            UUID userId = UUID.randomUUID();
             Customer existing = new Customer();
             existing.setUserId(userId);
             existing.setFirstNames("Nombre Original");
@@ -308,7 +309,7 @@ class CustomerServiceTest {
         @DisplayName("Rechaza la actualización cuando no existe un perfil para el usuario autenticado")
         void deberiaLanzarExcepcionCuandoElPerfilNoExiste() {
             // Arrange
-            Long userId = 123L;
+            UUID userId = UUID.randomUUID();
             when(customerRepository.findByUserId(userId)).thenReturn(Optional.empty());
 
             // Act & Assert

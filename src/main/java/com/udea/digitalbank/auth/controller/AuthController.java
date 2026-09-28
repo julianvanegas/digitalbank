@@ -18,6 +18,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.UUID;
+
 // No hay endpoint de registro: los usuarios se crean desde el módulo de la persona (AuthFacade.createUser)
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -62,7 +64,7 @@ public class AuthController {
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(Authentication authentication) {
         // El JwtAuthenticationFilter guarda el id del usuario como principal
-        authService.logout((Long) authentication.getPrincipal());
+        authService.logout((UUID) authentication.getPrincipal());
         return ResponseEntity.noContent().build();
     }
 

@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "verification_challenge")
+@Table(name = "verification_challenges")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -25,23 +25,23 @@ public class VerificationChallenge {
     private UUID id;
 
     @Column(nullable = false)
-    private Long userId;
+    private UUID userId;
 
     @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "purpose_id", nullable = false)
     private ChallengePurpose purpose;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 64)
     private String codeHash;
 
     @Column(nullable = false)
     private LocalDateTime expiresAt;
 
     @Column(nullable = false)
-    private int failedAttempts = 0;
+    private short failedAttempts = 0;
 
     // Momento de emisión: no se guarda, se deriva de la vigencia del propósito
     public LocalDateTime issuedAt() {
-        return expiresAt.minusMinutes(purpose.getTtlMinutes());
+        return expiresAt.minus(purpose.getTtl());
     }
 }

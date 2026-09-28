@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.Period;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -56,7 +57,7 @@ public class CustomerService {
                 .orElseThrow(() -> new IllegalArgumentException(
                         "Tipo de documento inexistente: " + request.getDocumentTypeId()));
 
-        if (customerRepository.existsByDocumentNumber(request.getDocumentNumber())) {
+        if (customerRepository.existsByDocumentTypeIdAndDocumentNumber(documentType.getId(), request.getDocumentNumber())) {
             throw new DuplicateCustomerException("Ya existe un cliente registrado con ese número de documento");
         }
 
@@ -78,19 +79,19 @@ public class CustomerService {
 
     // Perfil propio: se identifica por el id del usuario que viaja en el JWT
     @Transactional(readOnly = true)
-    public CustomerResponse getProfile(Long userId) {
+    public CustomerResponse getProfile(UUID userId) {
         Customer customer = customerRepository.findByUserId(userId)
                 .orElseThrow(() -> new CustomerNotFoundException("Cliente no encontrado para el usuario: " + userId));
         return toResponse(customer);
     }
 
     @Transactional(readOnly = true)
-    public CustomerResponse getCustomer(Long customerId) {
+    public CustomerResponse getCustomer(UUID customerId) {
         return toResponse(findByIdOrThrow(customerId));
     }
 
     @Transactional
-    public CustomerResponse updateProfile(Long userId, String firstNames, String lastNames, String phone) {
+    public CustomerResponse updateProfile(UUID userId, String firstNames, String lastNames, String phone) {
         Customer customer = customerRepository.findByUserId(userId)
                 .orElseThrow(() -> new CustomerNotFoundException("Cliente no encontrado para el usuario: " + userId));
         // solo campos de perfil editables — nunca documento, rol ni estado desde aquí
@@ -109,7 +110,7 @@ public class CustomerService {
     @Transactional(readOnly = true)
     public Page<CustomerResponse> getAllCustomers(Pageable pageable) {
         Page<Customer> customers = customerRepository.findAll(pageable);
-        Map<Long, UserView> users = authFacade
+        Map<UUID, UserView> users = authFacade
                 .getUsers(customers.stream().map(Customer::getUserId).toList())
                 .stream().collect(Collectors.toMap(UserView::id, Function.identity()));
         return customers.map(c -> customerMapper.toResponse(c, users.get(c.getUserId())));
@@ -118,7 +119,7 @@ public class CustomerService {
     // Solo se debe llamar desde un endpoint protegido con @PreAuthorize("hasRole('ADMIN')")
     // auth valida que el estado exista en el catálogo user_status
     @Transactional
-    public void changeStatus(Long customerId, UserStatusEnum statusEnum) {
+    public void changeStatus(UUID customerId, UserStatusEnum statusEnum) {
         Customer customer = findByIdOrThrow(customerId);
         authFacade.changeStatus(customer.getUserId(), statusEnum);
     }
@@ -127,7 +128,7 @@ public class CustomerService {
         return customerMapper.toResponse(customer, authFacade.getUser(customer.getUserId()));
     }
 
-    private Customer findByIdOrThrow(Long customerId) {
+    private Customer findByIdOrThrow(UUID customerId) {
         return customerRepository.findById(customerId)
                 .orElseThrow(() -> new CustomerNotFoundException("Cliente no encontrado: " + customerId));
     }

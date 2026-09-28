@@ -55,7 +55,7 @@ class CatalogsTest {
     private static ChallengePurpose purpose(short id, String code) {
         ChallengePurpose purpose = new ChallengePurpose();
         setField(purpose, "id", id);
-        setField(purpose, "code", code);
+        setField(purpose, "purpose", code);
         return purpose;
     }
 
@@ -97,7 +97,7 @@ class CatalogsTest {
             // Act & Assert
             assertThat(catalogs.role(RoleEnum.CUSTOMER).getCode()).isEqualTo("CUSTOMER");
             assertThat(catalogs.status(UserStatusEnum.BLOCKED).getCode()).isEqualTo("BLOCKED");
-            assertThat(catalogs.purpose(PurposeEnum.PASSWORD_RESET).getCode()).isEqualTo("PASSWORD_RESET");
+            assertThat(catalogs.purpose(PurposeEnum.PASSWORD_RESET).getPurpose()).isEqualTo("PASSWORD_RESET");
         }
     }
 

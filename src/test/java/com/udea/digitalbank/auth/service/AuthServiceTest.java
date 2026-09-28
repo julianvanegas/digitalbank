@@ -57,11 +57,11 @@ class AuthServiceTest {
 
     private static User buildUser(String email, String passwordHash, UserStatusEnum statusEnum) {
         User user = new User();
-        user.setId(1L);
+        user.setId(UUID.randomUUID());
         user.setEmail(email);
         user.setPasswordHash(passwordHash);
         user.setStatus(buildStatus(statusEnum));
-        user.setFailedAttempts(0);
+        user.setFailedAttempts((short) 0);
         return user;
     }
 
@@ -98,7 +98,7 @@ class AuthServiceTest {
         void deberiaAceptarCredencialesValidasYContinuarConEl2FA() {
             // Arrange
             User user = buildUser("cliente@example.com", "hash", UserStatusEnum.ACTIVE);
-            user.setFailedAttempts(2); // intentos previos que deben resetearse al acertar
+            user.setFailedAttempts((short) 2); // intentos previos que deben resetearse al acertar
             LoginRequest request = buildLoginRequest("cliente@example.com", "Abcdef1$");
             UUID challengeId = UUID.randomUUID();
 
@@ -295,7 +295,7 @@ class AuthServiceTest {
         @DisplayName("CA02 - Cerrar sesión revoca la sesión del usuario")
         void deberiaRevocarLaSesionDelUsuario() {
             // Arrange
-            Long userId = 42L;
+            UUID userId = UUID.randomUUID();
 
             // Act
             authService.logout(userId);

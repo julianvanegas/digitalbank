@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Service
 public class UserStatusService {
@@ -31,14 +32,14 @@ public class UserStatusService {
 
     // Los estados válidos son los del catálogo user_status; un valor fuera de él se rechaza
     @Transactional
-    public void changeStatus(Long userId, UserStatusEnum statusEnum) {
+    public void changeStatus(UUID userId, UserStatusEnum statusEnum) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("Usuario no encontrado: " + userId));
         applyStatus(user, statusEnum);
     }
 
     // Un usuario inexistente no está activo. Lo consulta el filtro JWT en cada petición autenticada
-    public boolean isActive(Long userId) {
+    public boolean isActive(UUID userId) {
         return userRepository.findById(userId)
                 .map(user -> user.getStatus().is(UserStatusEnum.ACTIVE))
                 .orElse(false);
@@ -47,7 +48,7 @@ public class UserStatusService {
     // Suma un fallo y bloquea al llegar al máximo
     @Transactional
     public void registerFailedAttempt(User user) {
-        user.setFailedAttempts(user.getFailedAttempts() + 1);
+        user.setFailedAttempts((short) (user.getFailedAttempts() + 1));
         if (user.getFailedAttempts() >= MAX_FAILED_ATTEMPTS) {
             applyStatus(user, UserStatusEnum.BLOCKED);
         }
@@ -72,7 +73,7 @@ public class UserStatusService {
             user.setStatusChangedAt(LocalDateTime.now());
         }
         if (statusEnum == UserStatusEnum.ACTIVE) {
-            user.setFailedAttempts(0);
+            user.setFailedAttempts((short) 0);
         } else {
             sessionService.revoke(user.getId());
         }

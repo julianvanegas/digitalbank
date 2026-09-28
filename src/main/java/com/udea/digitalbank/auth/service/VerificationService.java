@@ -58,10 +58,10 @@ public class VerificationService {
         challenge.setUserId(user.getId());
         challenge.setPurpose(purpose);
         challenge.setCodeHash(codeHasher.hash(user.getId(), purpose.getId(), code));
-        challenge.setExpiresAt(LocalDateTime.now().plusMinutes(purpose.getTtlMinutes()));
+        challenge.setExpiresAt(LocalDateTime.now().plus(purpose.getTtl()));
         challengeRepository.save(challenge);
 
-        return new IssuedChallenge(challenge.getId(), code, purpose.getTtlMinutes());
+        return new IssuedChallenge(challenge.getId(), code, (int) purpose.getTtl().toMinutes());
     }
 
     // Igual que issue, pero vacío si el último reto se emitió hace menos del intervalo mínimo
@@ -77,7 +77,7 @@ public class VerificationService {
     // Flujo LOGIN: el cliente conoce el id del reto
     // noRollbackFor: el conteo de fallos y el borrado del reto deben persistir aunque se lance la excepción
     @Transactional(noRollbackFor = InvalidVerificationCodeException.class)
-    public Long verifyById(UUID challengeId, PurposeEnum purposeEnum, String code) {
+    public UUID verifyById(UUID challengeId, PurposeEnum purposeEnum, String code) {
         VerificationChallenge challenge = challengeRepository.lockByIdAndPurpose(challengeId, purposeEnum.name())
                 .orElseThrow(() -> new InvalidVerificationCodeException(INVALID_MESSAGE));
         return consume(challenge, code);
@@ -85,7 +85,7 @@ public class VerificationService {
 
     // Flujos que no revelan si un email existe: se resuelve por (email, propósito)
     @Transactional(noRollbackFor = InvalidVerificationCodeException.class)
-    public Long verifyByEmail(String email, PurposeEnum purposeEnum, String code) {
+    public UUID verifyByEmail(String email, PurposeEnum purposeEnum, String code) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new InvalidVerificationCodeException(INVALID_MESSAGE));
         VerificationChallenge challenge = challengeRepository
@@ -99,7 +99,7 @@ public class VerificationService {
         challengeRepository.deleteExpired(LocalDateTime.now());
     }
 
-    private Long consume(VerificationChallenge challenge, String code) {
+    private UUID consume(VerificationChallenge challenge, String code) {
         if (challenge.getExpiresAt().isBefore(LocalDateTime.now())) {
             challengeRepository.delete(challenge);
             throw new InvalidVerificationCodeException(INVALID_MESSAGE);
@@ -110,7 +110,7 @@ public class VerificationService {
                 challenge.getUserId(), purpose.getId(), code, challenge.getCodeHash());
 
         if (!matches) {
-            challenge.setFailedAttempts(challenge.getFailedAttempts() + 1);
+            challenge.setFailedAttempts((short) (challenge.getFailedAttempts() + 1));
             if (challenge.getFailedAttempts() >= purpose.getMaxAttempts()) {
                 challengeRepository.delete(challenge);
             } else {

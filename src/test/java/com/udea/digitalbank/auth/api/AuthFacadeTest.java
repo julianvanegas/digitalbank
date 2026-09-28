@@ -23,6 +23,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -107,9 +108,10 @@ class AuthFacadeTest {
             when(catalogs.status(UserStatusEnum.PENDING_VERIFICATION))
                     .thenReturn(buildStatus((short) 2, "PENDING_VERIFICATION"));
             when(passwordEncoder.encode("Passw0rd!")).thenReturn("hashed-password");
+            UUID userId = UUID.randomUUID();
             when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
                 User user = invocation.getArgument(0);
-                user.setId(1L);
+                user.setId(userId);
                 return user;
             });
 
@@ -117,7 +119,7 @@ class AuthFacadeTest {
             UserView result = authFacade.createUser("ana@example.com", "Passw0rd!", RoleEnum.CUSTOMER);
 
             // Assert
-            assertThat(result.id()).isEqualTo(1L);
+            assertThat(result.id()).isEqualTo(userId);
             assertThat(result.email()).isEqualTo("ana@example.com");
             assertThat(result.role()).isEqualTo("CUSTOMER");
             assertThat(result.status()).isEqualTo("PENDING_VERIFICATION");
@@ -168,9 +170,10 @@ class AuthFacadeTest {
             when(catalogs.role(any())).thenReturn(buildRole((short) 1, "CUSTOMER"));
             when(catalogs.status(any())).thenReturn(buildStatus((short) 2, "PENDING_VERIFICATION"));
             when(passwordEncoder.encode(anyString())).thenReturn("hashed-password");
+            UUID userId = UUID.randomUUID();
             when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
                 User user = invocation.getArgument(0);
-                user.setId(5L);
+                user.setId(userId);
                 return user;
             });
 
@@ -180,7 +183,7 @@ class AuthFacadeTest {
             // Assert
             ArgumentCaptor<UserCreatedEvent> eventCaptor = ArgumentCaptor.forClass(UserCreatedEvent.class);
             verify(eventPublisher).publishEvent(eventCaptor.capture());
-            assertThat(eventCaptor.getValue().userId()).isEqualTo(5L);
+            assertThat(eventCaptor.getValue().userId()).isEqualTo(userId);
         }
     }
 
@@ -192,18 +195,19 @@ class AuthFacadeTest {
         @DisplayName("Retorna la vista del usuario cuando existe")
         void deberiaRetornarUsuarioCuandoExiste() {
             // Arrange
+            UUID userId = UUID.randomUUID();
             User user = new User();
-            user.setId(1L);
+            user.setId(userId);
             user.setEmail("ana@example.com");
             user.setRole(buildRole((short) 1, "CUSTOMER"));
             user.setStatus(buildStatus((short) 3, "ACTIVE"));
-            when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+            when(userRepository.findById(userId)).thenReturn(Optional.of(user));
 
             // Act
-            UserView result = authFacade.getUser(1L);
+            UserView result = authFacade.getUser(userId);
 
             // Assert
-            assertThat(result.id()).isEqualTo(1L);
+            assertThat(result.id()).isEqualTo(userId);
             assertThat(result.email()).isEqualTo("ana@example.com");
             assertThat(result.role()).isEqualTo("CUSTOMER");
             assertThat(result.status()).isEqualTo("ACTIVE");
@@ -213,32 +217,35 @@ class AuthFacadeTest {
         @DisplayName("Lanza excepción cuando el usuario no existe")
         void deberiaLanzarExcepcionCuandoUsuarioNoExiste() {
             // Arrange
-            when(userRepository.findById(99L)).thenReturn(Optional.empty());
+            UUID userId = UUID.randomUUID();
+            when(userRepository.findById(userId)).thenReturn(Optional.empty());
 
             // Act & Assert
-            assertThrows(UserNotFoundException.class, () -> authFacade.getUser(99L));
+            assertThrows(UserNotFoundException.class, () -> authFacade.getUser(userId));
         }
 
         @Test
         @DisplayName("getUsers retorna la vista de cada usuario encontrado")
         void deberiaRetornarVistasDeVariosUsuarios() {
             // Arrange
+            UUID userId1 = UUID.randomUUID();
+            UUID userId2 = UUID.randomUUID();
             User user1 = new User();
-            user1.setId(1L);
+            user1.setId(userId1);
             user1.setEmail("uno@example.com");
             user1.setRole(buildRole((short) 1, "CUSTOMER"));
             user1.setStatus(buildStatus((short) 3, "ACTIVE"));
 
             User user2 = new User();
-            user2.setId(2L);
+            user2.setId(userId2);
             user2.setEmail("dos@example.com");
             user2.setRole(buildRole((short) 1, "CUSTOMER"));
             user2.setStatus(buildStatus((short) 3, "ACTIVE"));
 
-            when(userRepository.findAllById(List.of(1L, 2L))).thenReturn(List.of(user1, user2));
+            when(userRepository.findAllById(List.of(userId1, userId2))).thenReturn(List.of(user1, user2));
 
             // Act
-            List<UserView> result = authFacade.getUsers(List.of(1L, 2L));
+            List<UserView> result = authFacade.getUsers(List.of(userId1, userId2));
 
             // Assert
             assertThat(result).hasSize(2);
@@ -254,11 +261,14 @@ class AuthFacadeTest {
         @Test
         @DisplayName("Delega el cambio de estado en UserStatusService")
         void deberiaDelegarCambioDeEstado() {
+            // Arrange
+            UUID userId = UUID.randomUUID();
+
             // Act
-            authFacade.changeStatus(1L, UserStatusEnum.BLOCKED);
+            authFacade.changeStatus(userId, UserStatusEnum.BLOCKED);
 
             // Assert
-            verify(userStatusService).changeStatus(1L, UserStatusEnum.BLOCKED);
+            verify(userStatusService).changeStatus(userId, UserStatusEnum.BLOCKED);
         }
     }
 }

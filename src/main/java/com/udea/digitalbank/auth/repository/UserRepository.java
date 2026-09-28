@@ -8,8 +8,9 @@ import org.springframework.data.repository.query.Param;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
-public interface UserRepository extends JpaRepository<User, Long> {
+public interface UserRepository extends JpaRepository<User, UUID> {
 
     // El email se guarda en minúsculas: la búsqueda normaliza el dato recibido igual que lo hace setEmail
     @Query("select u from User u where u.email = lower(trim(:email))")

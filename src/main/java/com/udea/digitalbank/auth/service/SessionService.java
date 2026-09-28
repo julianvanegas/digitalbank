@@ -11,6 +11,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
+import java.util.UUID;
 
 /**
  * Ciclo de vida de la única sesión vigente de cada usuario. La sesión es la fila de auth_session y el
@@ -40,20 +41,28 @@ public class SessionService {
 
     // Sesión única: sobrescribe la fila del usuario y con ello invalida el jti anterior
     @Transactional
-    void open(Long userId, String jti, LocalDateTime issuedAt, LocalDateTime expiresAt) {
-        sessionRepository.save(new AuthSession(userId, jti, issuedAt, expiresAt));
+    void open(UUID userId, String jti, LocalDateTime issuedAt, LocalDateTime expiresAt) {
+        sessionRepository.save(new AuthSession(userId, UUID.fromString(jti), issuedAt, expiresAt));
     }
 
     // Logout, reset de contraseña, bloqueo o inactividad: el token deja de valer aunque no haya expirado
     @Transactional
-    public void revoke(Long userId) {
+    public void revoke(UUID userId) {
         sessionRepository.deleteByUser(userId);
     }
 
     // Un token solo vale si su jti es el de la fila del usuario y esa sesión no ha expirado
-    public boolean isValid(Long userId, String jti) {
-        return jti != null
-                && sessionRepository.existsByUserIdAndJtiAndExpiresAtAfter(userId, jti, LocalDateTime.now());
+    public boolean isValid(UUID userId, String jti) {
+        if (jti == null) {
+            return false;
+        }
+        UUID jtiValue;
+        try {
+            jtiValue = UUID.fromString(jti);
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+        return sessionRepository.existsByUserIdAndJtiAndExpiresAtAfter(userId, jtiValue, LocalDateTime.now());
     }
 
     // Las sesiones vencidas ya no valen (isValid las rechaza); esto solo evita que se acumulen

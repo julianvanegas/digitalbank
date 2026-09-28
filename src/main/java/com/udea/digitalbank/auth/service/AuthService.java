@@ -65,7 +65,7 @@ public class AuthService {
             default -> throw new UserNotEnabledException("El usuario no está habilitado para iniciar sesión");
         }
 
-        user.setFailedAttempts(0);
+        user.setFailedAttempts((short) 0);
         userRepository.save(user);
 
         IssuedChallenge challenge = verificationDispatcher.issueAndSend(user, PurposeEnum.LOGIN);
@@ -76,7 +76,7 @@ public class AuthService {
 
     @Transactional(noRollbackFor = InvalidVerificationCodeException.class)
     public AuthResponse verifyTwoFactor(UUID challengeId, String code) {
-        Long userId = verificationService.verifyById(challengeId, PurposeEnum.LOGIN, code);
+        UUID userId = verificationService.verifyById(challengeId, PurposeEnum.LOGIN, code);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new InvalidVerificationCodeException("Código de verificación inválido o expirado"));
 
@@ -93,7 +93,7 @@ public class AuthService {
     }
 
     @Transactional
-    public void logout(Long userId) {
+    public void logout(UUID userId) {
         sessionService.revoke(userId);
     }
 }

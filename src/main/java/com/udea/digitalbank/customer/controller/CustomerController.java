@@ -15,6 +15,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
+
 @RestController
 @RequestMapping("/api/v1/customers")
 public class CustomerController {
@@ -34,7 +36,7 @@ public class CustomerController {
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<CustomerResponse> myProfile(Authentication auth) {
         // El principal es el id del usuario (sub del JWT)
-        Long userId = (Long) auth.getPrincipal();
+        UUID userId = (UUID) auth.getPrincipal();
         return ResponseEntity.ok(customerService.getProfile(userId));
     }
 
@@ -42,7 +44,7 @@ public class CustomerController {
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<CustomerResponse> updateProfile(Authentication auth,
                                                            @Valid @RequestBody UpdateProfileRequest request) {
-        Long userId = (Long) auth.getPrincipal();
+        UUID userId = (UUID) auth.getPrincipal();
         return ResponseEntity.ok(customerService.updateProfile(
                 userId, request.getFirstNames(), request.getLastNames(), request.getPhone()));
     }
@@ -56,13 +58,13 @@ public class CustomerController {
 
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<CustomerResponse> getCustomer(@PathVariable Long id) {
+    public ResponseEntity<CustomerResponse> getCustomer(@PathVariable UUID id) {
         return ResponseEntity.ok(customerService.getCustomer(id));
     }
 
     @PatchMapping("/{id}/status")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> changeStatus(@PathVariable Long id,
+    public ResponseEntity<Void> changeStatus(@PathVariable UUID id,
                                              @Valid @RequestBody ChangeStatusRequest request) {
         customerService.changeStatus(id, request.getStatus());
         return ResponseEntity.noContent().build();
