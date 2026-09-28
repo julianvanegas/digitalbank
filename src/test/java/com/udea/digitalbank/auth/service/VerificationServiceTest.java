@@ -16,7 +16,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
@@ -67,7 +66,7 @@ class VerificationServiceTest {
         ChallengePurpose purpose = new ChallengePurpose();
         setField(purpose, "id", id);
         setField(purpose, "purpose", code);
-        setField(purpose, "ttl", Duration.ofMinutes(ttlMinutes));
+        setField(purpose, "ttlMinutes", ttlMinutes);
         setField(purpose, "maxAttempts", maxAttempts);
         return purpose;
     }

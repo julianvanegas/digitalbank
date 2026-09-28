@@ -42,6 +42,6 @@ public class VerificationChallenge {
 
     // Momento de emisión: no se guarda, se deriva de la vigencia del propósito
     public LocalDateTime issuedAt() {
-        return expiresAt.minus(purpose.getTtl());
+        return expiresAt.minusMinutes(purpose.getTtlMinutes());
     }
 }

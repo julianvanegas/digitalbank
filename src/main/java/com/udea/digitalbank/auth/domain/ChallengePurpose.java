@@ -8,8 +8,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.Immutable;
 
-import java.time.Duration;
-
 @Entity
 @Immutable
 @Table(name = "challenge_purposes")
@@ -25,7 +23,7 @@ public class ChallengePurpose {
     private String purpose;
 
     @Column(nullable = false)
-    private Duration ttl;
+    private int ttlMinutes;
 
     @Column(nullable = false)
     private int maxAttempts;

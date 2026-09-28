@@ -58,10 +58,10 @@ public class VerificationService {
         challenge.setUserId(user.getId());
         challenge.setPurpose(purpose);
         challenge.setCodeHash(codeHasher.hash(user.getId(), purpose.getId(), code));
-        challenge.setExpiresAt(LocalDateTime.now().plus(purpose.getTtl()));
+        challenge.setExpiresAt(LocalDateTime.now().plusMinutes(purpose.getTtlMinutes()));
         challengeRepository.save(challenge);
 
-        return new IssuedChallenge(challenge.getId(), code, (int) purpose.getTtl().toMinutes());
+        return new IssuedChallenge(challenge.getId(), code, purpose.getTtlMinutes());
     }
 
     // Igual que issue, pero vacío si el último reto se emitió hace menos del intervalo mínimo

@@ -15,7 +15,7 @@ CREATE TABLE challenge_purposes (
     id           SMALLINT PRIMARY KEY,
     -- Se mantiene como "purpose" por decisión de diseño, aunque los demás catálogos usan "code"
     purpose      VARCHAR(30) NOT NULL UNIQUE,
-    ttl          INTERVAL NOT NULL CHECK (ttl > INTERVAL '0'),
+    ttl_minutes  INTEGER NOT NULL CHECK (ttl_minutes > 0),
     max_attempts INTEGER NOT NULL CHECK (max_attempts > 0)
 );
 
@@ -28,10 +28,10 @@ INSERT INTO user_status (id, code) VALUES
     (3, 'INACTIVE'),
     (4, 'BLOCKED');
 
-INSERT INTO challenge_purposes (id, purpose, ttl, max_attempts) VALUES
-    (1, 'LOGIN',              INTERVAL '5 minutes',  3),
-    (2, 'EMAIL_CONFIRMATION', INTERVAL '30 minutes',  3),
-    (3, 'PASSWORD_RESET',     INTERVAL '15 minutes',  3);
+INSERT INTO challenge_purposes (id, purpose, ttl_minutes, max_attempts) VALUES
+    (1, 'LOGIN',               5, 3),
+    (2, 'EMAIL_CONFIRMATION', 30, 3),
+    (3, 'PASSWORD_RESET',     15, 3);
 
 -- ============ USUARIO ============
 CREATE TABLE users (
