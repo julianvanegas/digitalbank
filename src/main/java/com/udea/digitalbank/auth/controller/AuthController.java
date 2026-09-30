@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.UUID;
 
-// No hay endpoint de registro: los usuarios se crean desde el módulo de la persona (AuthFacade.createUser)
+// No hay endpoint de registro: los usuarios se crean desde el módulo de la persona (UserApi.createUser)
 @RestController
 @RequestMapping("/api/v1/auth")
 public class AuthController {

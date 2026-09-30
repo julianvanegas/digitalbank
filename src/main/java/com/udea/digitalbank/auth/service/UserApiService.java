@@ -1,10 +1,11 @@
-package com.udea.digitalbank.auth.api;
+package com.udea.digitalbank.auth.service;
 
+import com.udea.digitalbank.auth.api.UserApi;
+import com.udea.digitalbank.auth.api.RoleEnum;
+import com.udea.digitalbank.auth.api.UserStatusEnum;
+import com.udea.digitalbank.auth.api.UserView;
 import com.udea.digitalbank.auth.domain.User;
 import com.udea.digitalbank.auth.repository.UserRepository;
-import com.udea.digitalbank.auth.service.UserCreatedEvent;
-import com.udea.digitalbank.auth.service.UserStatusService;
-import com.udea.digitalbank.auth.service.Catalogs;
 import com.udea.digitalbank.shared.exception.auth.UserNotFoundException;
 import com.udea.digitalbank.shared.exception.auth.DuplicateUserException;
 import org.springframework.context.ApplicationEventPublisher;
@@ -17,12 +18,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * Única puerta de entrada de otros módulos a auth.
- * Los módulos solo guardan el id del usuario; nunca importan entidades ni repositorios de auth.
- */
 @Service
-public class AuthFacade {
+public class UserApiService implements UserApi {
 
     private final UserRepository userRepository;
     private final UserStatusService userStatusService;
@@ -30,7 +27,7 @@ public class AuthFacade {
     private final PasswordEncoder passwordEncoder;
     private final ApplicationEventPublisher eventPublisher;
 
-    public AuthFacade(UserRepository userRepository,
+    public UserApiService(UserRepository userRepository,
                       UserStatusService userStatusService,
                       Catalogs catalogs,
                       PasswordEncoder passwordEncoder,
@@ -42,11 +39,7 @@ public class AuthFacade {
         this.eventPublisher = eventPublisher;
     }
 
-    /**
-     * Participa en la transacción del llamante: si el perfil falla, el usuario se revierte.
-     * Deja al usuario en PENDING_VERIFICATION y, al confirmarse la transacción,
-     * se emite el reto EMAIL_CONFIRMATION.
-     */
+    @Override
     @Transactional
     public UserView createUser(String email, String password, RoleEnum roleEnum) {
         if (userRepository.existsByEmail(email)) {
@@ -68,21 +61,24 @@ public class AuthFacade {
         return toView(saved);
     }
 
+    @Override
     @Transactional
     public void changeStatus(UUID userId, UserStatusEnum statusEnum) {
         userStatusService.changeStatus(userId, statusEnum);
     }
 
+    @Override
     @Transactional(readOnly = true)
     public UserView getUser(UUID userId) {
         return userRepository.findById(userId)
-                .map(AuthFacade::toView)
+                .map(UserApiService::toView)
                 .orElseThrow(() -> new UserNotFoundException("Usuario no encontrado: " + userId));
     }
 
+    @Override
     @Transactional(readOnly = true)
     public List<UserView> getUsers(Collection<UUID> userIds) {
-        return userRepository.findAllById(userIds).stream().map(AuthFacade::toView).toList();
+        return userRepository.findAllById(userIds).stream().map(UserApiService::toView).toList();
     }
 
     private static UserView toView(User user) {

@@ -3,7 +3,7 @@ package com.udea.digitalbank.customer.service;
 import com.udea.digitalbank.auth.api.RoleEnum;
 import com.udea.digitalbank.auth.api.UserStatusEnum;
 import com.udea.digitalbank.auth.api.UserView;
-import com.udea.digitalbank.auth.api.AuthFacade;
+import com.udea.digitalbank.auth.api.UserApi;
 import com.udea.digitalbank.customer.domain.Customer;
 import com.udea.digitalbank.customer.domain.DocumentType;
 import com.udea.digitalbank.customer.dto.CreateCustomerRequest;
@@ -32,16 +32,16 @@ public class CustomerService {
 
     private final CustomerRepository customerRepository;
     private final DocumentTypeRepository documentTypeRepository;
-    private final AuthFacade authFacade;
+    private final UserApi userApi;
     private final CustomerMapper customerMapper;
 
     public CustomerService(CustomerRepository customerRepository,
                            DocumentTypeRepository documentTypeRepository,
-                           AuthFacade authFacade,
+                           UserApi userApi,
                            CustomerMapper customerMapper) {
         this.customerRepository = customerRepository;
         this.documentTypeRepository = documentTypeRepository;
-        this.authFacade = authFacade;
+        this.userApi = userApi;
         this.customerMapper = customerMapper;
     }
 
@@ -62,7 +62,7 @@ public class CustomerService {
         }
 
         // Valida el email único, guarda el hash y deja al usuario en PENDING_VERIFICATION
-        UserView user = authFacade.createUser(
+        UserView user = userApi.createUser(
                 request.getEmail(), request.getPassword(), RoleEnum.CUSTOMER);
 
         Customer customer = new Customer();
@@ -110,7 +110,7 @@ public class CustomerService {
     @Transactional(readOnly = true)
     public Page<CustomerResponse> getAllCustomers(Pageable pageable) {
         Page<Customer> customers = customerRepository.findAll(pageable);
-        Map<UUID, UserView> users = authFacade
+        Map<UUID, UserView> users = userApi
                 .getUsers(customers.stream().map(Customer::getUserId).toList())
                 .stream().collect(Collectors.toMap(UserView::id, Function.identity()));
         return customers.map(c -> customerMapper.toResponse(c, users.get(c.getUserId())));
@@ -121,11 +121,11 @@ public class CustomerService {
     @Transactional
     public void changeStatus(UUID customerId, UserStatusEnum statusEnum) {
         Customer customer = findByIdOrThrow(customerId);
-        authFacade.changeStatus(customer.getUserId(), statusEnum);
+        userApi.changeStatus(customer.getUserId(), statusEnum);
     }
 
     private CustomerResponse toResponse(Customer customer) {
-        return customerMapper.toResponse(customer, authFacade.getUser(customer.getUserId()));
+        return customerMapper.toResponse(customer, userApi.getUser(customer.getUserId()));
     }
 
     private Customer findByIdOrThrow(UUID customerId) {

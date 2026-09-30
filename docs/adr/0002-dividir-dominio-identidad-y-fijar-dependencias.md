@@ -99,7 +99,7 @@ Las migraciones respetan la misma dirección que los paquetes: la del módulo `a
 
 | Dónde | Qué muestra |
 | --- | --- |
-| `auth/api/AuthFacade.java` | Única puerta de entrada a `auth`; su documentación fija la regla de que los demás módulos sólo guardan el identificador del usuario. |
+| `auth/api/UserApi.java` | Única puerta de entrada a `auth`; su documentación fija la regla de que los demás módulos sólo guardan el identificador del usuario. |
 | `auth/api/UserView.java` | Vista de solo lectura del usuario, sin hash ni datos de seguridad. |
 | `customer/service/CustomerService.java` | `customer` usa exclusivamente el paquete `api` de `auth`; no importa entidades ni repositorios ajenos. |
 | `shared/security/SecurityModule.java` | Contrato por el que cada módulo aporta su seguridad sin que `shared` lo conozca. |

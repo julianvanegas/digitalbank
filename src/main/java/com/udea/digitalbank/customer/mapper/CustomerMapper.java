@@ -11,7 +11,7 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface CustomerMapper {
 
-    // Datos del perfil (Customer) más los del usuario (UserView, que llega por AuthFacade)
+    // Datos del perfil (Customer) más los del usuario (UserView, que llega por UserApi)
     @Mapping(target = "id", source = "customer.id")
     @Mapping(target = "userId", source = "user.id")
     @Mapping(target = "email", source = "user.email")
