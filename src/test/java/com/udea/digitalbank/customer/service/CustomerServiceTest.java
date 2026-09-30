@@ -1,6 +1,6 @@
 package com.udea.digitalbank.customer.service;
 
-import com.udea.digitalbank.auth.api.AuthFacade;
+import com.udea.digitalbank.auth.api.UserApi;
 import com.udea.digitalbank.auth.api.RoleEnum;
 import com.udea.digitalbank.auth.api.UserView;
 import com.udea.digitalbank.customer.domain.Customer;
@@ -13,12 +13,12 @@ import com.udea.digitalbank.customer.repository.DocumentTypeRepository;
 import com.udea.digitalbank.shared.exception.auth.DuplicateUserException;
 import com.udea.digitalbank.shared.exception.customer.CustomerNotFoundException;
 import com.udea.digitalbank.shared.exception.customer.DuplicateCustomerException;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -35,7 +35,7 @@ import static org.mockito.Mockito.*;
 
 /**
  * Pruebas unitarias de {@link CustomerService}.
- * Todas las dependencias (repositorios, AuthFacade y mapper) se mockean: aquí no se prueba
+ * Todas las dependencias (repositorios, UserApi y mapper) se mockean: aquí no se prueba
  * persistencia real ni la política de contraseña (eso corresponde a pruebas de integración
  * y a {@code PasswordConstraintTest} respectivamente), solo la lógica de negocio del servicio.
  */
@@ -47,12 +47,18 @@ class CustomerServiceTest {
     @Mock
     private DocumentTypeRepository documentTypeRepository;
     @Mock
-    private AuthFacade authFacade;
+    private UserApi userApi;
     @Mock
     private CustomerMapper customerMapper;
 
-    @InjectMocks
     private CustomerService customerService;
+
+    // CustomerLookup se usa real sobre los mismos mocks: así se sigue verificando contra el repositorio y UserApi
+    @BeforeEach
+    void setUp() {
+        customerService = new CustomerService(customerRepository, documentTypeRepository, userApi, customerMapper,
+                new CustomerLookup(customerRepository, userApi));
+    }
 
     private CreateCustomerRequest buildValidRequest() {
         CreateCustomerRequest request = new CreateCustomerRequest();
@@ -103,7 +109,7 @@ class CustomerServiceTest {
                     .thenReturn(Optional.of(documentType));
             when(customerRepository.existsByDocumentTypeIdAndDocumentNumber(documentType.getId(), request.getDocumentNumber()))
                     .thenReturn(false);
-            when(authFacade.createUser(request.getEmail(), request.getPassword(), RoleEnum.CUSTOMER))
+            when(userApi.createUser(request.getEmail(), request.getPassword(), RoleEnum.CUSTOMER))
                     .thenReturn(userView);
             when(customerRepository.save(any(Customer.class)))
                     .thenAnswer(invocation -> invocation.getArgument(0));
@@ -141,7 +147,7 @@ class CustomerServiceTest {
                     .thenReturn(Optional.of(documentType));
             when(customerRepository.existsByDocumentTypeIdAndDocumentNumber(documentType.getId(), request.getDocumentNumber()))
                     .thenReturn(false);
-            when(authFacade.createUser(request.getEmail(), request.getPassword(), RoleEnum.CUSTOMER))
+            when(userApi.createUser(request.getEmail(), request.getPassword(), RoleEnum.CUSTOMER))
                     .thenReturn(userView);
             when(customerRepository.save(any(Customer.class)))
                     .thenAnswer(invocation -> invocation.getArgument(0));
@@ -169,7 +175,7 @@ class CustomerServiceTest {
             // Assert
             assertThat(thrown).isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("18");
-            verifyNoInteractions(documentTypeRepository, customerRepository, authFacade);
+            verifyNoInteractions(documentTypeRepository, customerRepository, userApi);
         }
 
         @Test
@@ -185,7 +191,7 @@ class CustomerServiceTest {
 
             // Assert
             assertThat(thrown).isInstanceOf(IllegalArgumentException.class);
-            verifyNoInteractions(customerRepository, authFacade);
+            verifyNoInteractions(customerRepository, userApi);
         }
 
         @Test
@@ -205,7 +211,7 @@ class CustomerServiceTest {
             // Assert
             assertThat(thrown).isInstanceOf(DuplicateCustomerException.class);
             // El documento se valida antes de crear el usuario en auth: no debe llegar a invocarse
-            verifyNoInteractions(authFacade);
+            verifyNoInteractions(userApi);
             verify(customerRepository, never()).save(any());
         }
 
@@ -219,7 +225,7 @@ class CustomerServiceTest {
                     .thenReturn(Optional.of(documentType));
             when(customerRepository.existsByDocumentTypeIdAndDocumentNumber(documentType.getId(), request.getDocumentNumber()))
                     .thenReturn(false);
-            when(authFacade.createUser(request.getEmail(), request.getPassword(), RoleEnum.CUSTOMER))
+            when(userApi.createUser(request.getEmail(), request.getPassword(), RoleEnum.CUSTOMER))
                     .thenThrow(new DuplicateUserException("Ya existe un usuario registrado con ese email"));
 
             // Act
@@ -246,7 +252,7 @@ class CustomerServiceTest {
             CustomerResponse expectedResponse = new CustomerResponse();
 
             when(customerRepository.findByUserId(userId)).thenReturn(Optional.of(customer));
-            when(authFacade.getUser(userId)).thenReturn(userView);
+            when(userApi.getUser(userId)).thenReturn(userView);
             when(customerMapper.toResponse(customer, userView)).thenReturn(expectedResponse);
 
             // Act
@@ -266,7 +272,7 @@ class CustomerServiceTest {
             // Act & Assert
             assertThatThrownBy(() -> customerService.getProfile(userId))
                     .isInstanceOf(CustomerNotFoundException.class);
-            verifyNoInteractions(authFacade);
+            verifyNoInteractions(userApi);
         }
     }
 
@@ -289,7 +295,7 @@ class CustomerServiceTest {
             when(customerRepository.findByUserId(userId)).thenReturn(Optional.of(existing));
             when(customerRepository.save(any(Customer.class)))
                     .thenAnswer(invocation -> invocation.getArgument(0));
-            when(authFacade.getUser(userId)).thenReturn(userView);
+            when(userApi.getUser(userId)).thenReturn(userView);
             when(customerMapper.toResponse(any(Customer.class), eq(userView)))
                     .thenReturn(new CustomerResponse());
 

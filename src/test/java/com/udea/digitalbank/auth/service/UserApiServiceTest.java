@@ -1,12 +1,12 @@
-package com.udea.digitalbank.auth.api;
+package com.udea.digitalbank.auth.service;
 
+import com.udea.digitalbank.auth.api.RoleEnum;
+import com.udea.digitalbank.auth.api.UserStatusEnum;
+import com.udea.digitalbank.auth.api.UserView;
 import com.udea.digitalbank.auth.domain.Role;
 import com.udea.digitalbank.auth.domain.User;
 import com.udea.digitalbank.auth.domain.UserStatus;
 import com.udea.digitalbank.auth.repository.UserRepository;
-import com.udea.digitalbank.auth.service.Catalogs;
-import com.udea.digitalbank.auth.service.UserCreatedEvent;
-import com.udea.digitalbank.auth.service.UserStatusService;
 import com.udea.digitalbank.shared.exception.auth.DuplicateUserException;
 import com.udea.digitalbank.shared.exception.auth.UserNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,14 +35,14 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /**
- * Pruebas unitarias (AAA) para AuthFacade.
+ * Pruebas unitarias (AAA) para UserApiService.
  * Aquí quedó, tras la reestructuración, la parte de HU01 que antes vivía en CustomerService:
  * unicidad de email (CA06/CA07) y el hash de la contraseña. El registro completo de HU01 se
  * cubre combinando esta clase con CustomerServiceTest (edad, tipo de documento, documento duplicado).
  */
 @ExtendWith(MockitoExtension.class)
-@DisplayName("AuthFacade - soporte de HU01 (unicidad de email, creación de usuario)")
-class AuthFacadeTest {
+@DisplayName("UserApiService - soporte de HU01 (unicidad de email, creación de usuario)")
+class UserApiServiceTest {
 
     @Mock
     private UserRepository userRepository;
@@ -59,11 +59,11 @@ class AuthFacadeTest {
     @Mock
     private ApplicationEventPublisher eventPublisher;
 
-    private AuthFacade authFacade;
+    private UserApiService userApi;
 
     @BeforeEach
     void setUp() {
-        authFacade = new AuthFacade(userRepository, userStatusService, catalogs, passwordEncoder, eventPublisher);
+        userApi = new UserApiService(userRepository, userStatusService, catalogs, passwordEncoder, eventPublisher);
     }
 
     private Role buildRole(short id, String code) {
@@ -92,7 +92,7 @@ class AuthFacadeTest {
 
             // Act & Assert
             assertThrows(DuplicateUserException.class,
-                    () -> authFacade.createUser("ana@example.com", "Passw0rd!", RoleEnum.CUSTOMER));
+                    () -> userApi.createUser("ana@example.com", "Passw0rd!", RoleEnum.CUSTOMER));
 
             // No debe llegar a codificar contraseña, guardar usuario ni publicar el evento
             verify(userRepository, never()).save(any(User.class));
@@ -116,7 +116,7 @@ class AuthFacadeTest {
             });
 
             // Act
-            UserView result = authFacade.createUser("ana@example.com", "Passw0rd!", RoleEnum.CUSTOMER);
+            UserView result = userApi.createUser("ana@example.com", "Passw0rd!", RoleEnum.CUSTOMER);
 
             // Assert
             assertThat(result.id()).isEqualTo(userId);
@@ -136,7 +136,7 @@ class AuthFacadeTest {
             when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
             // Act
-            authFacade.createUser("ana@example.com", "Passw0rd!", RoleEnum.CUSTOMER);
+            userApi.createUser("ana@example.com", "Passw0rd!", RoleEnum.CUSTOMER);
 
             // Assert
             ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
@@ -156,7 +156,7 @@ class AuthFacadeTest {
             when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
             // Act
-            authFacade.createUser("ana@example.com", "Passw0rd!", RoleEnum.CUSTOMER);
+            userApi.createUser("ana@example.com", "Passw0rd!", RoleEnum.CUSTOMER);
 
             // Assert: se pidió explícitamente el estado PENDING_VERIFICATION al catálogo
             verify(catalogs).status(UserStatusEnum.PENDING_VERIFICATION);
@@ -178,7 +178,7 @@ class AuthFacadeTest {
             });
 
             // Act
-            authFacade.createUser("ana@example.com", "Passw0rd!", RoleEnum.CUSTOMER);
+            userApi.createUser("ana@example.com", "Passw0rd!", RoleEnum.CUSTOMER);
 
             // Assert
             ArgumentCaptor<UserCreatedEvent> eventCaptor = ArgumentCaptor.forClass(UserCreatedEvent.class);
@@ -204,7 +204,7 @@ class AuthFacadeTest {
             when(userRepository.findById(userId)).thenReturn(Optional.of(user));
 
             // Act
-            UserView result = authFacade.getUser(userId);
+            UserView result = userApi.getUser(userId);
 
             // Assert
             assertThat(result.id()).isEqualTo(userId);
@@ -221,7 +221,7 @@ class AuthFacadeTest {
             when(userRepository.findById(userId)).thenReturn(Optional.empty());
 
             // Act & Assert
-            assertThrows(UserNotFoundException.class, () -> authFacade.getUser(userId));
+            assertThrows(UserNotFoundException.class, () -> userApi.getUser(userId));
         }
 
         @Test
@@ -245,7 +245,7 @@ class AuthFacadeTest {
             when(userRepository.findAllById(List.of(userId1, userId2))).thenReturn(List.of(user1, user2));
 
             // Act
-            List<UserView> result = authFacade.getUsers(List.of(userId1, userId2));
+            List<UserView> result = userApi.getUsers(List.of(userId1, userId2));
 
             // Assert
             assertThat(result).hasSize(2);
@@ -265,7 +265,7 @@ class AuthFacadeTest {
             UUID userId = UUID.randomUUID();
 
             // Act
-            authFacade.changeStatus(userId, UserStatusEnum.BLOCKED);
+            userApi.changeStatus(userId, UserStatusEnum.BLOCKED);
 
             // Assert
             verify(userStatusService).changeStatus(userId, UserStatusEnum.BLOCKED);
