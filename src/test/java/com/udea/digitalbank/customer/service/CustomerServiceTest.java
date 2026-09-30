@@ -13,12 +13,12 @@ import com.udea.digitalbank.customer.repository.DocumentTypeRepository;
 import com.udea.digitalbank.shared.exception.auth.DuplicateUserException;
 import com.udea.digitalbank.shared.exception.customer.CustomerNotFoundException;
 import com.udea.digitalbank.shared.exception.customer.DuplicateCustomerException;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -51,8 +51,14 @@ class CustomerServiceTest {
     @Mock
     private CustomerMapper customerMapper;
 
-    @InjectMocks
     private CustomerService customerService;
+
+    // CustomerLookup se usa real sobre los mismos mocks: así se sigue verificando contra el repositorio y UserApi
+    @BeforeEach
+    void setUp() {
+        customerService = new CustomerService(customerRepository, documentTypeRepository, userApi, customerMapper,
+                new CustomerLookup(customerRepository, userApi));
+    }
 
     private CreateCustomerRequest buildValidRequest() {
         CreateCustomerRequest request = new CreateCustomerRequest();

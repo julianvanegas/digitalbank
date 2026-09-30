@@ -11,7 +11,6 @@ import com.udea.digitalbank.customer.dto.CustomerResponse;
 import com.udea.digitalbank.customer.mapper.CustomerMapper;
 import com.udea.digitalbank.customer.repository.CustomerRepository;
 import com.udea.digitalbank.customer.repository.DocumentTypeRepository;
-import com.udea.digitalbank.shared.exception.customer.CustomerNotFoundException;
 import com.udea.digitalbank.shared.exception.customer.DuplicateCustomerException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -22,8 +21,6 @@ import java.time.LocalDate;
 import java.time.Period;
 import java.util.Map;
 import java.util.UUID;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 @Service
 public class CustomerService {
@@ -34,15 +31,18 @@ public class CustomerService {
     private final DocumentTypeRepository documentTypeRepository;
     private final UserApi userApi;
     private final CustomerMapper customerMapper;
+    private final CustomerLookup customerLookup;
 
     public CustomerService(CustomerRepository customerRepository,
                            DocumentTypeRepository documentTypeRepository,
                            UserApi userApi,
-                           CustomerMapper customerMapper) {
+                           CustomerMapper customerMapper,
+                           CustomerLookup customerLookup) {
         this.customerRepository = customerRepository;
         this.documentTypeRepository = documentTypeRepository;
         this.userApi = userApi;
         this.customerMapper = customerMapper;
+        this.customerLookup = customerLookup;
     }
 
     // Usuario y perfil en una sola transacción: si algo falla no quedan usuarios sin perfil ni al revés
@@ -80,20 +80,17 @@ public class CustomerService {
     // Perfil propio: se identifica por el id del usuario que viaja en el JWT
     @Transactional(readOnly = true)
     public CustomerResponse getProfile(UUID userId) {
-        Customer customer = customerRepository.findByUserId(userId)
-                .orElseThrow(() -> new CustomerNotFoundException("Cliente no encontrado para el usuario: " + userId));
-        return toResponse(customer);
+        return toResponse(customerLookup.byUserId(userId));
     }
 
     @Transactional(readOnly = true)
     public CustomerResponse getCustomer(UUID customerId) {
-        return toResponse(findByIdOrThrow(customerId));
+        return toResponse(customerLookup.byId(customerId));
     }
 
     @Transactional
     public CustomerResponse updateProfile(UUID userId, String firstNames, String lastNames, String phone) {
-        Customer customer = customerRepository.findByUserId(userId)
-                .orElseThrow(() -> new CustomerNotFoundException("Cliente no encontrado para el usuario: " + userId));
+        Customer customer = customerLookup.byUserId(userId);
         // solo campos de perfil editables — nunca documento, rol ni estado desde aquí
         if (firstNames != null) {
             customer.setFirstNames(firstNames);
@@ -110,9 +107,7 @@ public class CustomerService {
     @Transactional(readOnly = true)
     public Page<CustomerResponse> getAllCustomers(Pageable pageable) {
         Page<Customer> customers = customerRepository.findAll(pageable);
-        Map<UUID, UserView> users = userApi
-                .getUsers(customers.stream().map(Customer::getUserId).toList())
-                .stream().collect(Collectors.toMap(UserView::id, Function.identity()));
+        Map<UUID, UserView> users = customerLookup.usersOf(customers.getContent());
         return customers.map(c -> customerMapper.toResponse(c, users.get(c.getUserId())));
     }
 
@@ -120,16 +115,11 @@ public class CustomerService {
     // auth valida que el estado exista en el catálogo user_status
     @Transactional
     public void changeStatus(UUID customerId, UserStatusEnum statusEnum) {
-        Customer customer = findByIdOrThrow(customerId);
+        Customer customer = customerLookup.byId(customerId);
         userApi.changeStatus(customer.getUserId(), statusEnum);
     }
 
     private CustomerResponse toResponse(Customer customer) {
-        return customerMapper.toResponse(customer, userApi.getUser(customer.getUserId()));
-    }
-
-    private Customer findByIdOrThrow(UUID customerId) {
-        return customerRepository.findById(customerId)
-                .orElseThrow(() -> new CustomerNotFoundException("Cliente no encontrado: " + customerId));
+        return customerMapper.toResponse(customer, customerLookup.userOf(customer));
     }
 }
