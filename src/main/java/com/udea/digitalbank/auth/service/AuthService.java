@@ -63,6 +63,8 @@ public class AuthService {
                     "El usuario está bloqueado, contacta a un administrador");
             case PENDING_VERIFICATION -> throw new UserNotEnabledException(
                     "Debes confirmar tu correo electrónico antes de iniciar sesión");
+            case PENDING_REVIEW -> throw new UserNotEnabledException(
+                    "Tu cuenta está en revisión, podrás iniciar sesión cuando un administrador la active");
             default -> throw new UserNotEnabledException("El usuario no está habilitado para iniciar sesión");
         }
 
