@@ -34,7 +34,8 @@ public class VerificationDispatcher {
                 .ifPresent(challenge -> send(user, purpose, challenge));
     }
 
-    private void send(User user, PurposeEnum purpose, IssuedChallenge challenge) {
+    // Envía un código que ya emitió VerificationService (p. ej. al reenviarlo)
+    public void send(User user, PurposeEnum purpose, IssuedChallenge challenge) {
         emailService.send(user.getEmail(), subject(purpose),
                 "Tu código es: " + challenge.code() + ". Expira en " + challenge.ttlMinutes() + " minutos.");
     }
