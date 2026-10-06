@@ -37,6 +37,7 @@ public class VerificationChallenge {
     @Column(nullable = false)
     private LocalDateTime expiresAt;
 
+    // Cuenta los códigos fallidos y también los reenvíos: ambos gastan el max_attempts del propósito
     @Column(nullable = false)
     private short failedAttempts = 0;
 
