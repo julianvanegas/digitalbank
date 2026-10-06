@@ -6,12 +6,14 @@ import com.udea.digitalbank.auth.domain.User;
 import com.udea.digitalbank.auth.domain.VerificationChallenge;
 import com.udea.digitalbank.auth.repository.UserRepository;
 import com.udea.digitalbank.auth.repository.VerificationChallengeRepository;
+import com.udea.digitalbank.shared.exception.TooManyRequestsException;
 import com.udea.digitalbank.shared.exception.auth.InvalidVerificationCodeException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
@@ -72,6 +74,45 @@ public class VerificationService {
         boolean tooSoon = current.isPresent()
                 && current.get().issuedAt().plusSeconds(resendIntervalSeconds).isAfter(LocalDateTime.now());
         return tooSoon ? Optional.empty() : Optional.of(issue(user, purposeEnum));
+    }
+
+    /**
+     * Reenvía el código de un reto vigente: genera uno nuevo, el anterior deja de valer y el id del reto
+     * no cambia. Cada reenvío cuenta como un intento (failed_attempts), así que los fallos y los reenvíos
+     * comparten el presupuesto max_attempts del propósito y reenviar no concede intentos nuevos.
+     * Solo se reenvía si al código nuevo le queda al menos un intento, y no antes del intervalo mínimo.
+     */
+    @Transactional
+    public ResentChallenge resend(UUID challengeId, PurposeEnum purposeEnum) {
+        VerificationChallenge challenge = challengeRepository.lockByIdAndPurpose(challengeId, purposeEnum.name())
+                .orElseThrow(() -> new InvalidVerificationCodeException(INVALID_MESSAGE));
+        LocalDateTime now = LocalDateTime.now();
+        // Sin borrar: la excepción revierte la transacción y de la limpieza se encarga deleteExpired
+        if (challenge.getExpiresAt().isBefore(now)) {
+            throw new InvalidVerificationCodeException(INVALID_MESSAGE);
+        }
+
+        ChallengePurpose purpose = challenge.getPurpose();
+        // Primero el tope: si ya no quedan reenvíos, esperar no sirve de nada
+        if (challenge.getFailedAttempts() + 1 >= purpose.getMaxAttempts()) {
+            throw new TooManyRequestsException("No quedan reenvíos disponibles, inicia sesión de nuevo", 0);
+        }
+        LocalDateTime nextAllowed = challenge.issuedAt().plusSeconds(resendIntervalSeconds);
+        if (nextAllowed.isAfter(now)) {
+            long wait = Math.max(1, (long) Math.ceil(Duration.between(now, nextAllowed).toMillis() / 1000.0));
+            throw new TooManyRequestsException("Espera " + wait + " segundos antes de pedir otro código", wait);
+        }
+
+        String code = generateNumericCode();
+        challenge.setCodeHash(codeHasher.hash(challenge.getUserId(), purpose.getId(), code));
+        challenge.setExpiresAt(now.plusMinutes(purpose.getTtlMinutes()));
+        challenge.setFailedAttempts((short) (challenge.getFailedAttempts() + 1));
+        challengeRepository.save(challenge);
+
+        int remainingResends = purpose.getMaxAttempts() - 1 - challenge.getFailedAttempts();
+        return new ResentChallenge(challenge.getUserId(),
+                new IssuedChallenge(challenge.getId(), code, purpose.getTtlMinutes()),
+                remainingResends, resendIntervalSeconds);
     }
 
     // Flujo LOGIN: el cliente conoce el id del reto

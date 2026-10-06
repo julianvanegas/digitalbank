@@ -33,7 +33,13 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     // Todas las excepciones de negocio: cada una declara su categoría y aquí se decide el código HTTP
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ErrorResponse> handleBusiness(BusinessException ex) {
-        return build(statusOf(ex.getKind()), ex.getMessage());
+        HttpStatus status = statusOf(ex.getKind());
+        ResponseEntity.BodyBuilder response = ResponseEntity.status(status);
+        // Con 429 el cliente necesita saber cuánto esperar para reintentar
+        if (ex instanceof TooManyRequestsException tooMany && tooMany.getRetryAfterSeconds() > 0) {
+            response.header(HttpHeaders.RETRY_AFTER, String.valueOf(tooMany.getRetryAfterSeconds()));
+        }
+        return response.body(new ErrorResponse(status.value(), ex.getMessage(), LocalDateTime.now()));
     }
 
     // Exhaustivo: una categoría nueva no compila hasta que se decide qué código le corresponde
@@ -44,6 +50,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             case UNAUTHENTICATED -> HttpStatus.UNAUTHORIZED;
             case FORBIDDEN -> HttpStatus.FORBIDDEN;
             case INVALID -> HttpStatus.BAD_REQUEST;
+            case TOO_MANY_REQUESTS -> HttpStatus.TOO_MANY_REQUESTS;
         };
     }
 

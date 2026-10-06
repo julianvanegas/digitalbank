@@ -111,6 +111,32 @@ class GlobalExceptionHandlerTest {
         }
 
         @Test
+        @DisplayName("TOO_MANY_REQUESTS -> 429 con Retry-After cuando hay tiempo de espera")
+        void deberiaTraducirTooManyRequestsA429ConRetryAfter() {
+            TooManyRequestsException ex = new TooManyRequestsException("Espera 20 segundos", 20);
+            ResponseEntity<ErrorResponse> response = handler.handleBusiness(ex);
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
+            assertThat(response.getHeaders().getFirst(HttpHeaders.RETRY_AFTER)).isEqualTo("20");
+            assertThat(response.getBody().message()).isEqualTo("Espera 20 segundos");
+        }
+
+        @Test
+        @DisplayName("TOO_MANY_REQUESTS -> 429 sin Retry-After cuando no hay nada que esperar")
+        void deberiaTraducirTooManyRequestsA429SinRetryAfter() {
+            TooManyRequestsException ex = new TooManyRequestsException("Inicia sesión de nuevo", 0);
+            ResponseEntity<ErrorResponse> response = handler.handleBusiness(ex);
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
+            assertThat(response.getHeaders().getFirst(HttpHeaders.RETRY_AFTER)).isNull();
+        }
+
+        @Test
+        @DisplayName("Las demás excepciones de negocio no llevan Retry-After")
+        void lasDemasExcepcionesNoLlevanRetryAfter() {
+            ResponseEntity<ErrorResponse> response = handler.handleBusiness(new UserNotFoundException("x"));
+            assertThat(response.getHeaders().getFirst(HttpHeaders.RETRY_AFTER)).isNull();
+        }
+
+        @Test
         @DisplayName("El cuerpo siempre incluye un timestamp")
         void elCuerpoSiempreIncluyeTimestamp() {
             ResponseEntity<ErrorResponse> response = handler.handleBusiness(new UserNotFoundException("x"));

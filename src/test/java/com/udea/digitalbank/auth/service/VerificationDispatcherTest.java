@@ -130,4 +130,25 @@ class VerificationDispatcherTest {
             verifyNoInteractions(emailService);
         }
     }
+
+    @Nested
+    @DisplayName("send - enviar un código que ya emitió VerificationService (reenvío)")
+    class Send {
+
+        @Test
+        @DisplayName("Envía el correo de LOGIN con el código recibido, sin emitir ningún reto")
+        void deberiaEnviarElCodigoRecibidoSinEmitirNada() {
+            // Arrange
+            User user = buildUser(UUID.randomUUID(), "cliente@example.com");
+            IssuedChallenge challenge = new IssuedChallenge(UUID.randomUUID(), "424242", 5);
+
+            // Act
+            dispatcher.send(user, PurposeEnum.LOGIN, challenge);
+
+            // Assert
+            verify(emailService).send(eq("cliente@example.com"), eq("Tu código de verificación"), contains("424242"));
+            verifyNoInteractions(verificationService);
+        }
+    }
+
 }

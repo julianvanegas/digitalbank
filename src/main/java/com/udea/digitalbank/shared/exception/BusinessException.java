@@ -17,7 +17,9 @@ public abstract class BusinessException extends RuntimeException {
         /** Se sabe quién es, pero no puede hacer esto ahora. */
         FORBIDDEN,
         /** El dato recibido no es válido. */
-        INVALID
+        INVALID,
+        /** Se pidió demasiado pronto o demasiadas veces: hay que esperar o empezar de nuevo. */
+        TOO_MANY_REQUESTS
     }
 
     private final Kind kind;

@@ -5,6 +5,8 @@ import com.udea.digitalbank.auth.dto.EmailRequest;
 import com.udea.digitalbank.auth.dto.LoginRequest;
 import com.udea.digitalbank.auth.dto.LoginResponse;
 import com.udea.digitalbank.auth.dto.PasswordResetRequest;
+import com.udea.digitalbank.auth.dto.ResendTwoFactorRequest;
+import com.udea.digitalbank.auth.dto.ResendTwoFactorResponse;
 import com.udea.digitalbank.auth.dto.VerifyEmailRequest;
 import com.udea.digitalbank.auth.dto.VerifyTwoFactorRequest;
 import com.udea.digitalbank.auth.service.AuthService;
@@ -59,6 +61,12 @@ public class AuthController {
     @PostMapping("/verify-2fa")
     public ResponseEntity<AuthResponse> verifyTwoFactor(@Valid @RequestBody VerifyTwoFactorRequest request) {
         return ResponseEntity.ok(authService.verifyTwoFactor(request.getChallengeId(), request.getCode()));
+    }
+
+    // Público como /verify-2fa: el challengeId que devolvió /login prueba que el primer factor ya se pasó
+    @PostMapping("/resend-2fa")
+    public ResponseEntity<ResendTwoFactorResponse> resendTwoFactor(@Valid @RequestBody ResendTwoFactorRequest request) {
+        return ResponseEntity.ok(authService.resendTwoFactor(request.getChallengeId()));
     }
 
     @PostMapping("/logout")

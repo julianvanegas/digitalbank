@@ -33,6 +33,7 @@ public class AuthSecurity implements SecurityModule {
         return List.of(
                 PublicRoute.post("/api/v1/auth/login"),
                 PublicRoute.post("/api/v1/auth/verify-2fa"),
+                PublicRoute.post("/api/v1/auth/resend-2fa"),
                 PublicRoute.post("/api/v1/auth/verify-email"),
                 PublicRoute.post("/api/v1/auth/resend-verification"),
                 PublicRoute.post("/api/v1/auth/recover-password"),

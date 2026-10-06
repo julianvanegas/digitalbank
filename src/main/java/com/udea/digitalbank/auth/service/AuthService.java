@@ -6,6 +6,7 @@ import com.udea.digitalbank.auth.domain.User;
 import com.udea.digitalbank.auth.dto.AuthResponse;
 import com.udea.digitalbank.auth.dto.LoginRequest;
 import com.udea.digitalbank.auth.dto.LoginResponse;
+import com.udea.digitalbank.auth.dto.ResendTwoFactorResponse;
 import com.udea.digitalbank.auth.repository.UserRepository;
 import com.udea.digitalbank.shared.exception.auth.UserNotEnabledException;
 import com.udea.digitalbank.shared.exception.auth.InvalidCredentialsException;
@@ -90,6 +91,23 @@ public class AuthService {
 
         // Sesión única: abrir la nueva invalida el token anterior
         return new AuthResponse(sessionService.start(user));
+    }
+
+    // Reglas del reenvío en VerificationService. Si el usuario dejó de estar ACTIVE, la excepción revierte
+    // el reenvío (el reto vuelve a su estado anterior) y no se envía ningún correo.
+    @Transactional
+    public ResendTwoFactorResponse resendTwoFactor(UUID challengeId) {
+        ResentChallenge resent = verificationService.resend(challengeId, PurposeEnum.LOGIN);
+        User user = userRepository.findById(resent.userId())
+                .orElseThrow(() -> new InvalidVerificationCodeException("Código de verificación inválido o expirado"));
+
+        // El usuario pudo bloquearse entre el login y el reenvío
+        if (!user.getStatus().is(UserStatusEnum.ACTIVE)) {
+            throw new UserNotEnabledException("El usuario no está habilitado para iniciar sesión");
+        }
+
+        verificationDispatcher.send(user, PurposeEnum.LOGIN, resent.challenge());
+        return new ResendTwoFactorResponse(challengeId, resent.remainingResends(), resent.retryAfterSeconds());
     }
 
     @Transactional
