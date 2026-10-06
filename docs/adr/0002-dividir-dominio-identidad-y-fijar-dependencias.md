@@ -35,13 +35,13 @@ Las dependencias fluyen en un solo sentido, de lo más general a lo más especí
 auth  ←  customer  ←  accounts  ←  transactions
 ```
 
-`auth` gestiona roles y tokens sin conocer al resto de la aplicación; `customer` se apoya en `auth` para validar y crear la identidad del usuario; `accounts` se apoyará en `customer` para vincular cada cuenta a su titular; y `transactions` se apoyará en `accounts` para operar sobre saldos. Ninguna flecha va en sentido contrario.
+`auth` gestiona roles y tokens sin conocer al resto de la aplicación; `customer` se apoya en `auth` para validar y crear la identidad del usuario; `accounts` se apoya en `customer` para vincular cada cuenta a su titular; y `transactions` se apoyará en `accounts` para operar sobre saldos. Ninguna flecha va en sentido contrario.
 
 | Módulo | Responsabilidad | De quién depende | Estado |
 | --- | --- | --- | --- |
 | `auth` | Identidad de acceso: usuarios, roles, estados, tokens JWT, sesión única, segundo factor, confirmación de correo y recuperación de contraseña. | De nadie | Implementado |
 | `customer` | Ciclo de vida del cliente: datos personales, tipo y número de documento, perfil, vigencia y consulta de clientes. | `auth` | Implementado |
-| `accounts` | Apertura de cuentas, estados y saldos; vinculación de la cuenta con su titular. | `customer` | Previsto |
+| `accounts` | Apertura de cuentas, estados y saldos; vinculación de la cuenta con su titular. | `customer` | Implementado |
 | `transactions` | Movimientos de dinero, validación de saldo y aplicación de topes. | `accounts` | Previsto |
 | `shared` | Soporte transversal: configuración, manejo uniforme de errores, utilidades de validación, envío de correo y composición de la seguridad. | De ningún dominio | Implementado |
 
@@ -105,5 +105,6 @@ Las migraciones respetan la misma dirección que los paquetes: la del módulo `a
 | `shared/security/SecurityModule.java` | Contrato por el que cada módulo aporta su seguridad sin que `shared` lo conozca. |
 | `customer/security/CustomerSecurity.java` | Implementación del contrato anterior en el módulo `customer`. |
 | `auth/service/UserCreatedEvent.java`, `UserCreatedListener.java` | Comunicación asíncrona por eventos tras confirmarse la transacción. |
-| `db/migration/V1__auth.sql`, `V2__customers.sql` | Las migraciones documentan la dirección de las dependencias: `auth` no depende de nadie, `customer` depende de `auth`. |
+| `accounts/service/AccountService.java` | `accounts` usa exclusivamente el paquete `api` de `customer`: pide el titular a la fachada y solo persiste su identificador. |
+| `db/migration/V1__auth.sql`, `V2__customers.sql`, `V4__accounts.sql` | Las migraciones documentan la dirección de las dependencias: `auth` no depende de nadie, `customer` depende de `auth` y `accounts` de `customer`. |
 | Historial de Git (commit `a64b4fa`) | «Creación de módulo auth independiente para seguridad y módulo para customers»: el momento en que se aplicó la división. |
