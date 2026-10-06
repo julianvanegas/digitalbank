@@ -36,8 +36,7 @@ import static org.mockito.Mockito.*;
 /**
  * Pruebas unitarias de {@link CustomerService}.
  * Todas las dependencias (repositorios, UserApi y mapper) se mockean: aquí no se prueba
- * persistencia real ni la política de contraseña (eso corresponde a pruebas de integración
- * y a {@code PasswordConstraintTest} respectivamente), solo la lógica de negocio del servicio.
+ * persistencia real (eso corresponde a pruebas de integración), solo la lógica de negocio del servicio.
  */
 @ExtendWith(MockitoExtension.class)
 class CustomerServiceTest {
@@ -69,7 +68,6 @@ class CustomerServiceTest {
         request.setPhone("+573001234567");
         request.setBirthDate(LocalDate.now().minusYears(20));
         request.setEmail("ana.gomez@example.com");
-        request.setPassword("Abcdef1$");
         return request;
     }
 
@@ -109,7 +107,7 @@ class CustomerServiceTest {
                     .thenReturn(Optional.of(documentType));
             when(customerRepository.existsByDocumentTypeIdAndDocumentNumber(documentType.getId(), request.getDocumentNumber()))
                     .thenReturn(false);
-            when(userApi.createUser(request.getEmail(), request.getPassword(), RoleEnum.CUSTOMER))
+            when(userApi.createUser(request.getEmail(), RoleEnum.CUSTOMER))
                     .thenReturn(userView);
             when(customerRepository.save(any(Customer.class)))
                     .thenAnswer(invocation -> invocation.getArgument(0));
@@ -147,7 +145,7 @@ class CustomerServiceTest {
                     .thenReturn(Optional.of(documentType));
             when(customerRepository.existsByDocumentTypeIdAndDocumentNumber(documentType.getId(), request.getDocumentNumber()))
                     .thenReturn(false);
-            when(userApi.createUser(request.getEmail(), request.getPassword(), RoleEnum.CUSTOMER))
+            when(userApi.createUser(request.getEmail(), RoleEnum.CUSTOMER))
                     .thenReturn(userView);
             when(customerRepository.save(any(Customer.class)))
                     .thenAnswer(invocation -> invocation.getArgument(0));
@@ -225,7 +223,7 @@ class CustomerServiceTest {
                     .thenReturn(Optional.of(documentType));
             when(customerRepository.existsByDocumentTypeIdAndDocumentNumber(documentType.getId(), request.getDocumentNumber()))
                     .thenReturn(false);
-            when(userApi.createUser(request.getEmail(), request.getPassword(), RoleEnum.CUSTOMER))
+            when(userApi.createUser(request.getEmail(), RoleEnum.CUSTOMER))
                     .thenThrow(new DuplicateUserException("Ya existe un usuario registrado con ese email"));
 
             // Act

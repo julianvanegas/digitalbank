@@ -62,7 +62,6 @@ class CustomerControllerTest {
         request.setPhone("+573001234567");
         request.setBirthDate(LocalDate.of(2000, 1, 1));
         request.setEmail("ana@example.com");
-        request.setPassword("Passw0rd!");
 
         CustomerResponse expected = new CustomerResponse();
         expected.setId(UUID.randomUUID());
