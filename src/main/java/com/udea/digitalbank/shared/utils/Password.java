@@ -15,7 +15,7 @@ import java.lang.annotation.Target;
  * Política de contraseña: de 8 a 16 caracteres, con mayúscula, minúscula, número y un carácter
  * especial. Un valor nulo es válido: se combina con @NotBlank donde la contraseña sea obligatoria.
  */
-@Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&#_-]).{8,16}$")
+@Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&#_.,;+ -]).{8,16}$")
 @ReportAsSingleViolation
 @Target({ElementType.FIELD, ElementType.PARAMETER})
 @Retention(RetentionPolicy.RUNTIME)
@@ -23,7 +23,7 @@ import java.lang.annotation.Target;
 @Documented
 public @interface Password {
 
-    String message() default "La contraseña debe tener 8-16 caracteres, mayúscula, minúscula, número y carácter especial";
+    String message() default "La contraseña debe tener 8-16 caracteres, mayúscula, minúscula, número y carácter especial (@ $ ! % * ? & # _ - . , ; + o espacio)";
 
     Class<?>[] groups() default {};
 
