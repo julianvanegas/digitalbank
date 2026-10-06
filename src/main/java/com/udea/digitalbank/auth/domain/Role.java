@@ -1,5 +1,6 @@
 package com.udea.digitalbank.auth.domain;
 
+import com.udea.digitalbank.auth.api.RoleEnum;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -20,4 +21,8 @@ public class Role {
 
     @Column(nullable = false, unique = true, length = 30)
     private String code;
+
+    public boolean is(RoleEnum expected) {
+        return code.equals(expected.name());
+    }
 }
