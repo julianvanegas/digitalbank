@@ -7,6 +7,7 @@ import com.udea.digitalbank.auth.domain.VerificationChallenge;
 import com.udea.digitalbank.auth.repository.UserRepository;
 import com.udea.digitalbank.auth.repository.VerificationChallengeRepository;
 import com.udea.digitalbank.shared.exception.auth.InvalidVerificationCodeException;
+import com.udea.digitalbank.shared.exception.TooManyRequestsException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -272,4 +273,166 @@ class VerificationServiceTest {
             verify(challengeRepository).delete(challenge);
         }
     }
+
+    @Nested
+    @DisplayName("resend - reenvío del código 2FA: cada reenvío gasta un intento del propósito")
+    class Resend {
+
+        private final ChallengePurpose loginPurpose = buildPurpose((short) 1, "LOGIN", 5, 3);
+        private final UUID userId = UUID.randomUUID();
+        private final UUID challengeId = UUID.randomUUID();
+
+        // Reto emitido hace secondsAgo segundos: la emisión se deriva de expiresAt menos la vigencia del propósito
+        private VerificationChallenge challengeIssuedAgo(long secondsAgo, int failedAttempts) {
+            LocalDateTime expiresAt = LocalDateTime.now().plusMinutes(5).minusSeconds(secondsAgo);
+            return buildChallenge(challengeId, userId, loginPurpose, "hash-viejo", expiresAt, failedAttempts);
+        }
+
+        @Test
+        @DisplayName("Reemite en el sitio: mismo id, código nuevo, vigencia renovada y un intento gastado")
+        void deberiaReemitirElRetoEnElSitio() {
+            // Arrange
+            VerificationChallenge challenge = challengeIssuedAgo(60, 0);
+            when(challengeRepository.lockByIdAndPurpose(challengeId, "LOGIN")).thenReturn(Optional.of(challenge));
+            when(codeHasher.hash(eq(userId), eq((short) 1), anyString())).thenReturn("hash-nuevo");
+            LocalDateTime before = LocalDateTime.now();
+
+            // Act
+            ResentChallenge resent = verificationService.resend(challengeId, PurposeEnum.LOGIN);
+
+            // Assert
+            assertThat(resent.userId()).isEqualTo(userId);
+            assertThat(resent.challenge().challengeId()).isEqualTo(challengeId);
+            assertThat(resent.challenge().code()).matches("\\d{6}");
+            assertThat(resent.challenge().ttlMinutes()).isEqualTo(5);
+            assertThat(challenge.getCodeHash()).isEqualTo("hash-nuevo");
+            assertThat(challenge.getFailedAttempts()).isEqualTo((short) 1);
+            assertThat(challenge.getExpiresAt())
+                    .isCloseTo(before.plusMinutes(5), within(2, java.time.temporal.ChronoUnit.SECONDS));
+            verify(challengeRepository).save(challenge);
+            verify(challengeRepository, never()).delete(any());
+            verify(challengeRepository, never()).deleteByUserAndPurpose(any(), anyString());
+        }
+
+        @Test
+        @DisplayName("El hash guardado corresponde al código que se devuelve para enviar")
+        void deberiaGuardarElHashDelCodigoEnviado() {
+            // Arrange
+            VerificationChallenge challenge = challengeIssuedAgo(60, 0);
+            when(challengeRepository.lockByIdAndPurpose(challengeId, "LOGIN")).thenReturn(Optional.of(challenge));
+            when(codeHasher.hash(eq(userId), eq((short) 1), anyString())).thenReturn("hash-nuevo");
+
+            // Act
+            ResentChallenge resent = verificationService.resend(challengeId, PurposeEnum.LOGIN);
+
+            // Assert
+            verify(codeHasher).hash(userId, (short) 1, resent.challenge().code());
+        }
+
+        @Test
+        @DisplayName("Informa cuántos reenvíos quedan y cuánto esperar para el siguiente")
+        void deberiaInformarReenviosRestantesYEspera() {
+            // Arrange: max_attempts = 3, sin gastos previos -> tras reenviar quedan 1 reenvío
+            VerificationChallenge challenge = challengeIssuedAgo(60, 0);
+            when(challengeRepository.lockByIdAndPurpose(challengeId, "LOGIN")).thenReturn(Optional.of(challenge));
+            when(codeHasher.hash(any(), anyShort(), anyString())).thenReturn("hash-nuevo");
+
+            // Act
+            ResentChallenge resent = verificationService.resend(challengeId, PurposeEnum.LOGIN);
+
+            // Assert
+            assertThat(resent.remainingResends()).isEqualTo(1);
+            assertThat(resent.retryAfterSeconds()).isEqualTo(RESEND_INTERVAL_SECONDS);
+        }
+
+        @Test
+        @DisplayName("Conserva los fallos acumulados: reenviar no devuelve los intentos")
+        void noDeberiaReiniciarLosIntentosFallidos() {
+            // Arrange: ya hubo 1 fallo; el reenvío suma otro y deja 0 reenvíos
+            VerificationChallenge challenge = challengeIssuedAgo(60, 1);
+            when(challengeRepository.lockByIdAndPurpose(challengeId, "LOGIN")).thenReturn(Optional.of(challenge));
+            when(codeHasher.hash(any(), anyShort(), anyString())).thenReturn("hash-nuevo");
+
+            // Act
+            ResentChallenge resent = verificationService.resend(challengeId, PurposeEnum.LOGIN);
+
+            // Assert
+            assertThat(challenge.getFailedAttempts()).isEqualTo((short) 2);
+            assertThat(resent.remainingResends()).isZero();
+        }
+
+        @Test
+        @DisplayName("Reto desconocido o de otro propósito: error genérico")
+        void deberiaRechazarUnRetoDesconocido() {
+            // Arrange
+            when(challengeRepository.lockByIdAndPurpose(challengeId, "LOGIN")).thenReturn(Optional.empty());
+
+            // Act + Assert
+            assertThatThrownBy(() -> verificationService.resend(challengeId, PurposeEnum.LOGIN))
+                    .isInstanceOf(InvalidVerificationCodeException.class);
+            verify(challengeRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("Reto vencido: error genérico y no se reemite")
+        void deberiaRechazarUnRetoVencido() {
+            // Arrange
+            VerificationChallenge challenge = buildChallenge(challengeId, userId, loginPurpose,
+                    "hash-viejo", LocalDateTime.now().minusSeconds(1), 0);
+            when(challengeRepository.lockByIdAndPurpose(challengeId, "LOGIN")).thenReturn(Optional.of(challenge));
+
+            // Act + Assert
+            assertThatThrownBy(() -> verificationService.resend(challengeId, PurposeEnum.LOGIN))
+                    .isInstanceOf(InvalidVerificationCodeException.class);
+            verify(challengeRepository, never()).save(any());
+            verifyNoInteractions(codeHasher);
+        }
+
+        @Test
+        @DisplayName("Antes del intervalo mínimo: 429 con los segundos que faltan y sin reemitir")
+        void deberiaRechazarUnReenvioAntesDelIntervalo() {
+            // Arrange: emitido hace 10 s, el intervalo es de 30 s -> faltan unos 20 s
+            VerificationChallenge challenge = challengeIssuedAgo(10, 0);
+            when(challengeRepository.lockByIdAndPurpose(challengeId, "LOGIN")).thenReturn(Optional.of(challenge));
+
+            // Act + Assert
+            assertThatThrownBy(() -> verificationService.resend(challengeId, PurposeEnum.LOGIN))
+                    .isInstanceOfSatisfying(TooManyRequestsException.class,
+                            e -> assertThat(e.getRetryAfterSeconds()).isBetween(19L, 20L));
+            assertThat(challenge.getFailedAttempts()).isZero();
+            assertThat(challenge.getCodeHash()).isEqualTo("hash-viejo");
+            verify(challengeRepository, never()).save(any());
+            verifyNoInteractions(codeHasher);
+        }
+
+        @Test
+        @DisplayName("Sin reenvíos disponibles: 429 sin tiempo de espera y sin reemitir")
+        void deberiaRechazarCuandoYaNoQuedanReenvios() {
+            // Arrange: con 2 gastados, un reenvío más dejaría el código nuevo sin intentos
+            VerificationChallenge challenge = challengeIssuedAgo(60, 2);
+            when(challengeRepository.lockByIdAndPurpose(challengeId, "LOGIN")).thenReturn(Optional.of(challenge));
+
+            // Act + Assert
+            assertThatThrownBy(() -> verificationService.resend(challengeId, PurposeEnum.LOGIN))
+                    .isInstanceOfSatisfying(TooManyRequestsException.class,
+                            e -> assertThat(e.getRetryAfterSeconds()).isZero());
+            assertThat(challenge.getFailedAttempts()).isEqualTo((short) 2);
+            verify(challengeRepository, never()).save(any());
+            verifyNoInteractions(codeHasher);
+        }
+
+        @Test
+        @DisplayName("El tope manda sobre el intervalo: sin reenvíos no se pide esperar")
+        void elTopeTienePrioridadSobreElIntervalo() {
+            // Arrange: sin reenvíos y además recién emitido
+            VerificationChallenge challenge = challengeIssuedAgo(0, 2);
+            when(challengeRepository.lockByIdAndPurpose(challengeId, "LOGIN")).thenReturn(Optional.of(challenge));
+
+            // Act + Assert
+            assertThatThrownBy(() -> verificationService.resend(challengeId, PurposeEnum.LOGIN))
+                    .isInstanceOfSatisfying(TooManyRequestsException.class,
+                            e -> assertThat(e.getRetryAfterSeconds()).isZero());
+        }
+    }
+
 }

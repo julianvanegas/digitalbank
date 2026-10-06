@@ -5,6 +5,8 @@ import com.udea.digitalbank.auth.dto.EmailRequest;
 import com.udea.digitalbank.auth.dto.LoginRequest;
 import com.udea.digitalbank.auth.dto.LoginResponse;
 import com.udea.digitalbank.auth.dto.PasswordResetRequest;
+import com.udea.digitalbank.auth.dto.ResendTwoFactorRequest;
+import com.udea.digitalbank.auth.dto.ResendTwoFactorResponse;
 import com.udea.digitalbank.auth.dto.VerifyEmailRequest;
 import com.udea.digitalbank.auth.dto.VerifyTwoFactorRequest;
 import com.udea.digitalbank.auth.service.AuthService;
@@ -168,5 +170,23 @@ class AuthControllerTest {
         // Assert
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
         verify(passwordResetService).resetPassword("ana@example.com", "123456", "NuevaPass1!");
+    }
+
+    @Test
+    @DisplayName("resendTwoFactor: delega el challengeId y responde 200 con la respuesta del service")
+    void resendTwoFactor_deberiaDelegarYResponder200() {
+        // Arrange
+        UUID challengeId = UUID.randomUUID();
+        ResendTwoFactorRequest request = new ResendTwoFactorRequest();
+        request.setChallengeId(challengeId);
+        ResendTwoFactorResponse expected = new ResendTwoFactorResponse(challengeId, 1, 60);
+        when(authService.resendTwoFactor(challengeId)).thenReturn(expected);
+
+        // Act
+        ResponseEntity<ResendTwoFactorResponse> response = controller.resendTwoFactor(request);
+
+        // Assert
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isSameAs(expected);
     }
 }

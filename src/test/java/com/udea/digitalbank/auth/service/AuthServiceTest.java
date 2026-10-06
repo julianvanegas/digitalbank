@@ -7,7 +7,9 @@ import com.udea.digitalbank.auth.domain.UserStatus;
 import com.udea.digitalbank.auth.dto.AuthResponse;
 import com.udea.digitalbank.auth.dto.LoginRequest;
 import com.udea.digitalbank.auth.dto.LoginResponse;
+import com.udea.digitalbank.auth.dto.ResendTwoFactorResponse;
 import com.udea.digitalbank.auth.repository.UserRepository;
+import com.udea.digitalbank.shared.exception.TooManyRequestsException;
 import com.udea.digitalbank.shared.exception.auth.InvalidCredentialsException;
 import com.udea.digitalbank.shared.exception.auth.InvalidVerificationCodeException;
 import com.udea.digitalbank.shared.exception.auth.UserNotEnabledException;
@@ -284,6 +286,78 @@ class AuthServiceTest {
                     .isInstanceOf(UserNotEnabledException.class);
             verifyNoInteractions(sessionService);
             verify(userRepository, never()).save(any());
+        }
+    }
+
+    @Nested
+    @DisplayName("resendTwoFactor - reenvío del código 2FA")
+    class ResendTwoFactor {
+
+        @Test
+        @DisplayName("Reenvía el código por correo y devuelve el mismo challengeId con lo que queda")
+        void deberiaReenviarElCodigoYDevolverElMismoRetoConLosRestantes() {
+            // Arrange
+            User user = buildUser("cliente@example.com", "hash", UserStatusEnum.ACTIVE);
+            UUID challengeId = UUID.randomUUID();
+            IssuedChallenge issued = new IssuedChallenge(challengeId, "654321", 5);
+            when(verificationService.resend(challengeId, PurposeEnum.LOGIN))
+                    .thenReturn(new ResentChallenge(user.getId(), issued, 1, 60));
+            when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
+
+            // Act
+            ResendTwoFactorResponse response = authService.resendTwoFactor(challengeId);
+
+            // Assert
+            assertThat(response.getChallengeId()).isEqualTo(challengeId);
+            assertThat(response.getRemainingResends()).isEqualTo(1);
+            assertThat(response.getRetryAfterSeconds()).isEqualTo(60);
+            verify(verificationDispatcher).send(user, PurposeEnum.LOGIN, issued);
+        }
+
+        @Test
+        @DisplayName("Usuario que dejó de estar ACTIVE: se rechaza y no se envía ningún correo")
+        void noDeberiaEnviarNadaSiElUsuarioYaNoEstaActivo() {
+            // Arrange
+            User user = buildUser("cliente@example.com", "hash", UserStatusEnum.BLOCKED);
+            UUID challengeId = UUID.randomUUID();
+            when(verificationService.resend(challengeId, PurposeEnum.LOGIN))
+                    .thenReturn(new ResentChallenge(user.getId(), new IssuedChallenge(challengeId, "654321", 5), 1, 60));
+            when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
+
+            // Act + Assert
+            assertThatThrownBy(() -> authService.resendTwoFactor(challengeId))
+                    .isInstanceOf(UserNotEnabledException.class);
+            verifyNoInteractions(verificationDispatcher);
+        }
+
+        @Test
+        @DisplayName("Si VerificationService rechaza el reenvío, no se envía nada")
+        void deberiaPropagarElRechazoDelReenvio() {
+            // Arrange
+            UUID challengeId = UUID.randomUUID();
+            when(verificationService.resend(challengeId, PurposeEnum.LOGIN))
+                    .thenThrow(new TooManyRequestsException("Espera 20 segundos", 20));
+
+            // Act + Assert
+            assertThatThrownBy(() -> authService.resendTwoFactor(challengeId))
+                    .isInstanceOf(TooManyRequestsException.class);
+            verifyNoInteractions(userRepository, verificationDispatcher);
+        }
+
+        @Test
+        @DisplayName("Si el usuario del reto ya no existe, error genérico")
+        void deberiaRechazarSiElUsuarioDelRetoNoExiste() {
+            // Arrange
+            UUID challengeId = UUID.randomUUID();
+            UUID userId = UUID.randomUUID();
+            when(verificationService.resend(challengeId, PurposeEnum.LOGIN))
+                    .thenReturn(new ResentChallenge(userId, new IssuedChallenge(challengeId, "654321", 5), 1, 60));
+            when(userRepository.findById(userId)).thenReturn(Optional.empty());
+
+            // Act + Assert
+            assertThatThrownBy(() -> authService.resendTwoFactor(challengeId))
+                    .isInstanceOf(InvalidVerificationCodeException.class);
+            verifyNoInteractions(verificationDispatcher);
         }
     }
 
