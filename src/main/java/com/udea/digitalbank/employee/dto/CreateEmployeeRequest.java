@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
-// Sin contraseña ni rol: la contraseña la define el empleado con "olvidé mi contraseña" y el rol lo fija el endpoint
+// Sin contraseña ni rol: la contraseña la define el empleado al verificar su correo y el rol lo fija el endpoint
 @Data
 public class CreateEmployeeRequest {
     @NotBlank @Size(max = 100)

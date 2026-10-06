@@ -15,17 +15,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.security.SecureRandom;
-import java.util.Base64;
 import java.util.Map;
 import java.util.UUID;
 
 @Service
 public class EmployeeService {
-
-    private static final int TEMPORARY_PASSWORD_BYTES = 32;
-
-    private final SecureRandom secureRandom = new SecureRandom();
 
     private final EmployeeRepository employeeRepository;
     private final UserApi userApi;
@@ -43,12 +37,12 @@ public class EmployeeService {
     }
 
     // Usuario y perfil en una sola transacción: si algo falla no quedan usuarios sin perfil ni al revés.
-    // La contraseña inicial es aleatoria y no se entrega a nadie: el empleado confirma su correo y
-    // define la suya con el flujo "olvidé mi contraseña".
+    // La contraseña inicial es aleatoria y no se entrega a nadie: el empleado confirma su correo con el
+    // código que recibe y define la suya en ese mismo paso (verify-email); queda ACTIVE al verificar.
     @Transactional
     public EmployeeResponse create(CreateEmployeeRequest request) {
         // Valida el email único, guarda el hash y deja al usuario en PENDING_VERIFICATION
-        UserView user = userApi.createUser(request.getEmail(), temporaryPassword(), RoleEnum.ADMIN);
+        UserView user = userApi.createUser(request.getEmail(), RoleEnum.ADMIN);
 
         Employee employee = new Employee();
         employee.setUserId(user.id());
@@ -99,12 +93,6 @@ public class EmployeeService {
             throw new OwnStatusChangeException("No puedes cambiar tu propio estado");
         }
         userApi.changeStatus(employee.getUserId(), statusEnum);
-    }
-
-    private String temporaryPassword() {
-        byte[] bytes = new byte[TEMPORARY_PASSWORD_BYTES];
-        secureRandom.nextBytes(bytes);
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
 
     private EmployeeResponse toResponse(Employee employee) {
