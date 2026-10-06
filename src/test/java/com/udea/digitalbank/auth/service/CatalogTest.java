@@ -74,7 +74,7 @@ class CatalogsTest {
     private Catalogs buildCatalogsWithAllCatalogsLoaded() {
         when(roleRepository.findAll()).thenReturn(List.of(role((short) 1, "CUSTOMER"), role((short) 2, "ADMIN")));
         when(statusRepository.findAll()).thenReturn(List.of(
-                status((short) 1, "ACTIVE"), status((short) 2, "PENDING_VERIFICATION"),
+                status((short) 1, "ACTIVE"), status((short) 2, "PENDING_VERIFICATION"), status((short) 5, "PENDING_REVIEW"),
                 status((short) 3, "INACTIVE"), status((short) 4, "BLOCKED")));
         when(purposeRepository.findAll()).thenReturn(List.of(
                 purpose((short) 1, "LOGIN"), purpose((short) 2, "EMAIL_CONFIRMATION"), purpose((short) 3, "PASSWORD_RESET")));
@@ -97,6 +97,7 @@ class CatalogsTest {
             // Act & Assert
             assertThat(catalogs.role(RoleEnum.CUSTOMER).getCode()).isEqualTo("CUSTOMER");
             assertThat(catalogs.status(UserStatusEnum.BLOCKED).getCode()).isEqualTo("BLOCKED");
+            assertThat(catalogs.status(UserStatusEnum.PENDING_REVIEW).getCode()).isEqualTo("PENDING_REVIEW");
             assertThat(catalogs.purpose(PurposeEnum.PASSWORD_RESET).getPurpose()).isEqualTo("PASSWORD_RESET");
         }
     }
@@ -111,7 +112,8 @@ class CatalogsTest {
             // Arrange: falta BLOCKED en la base, pero el enum UserStatusEnum sí lo declara
             when(roleRepository.findAll()).thenReturn(List.of(role((short) 1, "CUSTOMER"), role((short) 2, "ADMIN")));
             when(statusRepository.findAll()).thenReturn(List.of(
-                    status((short) 1, "ACTIVE"), status((short) 2, "PENDING_VERIFICATION"), status((short) 3, "INACTIVE")));
+                    status((short) 1, "ACTIVE"), status((short) 2, "PENDING_VERIFICATION"), status((short) 5, "PENDING_REVIEW"),
+                    status((short) 3, "INACTIVE")));
             when(purposeRepository.findAll()).thenReturn(List.of(
                     purpose((short) 1, "LOGIN"), purpose((short) 2, "EMAIL_CONFIRMATION"), purpose((short) 3, "PASSWORD_RESET")));
             Catalogs catalogs = new Catalogs(roleRepository, statusRepository, purposeRepository);
@@ -129,7 +131,7 @@ class CatalogsTest {
             when(roleRepository.findAll()).thenReturn(List.of(
                     role((short) 1, "CUSTOMER"), role((short) 2, "ADMIN"), role((short) 3, "SUPPORT")));
             when(statusRepository.findAll()).thenReturn(List.of(
-                    status((short) 1, "ACTIVE"), status((short) 2, "PENDING_VERIFICATION"),
+                    status((short) 1, "ACTIVE"), status((short) 2, "PENDING_VERIFICATION"), status((short) 5, "PENDING_REVIEW"),
                     status((short) 3, "INACTIVE"), status((short) 4, "BLOCKED")));
             when(purposeRepository.findAll()).thenReturn(List.of(
                     purpose((short) 1, "LOGIN"), purpose((short) 2, "EMAIL_CONFIRMATION"), purpose((short) 3, "PASSWORD_RESET")));

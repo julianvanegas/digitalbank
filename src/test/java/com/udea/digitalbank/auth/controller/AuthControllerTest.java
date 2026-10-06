@@ -57,19 +57,21 @@ class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("verifyEmail - HU01 (confirmación de correo): delega y responde 204")
+    @DisplayName("verifyEmail - HU01 (confirmación de correo): delega con la contraseña y su confirmación y responde 204")
     void verifyEmail_deberiaDelegarYResponder204() {
         // Arrange
         VerifyEmailRequest request = new VerifyEmailRequest();
         request.setEmail("ana@example.com");
         request.setCode("123456");
+        request.setPassword("Passw0rd!");
+        request.setConfirmPassword("Passw0rd!");
 
         // Act
         ResponseEntity<Void> response = controller.verifyEmail(request);
 
         // Assert
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
-        verify(emailVerificationService).verifyEmail("ana@example.com", "123456");
+        verify(emailVerificationService).verifyEmail("ana@example.com", "123456", "Passw0rd!", "Passw0rd!");
     }
 
     @Test

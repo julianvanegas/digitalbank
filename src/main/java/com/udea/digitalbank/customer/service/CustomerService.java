@@ -61,9 +61,9 @@ public class CustomerService {
             throw new DuplicateCustomerException("Ya existe un cliente registrado con ese número de documento");
         }
 
-        // Valida el email único, guarda el hash y deja al usuario en PENDING_VERIFICATION
-        UserView user = userApi.createUser(
-                request.getEmail(), request.getPassword(), RoleEnum.CUSTOMER);
+        // Valida el email único y deja al usuario en PENDING_VERIFICATION con una contraseña aleatoria;
+        // el cliente define la suya al verificar su correo y queda PENDING_REVIEW hasta que un admin lo active
+        UserView user = userApi.createUser(request.getEmail(), RoleEnum.CUSTOMER);
 
         Customer customer = new Customer();
         customer.setUserId(user.id());

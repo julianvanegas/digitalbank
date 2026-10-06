@@ -30,6 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -92,7 +93,7 @@ class UserApiServiceTest {
 
             // Act & Assert
             assertThrows(DuplicateUserException.class,
-                    () -> userApi.createUser("ana@example.com", "Passw0rd!", RoleEnum.CUSTOMER));
+                    () -> userApi.createUser("ana@example.com", RoleEnum.CUSTOMER));
 
             // No debe llegar a codificar contraseña, guardar usuario ni publicar el evento
             verify(userRepository, never()).save(any(User.class));
@@ -107,7 +108,7 @@ class UserApiServiceTest {
             when(catalogs.role(RoleEnum.CUSTOMER)).thenReturn(buildRole((short) 1, "CUSTOMER"));
             when(catalogs.status(UserStatusEnum.PENDING_VERIFICATION))
                     .thenReturn(buildStatus((short) 2, "PENDING_VERIFICATION"));
-            when(passwordEncoder.encode("Passw0rd!")).thenReturn("hashed-password");
+            when(passwordEncoder.encode(anyString())).thenReturn("hashed-password");
             UUID userId = UUID.randomUUID();
             when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
                 User user = invocation.getArgument(0);
@@ -116,7 +117,7 @@ class UserApiServiceTest {
             });
 
             // Act
-            UserView result = userApi.createUser("ana@example.com", "Passw0rd!", RoleEnum.CUSTOMER);
+            UserView result = userApi.createUser("ana@example.com", RoleEnum.CUSTOMER);
 
             // Assert
             assertThat(result.id()).isEqualTo(userId);
@@ -126,22 +127,29 @@ class UserApiServiceTest {
         }
 
         @Test
-        @DisplayName("La contraseña se guarda codificada, nunca en texto plano")
-        void deberiaGuardarLaContrasenaCodificada() {
+        @DisplayName("La contraseña inicial es aleatoria y se guarda codificada, nunca en texto plano")
+        void deberiaGuardarUnaContrasenaAleatoriaCodificada() {
             // Arrange
             when(userRepository.existsByEmail(anyString())).thenReturn(false);
             when(catalogs.role(any())).thenReturn(buildRole((short) 1, "CUSTOMER"));
             when(catalogs.status(any())).thenReturn(buildStatus((short) 2, "PENDING_VERIFICATION"));
-            when(passwordEncoder.encode("Passw0rd!")).thenReturn("hashed-password");
+            when(passwordEncoder.encode(anyString())).thenReturn("hashed-password");
             when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
             // Act
-            userApi.createUser("ana@example.com", "Passw0rd!", RoleEnum.CUSTOMER);
+            userApi.createUser("ana@example.com", RoleEnum.CUSTOMER);
+            userApi.createUser("beto@example.com", RoleEnum.CUSTOMER);
 
             // Assert
-            ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
-            verify(userRepository).save(captor.capture());
-            assertThat(captor.getValue().getPasswordHash()).isEqualTo("hashed-password");
+            ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
+            verify(userRepository, times(2)).save(userCaptor.capture());
+            assertThat(userCaptor.getAllValues()).allSatisfy(user ->
+                    assertThat(user.getPasswordHash()).isEqualTo("hashed-password"));
+
+            ArgumentCaptor<String> rawCaptor = ArgumentCaptor.forClass(String.class);
+            verify(passwordEncoder, times(2)).encode(rawCaptor.capture());
+            assertThat(rawCaptor.getAllValues()).allSatisfy(raw -> assertThat(raw).hasSizeGreaterThanOrEqualTo(32));
+            assertThat(rawCaptor.getAllValues().get(0)).isNotEqualTo(rawCaptor.getAllValues().get(1));
         }
 
         @Test
@@ -156,7 +164,7 @@ class UserApiServiceTest {
             when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
             // Act
-            userApi.createUser("ana@example.com", "Passw0rd!", RoleEnum.CUSTOMER);
+            userApi.createUser("ana@example.com", RoleEnum.CUSTOMER);
 
             // Assert: se pidió explícitamente el estado PENDING_VERIFICATION al catálogo
             verify(catalogs).status(UserStatusEnum.PENDING_VERIFICATION);
@@ -178,7 +186,7 @@ class UserApiServiceTest {
             });
 
             // Act
-            userApi.createUser("ana@example.com", "Passw0rd!", RoleEnum.CUSTOMER);
+            userApi.createUser("ana@example.com", RoleEnum.CUSTOMER);
 
             // Assert
             ArgumentCaptor<UserCreatedEvent> eventCaptor = ArgumentCaptor.forClass(UserCreatedEvent.class);

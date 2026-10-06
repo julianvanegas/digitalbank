@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.UUID;
 
 // No hay endpoint de registro: los usuarios se crean desde el módulo de la persona (UserApi.createUser)
+// y definen su contraseña al confirmar su correo (verify-email)
 @RestController
 @RequestMapping("/api/v1/auth")
 public class AuthController {
@@ -41,7 +42,8 @@ public class AuthController {
 
     @PostMapping("/verify-email")
     public ResponseEntity<Void> verifyEmail(@Valid @RequestBody VerifyEmailRequest request) {
-        emailVerificationService.verifyEmail(request.getEmail(), request.getCode());
+        emailVerificationService.verifyEmail(
+                request.getEmail(), request.getCode(), request.getPassword(), request.getConfirmPassword());
         return ResponseEntity.noContent().build();
     }
 

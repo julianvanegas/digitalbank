@@ -210,6 +210,25 @@ class AuthServiceTest {
         }
 
         @Test
+        @DisplayName("Usuario con el correo confirmado pero pendiente de revisión: acceso rechazado con mensaje propio")
+        void deberiaRechazarInicioDeSesionCuandoElUsuarioEstaPendienteDeRevision() {
+            // Arrange
+            User user = buildUser("cliente@example.com", "hash", UserStatusEnum.PENDING_REVIEW);
+            LoginRequest request = buildLoginRequest("cliente@example.com", "Abcdef1$");
+
+            when(userRepository.findByEmail(request.getEmail())).thenReturn(Optional.of(user));
+            when(passwordEncoder.matches(request.getPassword(), user.getPasswordHash())).thenReturn(true);
+
+            // Act & Assert
+            assertThatThrownBy(() -> authService.login(request))
+                    .isInstanceOf(UserNotEnabledException.class)
+                    .hasMessageContaining("revisión");
+            verifyNoInteractions(verificationDispatcher);
+            // Solo los usuarios ACTIVE acumulan intentos fallidos: aquí la contraseña es correcta
+            verify(userStatusService, never()).registerFailedAttempt(any());
+        }
+
+        @Test
         @DisplayName("Estado INACTIVE tampoco permite iniciar sesión (rechazo por defecto)")
         void deberiaRechazarInicioDeSesionParaUsuarioInactivo() {
             // Arrange

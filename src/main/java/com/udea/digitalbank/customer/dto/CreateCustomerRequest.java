@@ -2,11 +2,10 @@ package com.udea.digitalbank.customer.dto;
 
 import jakarta.validation.constraints.*;
 import lombok.Data;
-import com.udea.digitalbank.shared.utils.Password;
 import com.udea.digitalbank.shared.utils.Phone;
 import java.time.LocalDate;
 
-// El rol no viaja en el request: lo fija el endpoint
+// Sin contraseña ni rol: la contraseña la define el cliente al verificar su correo y el rol lo fija el endpoint
 @Data
 public class CreateCustomerRequest {
     // Perfil
@@ -31,7 +30,4 @@ public class CreateCustomerRequest {
     // Usuario
     @NotBlank @Email @Size(max = 254)
     private String email;
-
-    @NotBlank @Password
-    private String password;
 }
