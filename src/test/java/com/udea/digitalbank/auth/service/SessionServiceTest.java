@@ -5,12 +5,12 @@ import com.udea.digitalbank.auth.domain.Role;
 import com.udea.digitalbank.auth.domain.User;
 import com.udea.digitalbank.auth.repository.AuthSessionRepository;
 import com.udea.digitalbank.auth.security.JwtUtil;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -36,8 +36,12 @@ class SessionServiceTest {
     @Mock
     private JwtUtil jwtUtil;
 
-    @InjectMocks
     private SessionService sessionService;
+
+    @BeforeEach
+    void setUp() {
+        sessionService = new SessionService(sessionRepository, jwtUtil, 5);
+    }
 
     private static Role buildRole(String code) {
         Role role = new Role();
@@ -70,7 +74,7 @@ class SessionServiceTest {
             user.setId(userId);
             user.setRole(buildRole("CUSTOMER"));
 
-            when(jwtUtil.getExpirationMs()).thenReturn(900_000L); // 15 minutos
+            when(jwtUtil.getExpirationMs()).thenReturn(3_600_000L); // tope del token: 1 hora
             when(jwtUtil.generateJti()).thenReturn(jti);
             when(jwtUtil.generateToken(eq(userId), eq("CUSTOMER"), eq(jti), any(Date.class), any(Date.class)))
                     .thenReturn("token-firmado");
@@ -90,7 +94,13 @@ class SessionServiceTest {
             assertThat(saved.getUserId()).isEqualTo(userId);
             assertThat(saved.getJti()).isEqualTo(UUID.fromString(jti));
             assertThat(saved.getIssuedAt()).isCloseTo(before, within(2, ChronoUnit.SECONDS));
-            assertThat(saved.getExpiresAt()).isCloseTo(before.plusSeconds(900), within(2, ChronoUnit.SECONDS));
+            assertThat(saved.getExpiresAt()).isCloseTo(before.plusMinutes(5), within(2, ChronoUnit.SECONDS));
+
+            // El token lleva como exp el tope de 1 hora, independiente de la inactividad
+            ArgumentCaptor<Date> tokenExp = ArgumentCaptor.forClass(Date.class);
+            verify(jwtUtil).generateToken(eq(userId), eq("CUSTOMER"), eq(jti), any(Date.class), tokenExp.capture());
+            assertThat(tokenExp.getValue().getTime())
+                    .isCloseTo(System.currentTimeMillis() + 3_600_000L, within(2_000L));
         }
     }
 
@@ -113,42 +123,52 @@ class SessionServiceTest {
     }
 
     @Nested
-    @DisplayName("isValid - CA07/CA09/CA10 de HU04 (validez del token frente a la sesión vigente)")
-    class IsValid {
+    @DisplayName("validateAndTouch - CA07/CA09/CA10 de HU04 (validez del token e inactividad)")
+    class ValidateAndTouch {
 
         @Test
-        @DisplayName("CA07 - Token vigente: la sesión se considera válida")
-        void deberiaConsiderarValidaUnaSesionVigente() {
+        @DisplayName("CA07 - Sesión vigente y activa: es válida y la petición renueva la actividad")
+        void deberiaConsiderarValidaUnaSesionVigenteYRenovarLaActividad() {
             // Arrange
             UUID userId = UUID.randomUUID();
             String jti = UUID.randomUUID().toString();
-            when(sessionRepository.existsByUserIdAndJtiAndExpiresAtAfter(
-                    eq(userId), eq(UUID.fromString(jti)), any(LocalDateTime.class)))
-                    .thenReturn(true);
+            when(sessionRepository.touch(eq(userId), eq(UUID.fromString(jti)),
+                    any(LocalDateTime.class), any(LocalDateTime.class)))
+                    .thenReturn(1);
+
+            LocalDateTime before = LocalDateTime.now();
 
             // Act & Assert
-            assertThat(sessionService.isValid(userId, jti)).isTrue();
+            assertThat(sessionService.validateAndTouch(userId, jti)).isTrue();
+
+            // El nuevo vencimiento es "ahora" más 5 minutos de inactividad
+            ArgumentCaptor<LocalDateTime> now = ArgumentCaptor.forClass(LocalDateTime.class);
+            ArgumentCaptor<LocalDateTime> newExpiresAt = ArgumentCaptor.forClass(LocalDateTime.class);
+            verify(sessionRepository).touch(eq(userId), eq(UUID.fromString(jti)), now.capture(), newExpiresAt.capture());
+            assertThat(now.getValue()).isCloseTo(before, within(2, ChronoUnit.SECONDS));
+            assertThat(newExpiresAt.getValue()).isEqualTo(now.getValue().plusMinutes(5));
         }
 
         @Test
-        @DisplayName("CA09/CA10 - Sesión cerrada, expirada o con jti distinto: se considera inválida")
-        void deberiaConsiderarInvalidaUnaSesionQueNoCoincideOYaExpiro() {
+        @DisplayName("CA09/CA10 - Sesión cerrada, expirada, inactiva o con jti distinto: es inválida")
+        void deberiaConsiderarInvalidaUnaSesionQueNoCoincideExpiroOEstaInactiva() {
             // Arrange
             UUID userId = UUID.randomUUID();
             String jti = UUID.randomUUID().toString();
-            when(sessionRepository.existsByUserIdAndJtiAndExpiresAtAfter(
-                    eq(userId), eq(UUID.fromString(jti)), any(LocalDateTime.class)))
-                    .thenReturn(false);
+            when(sessionRepository.touch(eq(userId), eq(UUID.fromString(jti)),
+                    any(LocalDateTime.class), any(LocalDateTime.class)))
+                    .thenReturn(0);
 
             // Act & Assert
-            assertThat(sessionService.isValid(userId, jti)).isFalse();
+            assertThat(sessionService.validateAndTouch(userId, jti)).isFalse();
         }
 
         @Test
-        @DisplayName("Un jti nulo se rechaza sin necesidad de consultar la base de datos")
-        void deberiaRechazarUnJtiNuloSinConsultarElRepositorio() {
+        @DisplayName("Un jti nulo o mal formado se rechaza sin necesidad de consultar la base de datos")
+        void deberiaRechazarUnJtiNuloOMalFormadoSinConsultarElRepositorio() {
             // Act & Assert
-            assertThat(sessionService.isValid(UUID.randomUUID(), null)).isFalse();
+            assertThat(sessionService.validateAndTouch(UUID.randomUUID(), null)).isFalse();
+            assertThat(sessionService.validateAndTouch(UUID.randomUUID(), "no-es-un-uuid")).isFalse();
             verifyNoInteractions(sessionRepository);
         }
     }
