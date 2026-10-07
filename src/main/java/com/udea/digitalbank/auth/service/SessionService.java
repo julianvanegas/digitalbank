@@ -4,6 +4,7 @@ import com.udea.digitalbank.auth.domain.AuthSession;
 import com.udea.digitalbank.auth.domain.User;
 import com.udea.digitalbank.auth.repository.AuthSessionRepository;
 import com.udea.digitalbank.auth.security.JwtUtil;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,20 +24,25 @@ public class SessionService {
 
     private final AuthSessionRepository sessionRepository;
     private final JwtUtil jwtUtil;
+    private final Duration inactivityTimeout;
 
-    public SessionService(AuthSessionRepository sessionRepository, JwtUtil jwtUtil) {
+    public SessionService(AuthSessionRepository sessionRepository,
+                          JwtUtil jwtUtil,
+                          @Value("${session.inactivity-timeout-minutes}") long inactivityTimeoutMinutes) {
         this.sessionRepository = sessionRepository;
         this.jwtUtil = jwtUtil;
+        this.inactivityTimeout = Duration.ofMinutes(inactivityTimeoutMinutes);
     }
 
     // Abre la sesión del usuario y devuelve el token firmado que la representa
     @Transactional
     public String start(User user) {
         LocalDateTime issuedAt = LocalDateTime.now();
-        LocalDateTime expiresAt = issuedAt.plus(Duration.ofMillis(jwtUtil.getExpirationMs()));
+        LocalDateTime expiresAt = issuedAt.plus(inactivityTimeout);
+        LocalDateTime tokenExpiresAt = issuedAt.plus(Duration.ofMillis(jwtUtil.getExpirationMs()));
         String jti = jwtUtil.generateJti();
         open(user.getId(), jti, issuedAt, expiresAt);
-        return jwtUtil.generateToken(user.getId(), user.getRole().getCode(), jti, toDate(issuedAt), toDate(expiresAt));
+        return jwtUtil.generateToken(user.getId(), user.getRole().getCode(), jti, toDate(issuedAt), toDate(tokenExpiresAt));
     }
 
     // Sesión única: sobrescribe la fila del usuario y con ello invalida el jti anterior
@@ -51,8 +57,10 @@ public class SessionService {
         sessionRepository.deleteByUser(userId);
     }
 
-    // Un token solo vale si su jti es el de la fila del usuario y esa sesión no ha expirado
-    public boolean isValid(UUID userId, String jti) {
+    // Un token solo vale si su jti es el de la fila del usuario y la sesión no ha vencido. expires_at es
+    // "última actividad + inactividad": si vale, la petición cuenta como actividad y lo desplaza
+    @Transactional
+    public boolean validateAndTouch(UUID userId, String jti) {
         if (jti == null) {
             return false;
         }
@@ -62,10 +70,11 @@ public class SessionService {
         } catch (IllegalArgumentException e) {
             return false;
         }
-        return sessionRepository.existsByUserIdAndJtiAndExpiresAtAfter(userId, jtiValue, LocalDateTime.now());
+        LocalDateTime now = LocalDateTime.now();
+        return sessionRepository.touch(userId, jtiValue, now, now.plus(inactivityTimeout)) > 0;
     }
 
-    // Las sesiones vencidas ya no valen (isValid las rechaza); esto solo evita que se acumulen
+    // Las sesiones vencidas ya no valen (validateAndTouch las rechaza); esto solo evita que se acumulen
     @Transactional
     public void deleteExpired() {
         sessionRepository.deleteExpired(LocalDateTime.now());
