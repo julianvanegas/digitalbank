@@ -11,8 +11,16 @@ import java.util.UUID;
 
 public interface AuthSessionRepository extends JpaRepository<AuthSession, UUID> {
 
-    // Consulta a la base (no findById): un DELETE masivo previo no actualiza la caché de la transacción
-    boolean existsByUserIdAndJtiAndExpiresAtAfter(UUID userId, UUID jti, LocalDateTime now);
+    // Valida y renueva en una sola sentencia atómica: devuelve 1 si la sesión sigue vigente (y desplaza su
+    // vencimiento), 0 si no existe, es otro jti o ya venció por inactividad.
+    // Va a la base (no findById): un DELETE masivo previo no actualiza la caché de la transacción
+    @Modifying
+    @Query("""
+            update AuthSession s set s.expiresAt = :newExpiresAt
+            where s.userId = :userId and s.jti = :jti and s.expiresAt > :now
+            """)
+    int touch(@Param("userId") UUID userId, @Param("jti") UUID jti,
+              @Param("now") LocalDateTime now, @Param("newExpiresAt") LocalDateTime newExpiresAt);
 
     @Modifying
     @Query("delete from AuthSession s where s.userId = :userId")

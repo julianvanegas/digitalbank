@@ -24,7 +24,6 @@ class JwtUtilTest {
         jwtUtil = new JwtUtil();
         // @Value se resuelve normalmente vía Spring; aquí se fija por reflexión al no levantar contexto.
         setField(jwtUtil, "secret", "clave-de-prueba-con-mas-de-32-caracteres-para-hmac");
-        setField(jwtUtil, "expirationMs", 900_000L); // 15 minutos
     }
 
     private static void setField(Object target, String fieldName, Object value) {
@@ -46,11 +45,10 @@ class JwtUtilTest {
         void deberiaGenerarUnTokenQueSePuedeParsearCorrectamente() {
             // Arrange
             Date issuedAt = new Date();
-            Date expiresAt = new Date(issuedAt.getTime() + 900_000L);
             UUID userId = UUID.randomUUID();
 
             // Act
-            String token = jwtUtil.generateToken(userId, "CUSTOMER", "jti-123", issuedAt, expiresAt);
+            String token = jwtUtil.generateToken(userId, "CUSTOMER", "jti-123", issuedAt);
             var claims = jwtUtil.parseClaims(token);
 
             // Assert
@@ -60,9 +58,11 @@ class JwtUtilTest {
         }
 
         @Test
-        @DisplayName("getExpirationMs() devuelve el valor configurado")
-        void deberiaExponerLaExpiracionConfigurada() {
-            assertThat(jwtUtil.getExpirationMs()).isEqualTo(900_000L);
+        @DisplayName("El token no lleva exp: la vigencia la decide la sesión, no el reloj del token")
+        void deberiaGenerarUnTokenSinExpiracion() {
+            String token = jwtUtil.generateToken(UUID.randomUUID(), "CUSTOMER", "jti-1", new Date());
+
+            assertThat(jwtUtil.parseClaims(token).getExpiration()).isNull();
         }
 
         @Test
@@ -73,31 +73,26 @@ class JwtUtilTest {
     }
 
     @Nested
-    @DisplayName("isValid - CA09/CA10 de HU02/HU04 (token expirado o alterado no debe validar)")
+    @DisplayName("isValid - CA09/CA10 de HU02/HU04 (token alterado no debe validar)")
     class IsValid {
 
         @Test
         @DisplayName("Un token recién emitido y vigente es válido")
         void deberiaSerValidoUnTokenVigente() {
             // Arrange
-            Date issuedAt = new Date();
-            Date expiresAt = new Date(issuedAt.getTime() + 900_000L);
-            String token = jwtUtil.generateToken(UUID.randomUUID(), "CUSTOMER", "jti-1", issuedAt, expiresAt);
+            String token = jwtUtil.generateToken(UUID.randomUUID(), "CUSTOMER", "jti-1", new Date());
 
             // Act & Assert
             assertThat(jwtUtil.isValid(token)).isTrue();
         }
 
         @Test
-        @DisplayName("Un token con fecha de expiración en el pasado no es válido")
-        void noDeberiaSerValidoUnTokenExpirado() {
-            // Arrange: se genera ya vencido (expiró hace 1 minuto)
-            Date issuedAt = new Date(System.currentTimeMillis() - 120_000L);
-            Date expiresAt = new Date(System.currentTimeMillis() - 60_000L);
-            String token = jwtUtil.generateToken(UUID.randomUUID(), "CUSTOMER", "jti-1", issuedAt, expiresAt);
+        @DisplayName("Un token emitido hace horas sigue siendo válido para el JWT: la inactividad se comprueba en la sesión")
+        void deberiaSerValidoUnTokenAntiguoPorqueNoLlevaExp() {
+            Date issuedAt = new Date(System.currentTimeMillis() - 3 * 3_600_000L);
+            String token = jwtUtil.generateToken(UUID.randomUUID(), "CUSTOMER", "jti-1", issuedAt);
 
-            // Act & Assert
-            assertThat(jwtUtil.isValid(token)).isFalse();
+            assertThat(jwtUtil.isValid(token)).isTrue();
         }
 
         @Test
@@ -106,10 +101,7 @@ class JwtUtilTest {
             // Arrange: mismo contenido, pero firmado por una instancia con una clave distinta
             JwtUtil otraInstancia = new JwtUtil();
             setField(otraInstancia, "secret", "otra-clave-completamente-distinta-de-32-caracteres");
-            setField(otraInstancia, "expirationMs", 900_000L);
-            Date issuedAt = new Date();
-            Date expiresAt = new Date(issuedAt.getTime() + 900_000L);
-            String tokenFalsificado = otraInstancia.generateToken(UUID.randomUUID(), "CUSTOMER", "jti-1", issuedAt, expiresAt);
+            String tokenFalsificado = otraInstancia.generateToken(UUID.randomUUID(), "CUSTOMER", "jti-1", new Date());
 
             // Act & Assert
             assertThat(jwtUtil.isValid(tokenFalsificado)).isFalse();

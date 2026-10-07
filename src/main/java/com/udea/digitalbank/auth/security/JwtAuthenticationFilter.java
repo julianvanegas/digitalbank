@@ -56,8 +56,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String role = claims.get("role", String.class);
         String jti = claims.getId();
 
-        // Sesión única: el token solo vale si es la sesión vigente del usuario y el usuario está ACTIVE
-        boolean userActive = sessionService.isValid(userId, jti) && userStatusService.isActive(userId);
+        // Sesión única: el token solo vale si es la sesión vigente del usuario (sin exceder la inactividad) y el usuario está ACTIVE
+        boolean userActive = sessionService.validateAndTouch(userId, jti) && userStatusService.isActive(userId);
 
         if (!userActive) {
             filterChain.doFilter(request, response);

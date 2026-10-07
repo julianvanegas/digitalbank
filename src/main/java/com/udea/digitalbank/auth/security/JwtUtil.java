@@ -13,32 +13,24 @@ import java.util.UUID;
 @Component
 public class JwtUtil {
 
-    // definidos en application.properties: jwt.secret (32+ caracteres) y jwt.expiration-ms
+    // definido en application.properties: jwt.secret (32+ caracteres)
     @Value("${jwt.secret}")
     private String secret;
-
-    @Value("${jwt.expiration-ms}")
-    private long expirationMs;
 
     private SecretKey signingKey() {
         return Keys.hmacShaKeyFor(secret.getBytes());
     }
 
     // el jti sirve para invalidar sesiones anteriores (ver AuthService.verifyTwoFactor)
-    // issuedAt y expiresAt vienen de fuera para que el token y la fila de auth_session coincidan
-    public String generateToken(UUID userId, String role, String jti, Date issuedAt, Date expiresAt) {
+    // El token no lleva exp: la vigencia (inactividad) la decide la fila de auth_sessions, que se renueva con la actividad
+    public String generateToken(UUID userId, String role, String jti, Date issuedAt) {
         return Jwts.builder()
                 .subject(String.valueOf(userId))
                 .claim("role", role)
                 .id(jti)
                 .issuedAt(issuedAt)
-                .expiration(expiresAt)
                 .signWith(signingKey())
                 .compact();
-    }
-
-    public long getExpirationMs() {
-        return expirationMs;
     }
 
     public String generateJti() {
@@ -53,7 +45,7 @@ public class JwtUtil {
                 .getPayload();
     }
 
-    // devuelve false si la firma no coincide o el token expiró (parseClaims lanza excepción en ambos casos)
+    // devuelve false si la firma no coincide o el token está mal formado (parseClaims lanza excepción)
     public boolean isValid(String token) {
         try {
             parseClaims(token);
