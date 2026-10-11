@@ -1,5 +1,6 @@
 package com.udea.digitalbank.accounts.controller;
 
+import com.udea.digitalbank.accounts.dto.AccountBalanceResponse;
 import com.udea.digitalbank.accounts.dto.AccountResponse;
 import com.udea.digitalbank.accounts.dto.CreateAccountRequest;
 import com.udea.digitalbank.accounts.service.AccountService;
@@ -56,6 +57,21 @@ public class AccountController {
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<AccountResponse> myAccount(Authentication auth, @PathVariable UUID id) {
         return ResponseEntity.ok(accountService.getMyAccount((UUID) auth.getPrincipal(), id));
+    }
+
+    // El número es el identificador que el cliente conoce; un número ajeno responde igual que uno inexistente
+    @GetMapping("/by-number/{accountNumber}")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ResponseEntity<AccountResponse> myAccountByNumber(Authentication auth,
+                                                             @PathVariable String accountNumber) {
+        return ResponseEntity.ok(accountService.getMyAccountByNumber((UUID) auth.getPrincipal(), accountNumber));
+    }
+
+    @GetMapping("/by-number/{accountNumber}/balance")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ResponseEntity<AccountBalanceResponse> myBalanceByNumber(Authentication auth,
+                                                                    @PathVariable String accountNumber) {
+        return ResponseEntity.ok(accountService.getMyBalanceByNumber((UUID) auth.getPrincipal(), accountNumber));
     }
 
     private static boolean isAdmin(Authentication auth) {

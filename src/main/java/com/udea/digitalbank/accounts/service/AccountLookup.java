@@ -38,4 +38,14 @@ class AccountLookup {
         }
         return account;
     }
+
+    // Igual que ownedBy, pero por número. El mensaje lleva el número que envió el cliente, nunca el id
+    // interno: así "no existe" y "es de otro cliente" producen exactamente la misma respuesta
+    Account byNumberOwnedBy(String accountNumber, UUID customerId) {
+        Account account = byNumber(accountNumber);
+        if (!account.getCustomerId().equals(customerId)) {
+            throw new AccountNotFoundException("Cuenta no encontrada: " + accountNumber);
+        }
+        return account;
+    }
 }
