@@ -2,6 +2,7 @@ package com.udea.digitalbank.accounts.service;
 
 import com.udea.digitalbank.accounts.api.AccountStatusEnum;
 import com.udea.digitalbank.accounts.domain.Account;
+import com.udea.digitalbank.accounts.dto.AccountBalanceResponse;
 import com.udea.digitalbank.accounts.dto.AccountResponse;
 import com.udea.digitalbank.accounts.mapper.AccountMapper;
 import com.udea.digitalbank.accounts.repository.AccountRepository;
@@ -79,6 +80,20 @@ public class AccountService {
     public AccountResponse getMyAccount(UUID userId, UUID accountId) {
         CustomerView customer = customerApi.getCustomerByUserId(userId);
         return accountMapper.toResponse(accountLookup.ownedBy(accountId, customer.id()));
+    }
+
+    // HU13: se responde en cualquier estado (CA04 y CA05 piden reflejarlo, no rechazarlo)
+    @Transactional(readOnly = true)
+    public AccountResponse getMyAccountByNumber(UUID userId, String accountNumber) {
+        CustomerView customer = customerApi.getCustomerByUserId(userId);
+        return accountMapper.toResponse(accountLookup.byNumberOwnedBy(accountNumber, customer.id()));
+    }
+
+    // HU12: en cualquier estado, como el detalle, que ya incluye el saldo
+    @Transactional(readOnly = true)
+    public AccountBalanceResponse getMyBalanceByNumber(UUID userId, String accountNumber) {
+        CustomerView customer = customerApi.getCustomerByUserId(userId);
+        return accountMapper.toBalanceResponse(accountLookup.byNumberOwnedBy(accountNumber, customer.id()));
     }
 
     // La cuenta nace activa y sin saldo: la apertura no exige depósito inicial
