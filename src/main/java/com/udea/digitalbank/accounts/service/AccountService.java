@@ -96,6 +96,21 @@ public class AccountService {
         return accountMapper.toBalanceResponse(accountLookup.byNumberOwnedBy(accountNumber, customer.id()));
     }
 
+    /**
+     * Consultas del administrador: sin verificación de propiedad ni filtro por estado.
+     * No pasan por customerApi: un ADMIN no tiene fila en customers, así que getCustomerByUserId fallaría.
+     * Solo se deben llamar desde un endpoint protegido con @PreAuthorize("hasRole('ADMIN')").
+     */
+    @Transactional(readOnly = true)
+    public AccountResponse getAnyAccountByNumber(String accountNumber) {
+        return accountMapper.toResponse(accountLookup.byNumber(accountNumber));
+    }
+
+    @Transactional(readOnly = true)
+    public AccountBalanceResponse getAnyBalanceByNumber(String accountNumber) {
+        return accountMapper.toBalanceResponse(accountLookup.byNumber(accountNumber));
+    }
+
     // La cuenta nace activa y sin saldo: la apertura no exige depósito inicial
     private AccountResponse open(UUID customerId) {
         List<Account> existing = accountRepository.findByCustomerIdOrderByCreatedAt(customerId);
