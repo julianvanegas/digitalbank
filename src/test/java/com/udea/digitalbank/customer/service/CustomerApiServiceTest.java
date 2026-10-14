@@ -98,6 +98,48 @@ class CustomerApiServiceTest {
     }
 
     @Test
+    @DisplayName("getCustomerByDocument resuelve el cliente por tipo y número de documento")
+    void getCustomerByDocument_returnsView() {
+        when(customerRepository.findByDocumentTypeIdAndDocumentNumber((short) 1, "1000000001"))
+                .thenReturn(Optional.of(buildCustomer()));
+        when(userApi.getUser(userId)).thenReturn(buildUser("ACTIVE"));
+
+        CustomerView view = customerApiService.getCustomerByDocument((short) 1, "1000000001");
+
+        assertThat(view.id()).isEqualTo(customerId);
+        assertThat(view.userId()).isEqualTo(userId);
+        assertThat(view.documentNumber()).isEqualTo("1000000001");
+        assertThat(view.email()).isEqualTo("ana@example.com");
+    }
+
+    @Test
+    @DisplayName("getCustomerByDocument lanza CustomerNotFoundException si el documento no existe")
+    void getCustomerByDocument_notFound() {
+        when(customerRepository.findByDocumentTypeIdAndDocumentNumber((short) 1, "1000000001"))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> customerApiService.getCustomerByDocument((short) 1, "1000000001"))
+                .isInstanceOf(CustomerNotFoundException.class);
+    }
+
+    // Cubre que el servicio pase el tipo de documento al repositorio y no solo el número. No cubre que la
+    // consulta real lo filtre: eso lo garantizan el nombre del método de Spring Data y el UNIQUE
+    // (document_type_id, document_number) de V2, y aquí no hay base de datos que lo compruebe.
+    @Test
+    @DisplayName("getCustomerByDocument no encuentra el mismo número con otro tipo de documento")
+    void getCustomerByDocument_sameNumberOtherType_notFound() {
+        when(customerRepository.findByDocumentTypeIdAndDocumentNumber((short) 1, "1000000001"))
+                .thenReturn(Optional.of(buildCustomer()));
+        when(customerRepository.findByDocumentTypeIdAndDocumentNumber((short) 3, "1000000001"))
+                .thenReturn(Optional.empty());
+        when(userApi.getUser(userId)).thenReturn(buildUser("ACTIVE"));
+
+        assertThat(customerApiService.getCustomerByDocument((short) 1, "1000000001").id()).isEqualTo(customerId);
+        assertThatThrownBy(() -> customerApiService.getCustomerByDocument((short) 3, "1000000001"))
+                .isInstanceOf(CustomerNotFoundException.class);
+    }
+
+    @Test
     @DisplayName("getCustomers resuelve los usuarios en una sola llamada")
     void getCustomers_batch() {
         when(customerRepository.findAllById(List.of(customerId))).thenReturn(List.of(buildCustomer()));

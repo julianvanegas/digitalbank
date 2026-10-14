@@ -38,6 +38,13 @@ class CustomerLookup {
                 .orElseThrow(() -> new CustomerNotFoundException("Cliente no encontrado para el usuario: " + userId));
     }
 
+    // Por tipo y número: el UNIQUE de la base es sobre los dos, el número solo puede repetirse entre tipos
+    Customer byDocument(Short documentTypeId, String documentNumber) {
+        return customerRepository.findByDocumentTypeIdAndDocumentNumber(documentTypeId, documentNumber)
+                .orElseThrow(() -> new CustomerNotFoundException(
+                        "Cliente no encontrado con el documento: " + documentTypeId + " " + documentNumber));
+    }
+
     UserView userOf(Customer customer) {
         return userApi.getUser(customer.getUserId());
     }
