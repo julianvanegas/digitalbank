@@ -17,6 +17,14 @@ public interface CustomerApi {
     /** Lanza CustomerNotFoundException si el usuario no tiene perfil de cliente. */
     CustomerView getCustomerByUserId(UUID userId);
 
+    /**
+     * Busca por tipo y número de documento juntos: el mismo número puede pertenecer a otra persona con
+     * otro tipo de documento. Lanza CustomerNotFoundException si no existe.
+     * El mensaje de no encontrado incluye el documento consultado; está pensado para un endpoint de ADMIN,
+     * que fue quien lo envió. Si alguna vez se expone esta búsqueda a un cliente, hay que revisarlo.
+     */
+    CustomerView getCustomerByDocument(Short documentTypeId, String documentNumber);
+
     /** En una sola consulta, para listados: los ids inexistentes se omiten. */
     List<CustomerView> getCustomers(Collection<UUID> customerIds);
 

@@ -9,4 +9,5 @@ import java.util.UUID;
 public interface CustomerRepository extends JpaRepository<Customer, UUID> {
     Optional<Customer> findByUserId(UUID userId);
     boolean existsByDocumentTypeIdAndDocumentNumber(Short documentTypeId, String documentNumber);
+    Optional<Customer> findByDocumentTypeIdAndDocumentNumber(Short documentTypeId, String documentNumber);
 }

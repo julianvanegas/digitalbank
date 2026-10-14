@@ -45,6 +45,12 @@ public class CustomerApiService implements CustomerApi {
 
     @Override
     @Transactional(readOnly = true)
+    public CustomerView getCustomerByDocument(Short documentTypeId, String documentNumber) {
+        return toView(customerLookup.byDocument(documentTypeId, documentNumber));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<CustomerView> getCustomers(Collection<UUID> customerIds) {
         List<Customer> customers = customerRepository.findAllById(customerIds);
         Map<UUID, UserView> users = customerLookup.usersOf(customers);
