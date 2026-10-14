@@ -111,6 +111,41 @@ public class AccountService {
         return accountMapper.toBalanceResponse(accountLookup.byNumber(accountNumber));
     }
 
+    /**
+     * Todas las cuentas de un cliente a partir de su documento, en orden de apertura y en cualquier estado.
+     * Consulta del administrador: el camino es documento → cliente → cuentas, sin pasar por getCustomerByUserId
+     * (un ADMIN no tiene fila en customers). Un cliente sin cuentas devuelve una lista vacía, no un error;
+     * un documento sin cliente propaga CustomerNotFoundException (404).
+     * <p>
+     * La búsqueda es por coincidencia exacta del número: el registro guarda el documento tal como lo escribe
+     * el cliente, sin normalizar, así que "1.234.567" y "1234567" no son el mismo. Un documentNumber vacío
+     * responde 404 y no 400, a propósito: no hay cliente con ese documento.
+     */
+    @Transactional(readOnly = true)
+    public List<AccountResponse> getAccountsByDocument(Short documentTypeId, String documentNumber) {
+        CustomerView customer = customerApi.getCustomerByDocument(documentTypeId, documentNumber);
+        return accountRepository.findByCustomerIdOrderByCreatedAt(customer.id()).stream()
+                .map(accountMapper::toResponse)
+                .toList();
+    }
+
+    /**
+     * Saldo de cada cuenta de un cliente a partir de su documento, con su estado al lado: no se suman,
+     * porque mezclaría dinero disponible con dinero que no se puede mover. Mismo camino y mismas reglas que
+     * getAccountsByDocument.
+     * <p>
+     * La búsqueda es por coincidencia exacta del número: el registro guarda el documento tal como lo escribe
+     * el cliente, sin normalizar, así que "1.234.567" y "1234567" no son el mismo. Un documentNumber vacío
+     * responde 404 y no 400, a propósito: no hay cliente con ese documento.
+     */
+    @Transactional(readOnly = true)
+    public List<AccountBalanceResponse> getBalancesByDocument(Short documentTypeId, String documentNumber) {
+        CustomerView customer = customerApi.getCustomerByDocument(documentTypeId, documentNumber);
+        return accountRepository.findByCustomerIdOrderByCreatedAt(customer.id()).stream()
+                .map(accountMapper::toBalanceResponse)
+                .toList();
+    }
+
     // La cuenta nace activa y sin saldo: la apertura no exige depósito inicial
     private AccountResponse open(UUID customerId) {
         List<Account> existing = accountRepository.findByCustomerIdOrderByCreatedAt(customerId);

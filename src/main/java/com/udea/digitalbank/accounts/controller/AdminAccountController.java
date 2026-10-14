@@ -8,7 +8,10 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 // Todos los endpoints son de administradores: un empleado consulta la cuenta de cualquier cliente,
 // en cualquier estado, sin verificación de propiedad
@@ -31,5 +34,18 @@ public class AdminAccountController {
     @GetMapping("/by-number/{accountNumber}/balance")
     public ResponseEntity<AccountBalanceResponse> balanceByNumber(@PathVariable String accountNumber) {
         return ResponseEntity.ok(accountService.getAnyBalanceByNumber(accountNumber));
+    }
+
+    // Sin paginar: un cliente tiene como máximo tres cuentas. Tipo y número juntos, como el UNIQUE de customers
+    @GetMapping("/by-customer")
+    public ResponseEntity<List<AccountResponse>> accountsByCustomer(@RequestParam Short documentTypeId,
+                                                                    @RequestParam String documentNumber) {
+        return ResponseEntity.ok(accountService.getAccountsByDocument(documentTypeId, documentNumber));
+    }
+
+    @GetMapping("/by-customer/balances")
+    public ResponseEntity<List<AccountBalanceResponse>> balancesByCustomer(@RequestParam Short documentTypeId,
+                                                                           @RequestParam String documentNumber) {
+        return ResponseEntity.ok(accountService.getBalancesByDocument(documentTypeId, documentNumber));
     }
 }
