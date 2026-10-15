@@ -11,6 +11,8 @@ public interface AccountRepository extends JpaRepository<Account, UUID> {
 
     boolean existsByAccountNumber(String accountNumber);
 
+    boolean existsByAccountKey(String accountKey);
+
     Optional<Account> findByAccountNumber(String accountNumber);
 
     // Un cliente tiene como máximo tres cuentas, así que la lista completa sirve tanto para

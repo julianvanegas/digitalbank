@@ -8,6 +8,7 @@ import com.udea.digitalbank.accounts.mapper.AccountMapper;
 import com.udea.digitalbank.accounts.repository.AccountRepository;
 import com.udea.digitalbank.customer.api.CustomerApi;
 import com.udea.digitalbank.customer.api.CustomerView;
+import com.udea.digitalbank.shared.exception.accounts.AccountKeyCollisionException;
 import com.udea.digitalbank.shared.exception.accounts.AccountLimitReachedException;
 import com.udea.digitalbank.shared.exception.accounts.AccountOwnershipException;
 import org.springframework.stereotype.Service;
@@ -26,6 +27,7 @@ public class AccountService {
     private final AccountMapper accountMapper;
     private final AccountLookup accountLookup;
     private final AccountNumberGenerator accountNumberGenerator;
+    private final AccountKeyGenerator accountKeyGenerator;
     private final AccountCatalog accountCatalog;
 
     public AccountService(AccountRepository accountRepository,
@@ -33,12 +35,14 @@ public class AccountService {
                           AccountMapper accountMapper,
                           AccountLookup accountLookup,
                           AccountNumberGenerator accountNumberGenerator,
+                          AccountKeyGenerator accountKeyGenerator,
                           AccountCatalog accountCatalog) {
         this.accountRepository = accountRepository;
         this.customerApi = customerApi;
         this.accountMapper = accountMapper;
         this.accountLookup = accountLookup;
         this.accountNumberGenerator = accountNumberGenerator;
+        this.accountKeyGenerator = accountKeyGenerator;
         this.accountCatalog = accountCatalog;
     }
 
@@ -54,7 +58,7 @@ public class AccountService {
         if (requestedCustomerId != null && !requestedCustomerId.equals(customer.id())) {
             throw new AccountOwnershipException("No puedes abrir una cuenta a nombre de otro cliente");
         }
-        return open(customer.id());
+        return open(customer);
     }
 
     /**
@@ -65,7 +69,7 @@ public class AccountService {
     public AccountResponse openForCustomer(UUID customerId) {
         // La fachada de customer valida en un solo paso que el cliente exista y esté ACTIVE
         CustomerView customer = customerApi.requireActiveCustomer(customerId);
-        return open(customer.id());
+        return open(customer);
     }
 
     @Transactional(readOnly = true)
@@ -147,21 +151,40 @@ public class AccountService {
     }
 
     // La cuenta nace activa y sin saldo: la apertura no exige depósito inicial
-    private AccountResponse open(UUID customerId) {
-        List<Account> existing = accountRepository.findByCustomerIdOrderByCreatedAt(customerId);
+    private AccountResponse open(CustomerView customer) {
+        List<Account> existing = accountRepository.findByCustomerIdOrderByCreatedAt(customer.id());
         if (existing.size() >= MAX_ACCOUNTS_PER_CUSTOMER) {
             throw new AccountLimitReachedException("El cliente ya alcanzó el número máximo permitido de "
                     + MAX_ACCOUNTS_PER_CUSTOMER + " cuentas");
         }
 
+        short index = nextIndex(existing);
+
         Account account = new Account();
-        account.setCustomerId(customerId);
+        account.setCustomerId(customer.id());
         account.setAccountNumber(accountNumberGenerator.next());
-        account.setAccountIndex(nextIndex(existing));
+        // La llave se deduce del titular, así que necesita su nombre y documento, no solo el id
+        account.setAccountKey(requireFreeKey(accountKeyGenerator.build(
+                customer.firstNames(), customer.documentNumber(), index)));
+        account.setAccountIndex(index);
         account.setStatus(accountCatalog.status(AccountStatusEnum.ACTIVE));
         account.setBalance(Account.INITIAL_BALANCE);
 
         return accountMapper.toResponse(accountRepository.save(account));
+    }
+
+    /**
+     * La llave de CA01 se deduce del titular, así que si choca con la de otro cliente no sirve
+     * reintentar: siempre daría el mismo valor. Se comprueba antes de guardar para distinguir este caso
+     * del choque genérico del UNIQUE y poder decir qué pasó; el UNIQUE sigue siendo la garantía.
+     */
+    private String requireFreeKey(String accountKey) {
+        if (accountRepository.existsByAccountKey(accountKey)) {
+            throw new AccountKeyCollisionException("La llave " + accountKey + " ya pertenece a otra cuenta: "
+                    + "otro cliente comparte el inicio del primer nombre y los últimos dígitos del documento. "
+                    + "Requiere asignación manual.");
+        }
+        return accountKey;
     }
 
     // Se toma del mayor ocupado y no del conteo, para no reutilizar una posición si alguna vez
