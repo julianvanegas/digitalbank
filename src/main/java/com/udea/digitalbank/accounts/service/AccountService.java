@@ -2,14 +2,17 @@ package com.udea.digitalbank.accounts.service;
 
 import com.udea.digitalbank.accounts.api.AccountStatusEnum;
 import com.udea.digitalbank.accounts.domain.Account;
+import com.udea.digitalbank.accounts.domain.AccountBlock;
 import com.udea.digitalbank.accounts.dto.AccountBalanceResponse;
 import com.udea.digitalbank.accounts.dto.AccountResponse;
 import com.udea.digitalbank.accounts.mapper.AccountMapper;
+import com.udea.digitalbank.accounts.repository.AccountBlockRepository;
 import com.udea.digitalbank.accounts.repository.AccountRepository;
 import com.udea.digitalbank.customer.api.CustomerApi;
 import com.udea.digitalbank.customer.api.CustomerView;
 import com.udea.digitalbank.shared.exception.accounts.AccountKeyCollisionException;
 import com.udea.digitalbank.shared.exception.accounts.AccountLimitReachedException;
+import com.udea.digitalbank.shared.exception.accounts.AccountNotBlockableException;
 import com.udea.digitalbank.shared.exception.accounts.AccountOwnershipException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +26,7 @@ public class AccountService {
     static final int MAX_ACCOUNTS_PER_CUSTOMER = 3;
 
     private final AccountRepository accountRepository;
+    private final AccountBlockRepository accountBlockRepository;
     private final CustomerApi customerApi;
     private final AccountMapper accountMapper;
     private final AccountLookup accountLookup;
@@ -31,6 +35,7 @@ public class AccountService {
     private final AccountCatalog accountCatalog;
 
     public AccountService(AccountRepository accountRepository,
+                          AccountBlockRepository accountBlockRepository,
                           CustomerApi customerApi,
                           AccountMapper accountMapper,
                           AccountLookup accountLookup,
@@ -38,6 +43,7 @@ public class AccountService {
                           AccountKeyGenerator accountKeyGenerator,
                           AccountCatalog accountCatalog) {
         this.accountRepository = accountRepository;
+        this.accountBlockRepository = accountBlockRepository;
         this.customerApi = customerApi;
         this.accountMapper = accountMapper;
         this.accountLookup = accountLookup;
@@ -148,6 +154,46 @@ public class AccountService {
         return accountRepository.findByCustomerIdOrderByCreatedAt(customer.id()).stream()
                 .map(accountMapper::toBalanceResponse)
                 .toList();
+    }
+
+    /**
+     * Bloqueo temporal de una cuenta por parte de un administrador (HU15). Deja la cuenta en BLOCKED
+     * y guarda el motivo en el historial, que no se modifica después: cada bloqueo conserva el suyo.
+     * Solo se debe llamar desde un endpoint protegido con @PreAuthorize("hasRole('ADMIN')").
+     * <p>
+     * Solo se bloquea una cuenta ACTIVE: una ya bloqueada se rechaza por CA02, y una inactiva o
+     * cerrada también, porque CA01 parte de que la cuenta está activa.
+     */
+    @Transactional
+    public AccountResponse blockAccount(String accountNumber, String reason, UUID actingUserId) {
+        // El motivo también lo exige el DTO y el CHECK de la tabla; aquí se protege la entrada al caso de uso
+        if (reason == null || reason.isBlank()) {
+            throw new IllegalArgumentException("El motivo del bloqueo es obligatorio");
+        }
+
+        Account account = accountLookup.byNumber(accountNumber);
+        requireBlockable(account);
+
+        account.setStatus(accountCatalog.status(AccountStatusEnum.BLOCKED));
+
+        AccountBlock block = new AccountBlock();
+        block.setAccountId(account.getId());
+        block.setReason(reason.trim());
+        block.setBlockedByUserId(actingUserId);
+        accountBlockRepository.save(block);
+
+        return accountMapper.toResponse(accountRepository.save(account));
+    }
+
+    private static void requireBlockable(Account account) {
+        if (account.getStatus().is(AccountStatusEnum.BLOCKED)) {
+            throw new AccountNotBlockableException(
+                    "La cuenta " + account.getAccountNumber() + " ya está bloqueada");
+        }
+        if (!account.getStatus().is(AccountStatusEnum.ACTIVE)) {
+            throw new AccountNotBlockableException("Solo se puede bloquear una cuenta activa; la cuenta "
+                    + account.getAccountNumber() + " está en estado " + account.getStatus().getCode());
+        }
     }
 
     // La cuenta nace activa y sin saldo: la apertura no exige depósito inicial
