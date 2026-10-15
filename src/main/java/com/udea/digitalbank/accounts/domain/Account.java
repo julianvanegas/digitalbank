@@ -27,6 +27,14 @@ public class Account {
     @Column(nullable = false, unique = true, updatable = false, length = 11)
     private String accountNumber;
 
+    /**
+     * Llave visible de la cuenta, con la estructura de CA01: arroba, dos letras del primer nombre,
+     * seis dígitos del documento y la posición. Se calcula una sola vez al abrir la cuenta y no se
+     * recalcula después: si el cliente corrige su nombre, la llave de una cuenta existente no cambia.
+     */
+    @Column(nullable = false, unique = true, updatable = false, length = 10)
+    private String accountKey;
+
     // Sin @ManyToOne hacia customer para mantener los módulos desacoplados
     @Column(nullable = false, updatable = false)
     private UUID customerId;
