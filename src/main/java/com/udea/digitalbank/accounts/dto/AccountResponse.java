@@ -9,6 +9,7 @@ import java.util.UUID;
 @Data
 public class AccountResponse {
     private UUID id;
+    private String accountKey;
     private String accountNumber;
     private UUID customerId;
     private String status;

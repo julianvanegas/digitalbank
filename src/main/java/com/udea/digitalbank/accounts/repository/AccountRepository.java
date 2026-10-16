@@ -2,6 +2,8 @@ package com.udea.digitalbank.accounts.repository;
 
 import com.udea.digitalbank.accounts.domain.Account;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -10,6 +12,10 @@ import java.util.UUID;
 public interface AccountRepository extends JpaRepository<Account, UUID> {
 
     boolean existsByAccountNumber(String accountNumber);
+
+    // Las llaves que ya usan un prefijo, para saber en una sola consulta qué consecutivo está libre
+    @Query("select a.accountKey from Account a where a.accountKey like concat(:prefix, '%')")
+    List<String> findKeysByPrefix(@Param("prefix") String prefix);
 
     Optional<Account> findByAccountNumber(String accountNumber);
 

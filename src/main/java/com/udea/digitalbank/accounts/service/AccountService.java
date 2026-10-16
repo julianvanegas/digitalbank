@@ -26,6 +26,7 @@ public class AccountService {
     private final AccountMapper accountMapper;
     private final AccountLookup accountLookup;
     private final AccountNumberGenerator accountNumberGenerator;
+    private final AccountKeyGenerator accountKeyGenerator;
     private final AccountCatalog accountCatalog;
 
     public AccountService(AccountRepository accountRepository,
@@ -33,12 +34,14 @@ public class AccountService {
                           AccountMapper accountMapper,
                           AccountLookup accountLookup,
                           AccountNumberGenerator accountNumberGenerator,
+                          AccountKeyGenerator accountKeyGenerator,
                           AccountCatalog accountCatalog) {
         this.accountRepository = accountRepository;
         this.customerApi = customerApi;
         this.accountMapper = accountMapper;
         this.accountLookup = accountLookup;
         this.accountNumberGenerator = accountNumberGenerator;
+        this.accountKeyGenerator = accountKeyGenerator;
         this.accountCatalog = accountCatalog;
     }
 
@@ -54,7 +57,7 @@ public class AccountService {
         if (requestedCustomerId != null && !requestedCustomerId.equals(customer.id())) {
             throw new AccountOwnershipException("No puedes abrir una cuenta a nombre de otro cliente");
         }
-        return open(customer.id());
+        return open(customer);
     }
 
     /**
@@ -65,7 +68,7 @@ public class AccountService {
     public AccountResponse openForCustomer(UUID customerId) {
         // La fachada de customer valida en un solo paso que el cliente exista y esté ACTIVE
         CustomerView customer = customerApi.requireActiveCustomer(customerId);
-        return open(customer.id());
+        return open(customer);
     }
 
     @Transactional(readOnly = true)
@@ -147,17 +150,22 @@ public class AccountService {
     }
 
     // La cuenta nace activa y sin saldo: la apertura no exige depósito inicial
-    private AccountResponse open(UUID customerId) {
-        List<Account> existing = accountRepository.findByCustomerIdOrderByCreatedAt(customerId);
+    private AccountResponse open(CustomerView customer) {
+        List<Account> existing = accountRepository.findByCustomerIdOrderByCreatedAt(customer.id());
         if (existing.size() >= MAX_ACCOUNTS_PER_CUSTOMER) {
             throw new AccountLimitReachedException("El cliente ya alcanzó el número máximo permitido de "
                     + MAX_ACCOUNTS_PER_CUSTOMER + " cuentas");
         }
 
+        short index = nextIndex(existing);
+
         Account account = new Account();
-        account.setCustomerId(customerId);
+        account.setCustomerId(customer.id());
         account.setAccountNumber(accountNumberGenerator.next());
-        account.setAccountIndex(nextIndex(existing));
+        // La llave se deduce del titular, así que necesita su nombre y documento, no solo el id
+        account.setAccountKey(accountKeyGenerator.build(
+                customer.firstNames(), customer.documentNumber()));
+        account.setAccountIndex(index);
         account.setStatus(accountCatalog.status(AccountStatusEnum.ACTIVE));
         account.setBalance(Account.INITIAL_BALANCE);
 
