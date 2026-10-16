@@ -8,7 +8,6 @@ import com.udea.digitalbank.accounts.mapper.AccountMapper;
 import com.udea.digitalbank.accounts.repository.AccountRepository;
 import com.udea.digitalbank.customer.api.CustomerApi;
 import com.udea.digitalbank.customer.api.CustomerView;
-import com.udea.digitalbank.shared.exception.accounts.AccountKeyCollisionException;
 import com.udea.digitalbank.shared.exception.accounts.AccountLimitReachedException;
 import com.udea.digitalbank.shared.exception.accounts.AccountOwnershipException;
 import org.springframework.stereotype.Service;
@@ -164,27 +163,13 @@ public class AccountService {
         account.setCustomerId(customer.id());
         account.setAccountNumber(accountNumberGenerator.next());
         // La llave se deduce del titular, así que necesita su nombre y documento, no solo el id
-        account.setAccountKey(requireFreeKey(accountKeyGenerator.build(
-                customer.firstNames(), customer.documentNumber(), index)));
+        account.setAccountKey(accountKeyGenerator.build(
+                customer.firstNames(), customer.documentNumber()));
         account.setAccountIndex(index);
         account.setStatus(accountCatalog.status(AccountStatusEnum.ACTIVE));
         account.setBalance(Account.INITIAL_BALANCE);
 
         return accountMapper.toResponse(accountRepository.save(account));
-    }
-
-    /**
-     * La llave de CA01 se deduce del titular, así que si choca con la de otro cliente no sirve
-     * reintentar: siempre daría el mismo valor. Se comprueba antes de guardar para distinguir este caso
-     * del choque genérico del UNIQUE y poder decir qué pasó; el UNIQUE sigue siendo la garantía.
-     */
-    private String requireFreeKey(String accountKey) {
-        if (accountRepository.existsByAccountKey(accountKey)) {
-            throw new AccountKeyCollisionException("La llave " + accountKey + " ya pertenece a otra cuenta: "
-                    + "otro cliente comparte el inicio del primer nombre y los últimos dígitos del documento. "
-                    + "Requiere asignación manual.");
-        }
-        return accountKey;
     }
 
     // Se toma del mayor ocupado y no del conteo, para no reutilizar una posición si alguna vez

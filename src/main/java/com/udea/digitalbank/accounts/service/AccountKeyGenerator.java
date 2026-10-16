@@ -1,38 +1,74 @@
 package com.udea.digitalbank.accounts.service;
 
+import com.udea.digitalbank.accounts.domain.Account;
+import com.udea.digitalbank.accounts.repository.AccountRepository;
+import com.udea.digitalbank.shared.exception.accounts.AccountKeyCollisionException;
 import org.springframework.stereotype.Component;
 
 import java.text.Normalizer;
+import java.util.HashSet;
 import java.util.Locale;
+import java.util.Set;
 
 /**
- * Arma la llave visible de la cuenta con la estructura acordada en CA01:
- * arroba + dos primeras letras del primer nombre + últimos dígitos del documento + posición (1, 2 o 3).
- * Por ejemplo, Ana Gómez con documento 1000000001 y su primera cuenta: {@code @AN0000011}.
+ * Arma la llave visible de la cuenta: arroba + dos primeras letras del primer nombre + tres últimos
+ * dígitos del documento + un consecutivo. Por ejemplo, Ana Gómez con documento 1000000001 obtiene
+ * {@code @AN0011} en su primera cuenta.
  * <p>
- * A diferencia del número de cuenta, esta llave es determinista: se deduce del titular, así que no se
- * puede reintentar con otro valor si choca. Por eso se toman seis dígitos del documento y no tres,
- * según lo decidido tras la reunión: con tres, los nombres en español concentran tanto los prefijos de
- * dos letras que las colisiones aparecen con apenas unos cientos de clientes.
+ * El consecutivo no es la posición de la cuenta dentro del cliente, sino el primer número libre para
+ * ese prefijo: si dos clientes distintos coinciden en nombre y documento, el segundo continúa la
+ * numeración del primero en vez de chocar. Así la colisión deja de ser un error y se vuelve el
+ * mecanismo normal de asignación.
  */
 @Component
 class AccountKeyGenerator {
 
     private static final String PREFIX = "@";
     private static final int NAME_CHARS = 2;
-    private static final int DOCUMENT_DIGITS = 6;
-    // Relleno para un primer nombre de una sola letra, para que la llave conserve su longitud fija
+    private static final int DOCUMENT_DIGITS = 3;
+    // Relleno para un primer nombre de una sola letra, para que el prefijo conserve su longitud
     private static final char NAME_PADDING = 'X';
 
-    String build(String firstNames, String documentNumber, short accountIndex) {
-        return PREFIX + namePart(firstNames) + documentPart(documentNumber) + accountIndex;
+    private final AccountRepository accountRepository;
+
+    AccountKeyGenerator(AccountRepository accountRepository) {
+        this.accountRepository = accountRepository;
+    }
+
+    String build(String firstNames, String documentNumber) {
+        String prefix = PREFIX + namePart(firstNames) + documentPart(documentNumber);
+        String key = prefix + nextConsecutive(prefix);
+
+        // Con un prefijo de seis caracteres, agotar el espacio exigiría un consecutivo de 58 dígitos:
+        // en la práctica no ocurre, pero la llave no puede exceder la columna.
+        if (key.length() > Account.MAX_KEY_LENGTH) {
+            throw new AccountKeyCollisionException("No queda consecutivo disponible para la llave "
+                    + prefix + ": se superó la longitud máxima de " + Account.MAX_KEY_LENGTH + " caracteres");
+        }
+        return key;
     }
 
     /**
-     * Las dos primeras letras del primer nombre. "Ana María" toma "AN", no "AN" de "AnaMaría":
-     * se queda con el primer nombre y descarta el resto.
-     * Las tildes se reducen a su letra base (Álvaro -> AL) para que la llave sea estable y
-     * no dependa de cómo se haya escrito el acento.
+     * El primer consecutivo libre para el prefijo, empezando en 1. Se traen de una sola consulta las
+     * llaves que ya lo usan en vez de preguntar número por número.
+     */
+    private int nextConsecutive(String prefix) {
+        Set<String> taken = new HashSet<>();
+        for (String key : accountRepository.findKeysByPrefix(prefix)) {
+            taken.add(key.substring(prefix.length()));
+        }
+
+        int consecutive = 1;
+        while (taken.contains(String.valueOf(consecutive))) {
+            consecutive++;
+        }
+        return consecutive;
+    }
+
+    /**
+     * Las dos primeras letras del primer nombre. "Ana María" toma "AN": se queda con el primer nombre
+     * y descarta el resto. Las tildes se reducen a su letra base (Álvaro -> AL) para que la llave no
+     * dependa de cómo se haya escrito el acento.
      */
     private static String namePart(String firstNames) {
         String firstName = firstNames == null ? "" : firstNames.trim().split("\\s+")[0];
@@ -52,7 +88,7 @@ class AccountKeyGenerator {
     /**
      * Los últimos dígitos del documento. Se descarta cualquier carácter que no sea dígito, porque el
      * documento se guarda tal como lo escribe el cliente y puede traer puntos o letras (pasaporte).
-     * Un documento más corto se rellena con ceros a la izquierda para no acortar la llave.
+     * Un documento más corto se rellena con ceros a la izquierda para no acortar el prefijo.
      */
     private static String documentPart(String documentNumber) {
         String digits = documentNumber == null ? "" : documentNumber.replaceAll("\\D", "");
