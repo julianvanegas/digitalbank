@@ -19,6 +19,9 @@ public class Account {
 
     public static final BigDecimal INITIAL_BALANCE = new BigDecimal("0.00");
 
+    // El consecutivo de la llave puede crecer, así que la columna deja margen de sobra
+    public static final int MAX_KEY_LENGTH = 64;
+
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
@@ -29,10 +32,10 @@ public class Account {
 
     /**
      * Llave visible de la cuenta, con la estructura de CA01: arroba, dos letras del primer nombre,
-     * seis dígitos del documento y la posición. Se calcula una sola vez al abrir la cuenta y no se
-     * recalcula después: si el cliente corrige su nombre, la llave de una cuenta existente no cambia.
+     * tres dígitos del documento y un consecutivo. Se calcula una sola vez al abrir la cuenta y no
+     * se recalcula después: si el cliente corrige su nombre, la llave de una cuenta existente no cambia.
      */
-    @Column(nullable = false, unique = true, updatable = false, length = 10)
+    @Column(nullable = false, unique = true, updatable = false, length = MAX_KEY_LENGTH)
     private String accountKey;
 
     // Sin @ManyToOne hacia customer para mantener los módulos desacoplados
