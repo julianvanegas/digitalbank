@@ -14,6 +14,7 @@ import com.udea.digitalbank.shared.exception.accounts.AccountKeyCollisionExcepti
 import com.udea.digitalbank.shared.exception.accounts.AccountLimitReachedException;
 import com.udea.digitalbank.shared.exception.accounts.AccountNotBlockableException;
 import com.udea.digitalbank.shared.exception.accounts.AccountOwnershipException;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,6 +34,7 @@ public class AccountService {
     private final AccountNumberGenerator accountNumberGenerator;
     private final AccountKeyGenerator accountKeyGenerator;
     private final AccountCatalog accountCatalog;
+    private final ApplicationEventPublisher eventPublisher;
 
     public AccountService(AccountRepository accountRepository,
                           AccountBlockRepository accountBlockRepository,
@@ -41,7 +43,8 @@ public class AccountService {
                           AccountLookup accountLookup,
                           AccountNumberGenerator accountNumberGenerator,
                           AccountKeyGenerator accountKeyGenerator,
-                          AccountCatalog accountCatalog) {
+                          AccountCatalog accountCatalog,
+                          ApplicationEventPublisher eventPublisher) {
         this.accountRepository = accountRepository;
         this.accountBlockRepository = accountBlockRepository;
         this.customerApi = customerApi;
@@ -50,6 +53,7 @@ public class AccountService {
         this.accountNumberGenerator = accountNumberGenerator;
         this.accountKeyGenerator = accountKeyGenerator;
         this.accountCatalog = accountCatalog;
+        this.eventPublisher = eventPublisher;
     }
 
     /**
@@ -182,7 +186,13 @@ public class AccountService {
         block.setBlockedByUserId(actingUserId);
         accountBlockRepository.save(block);
 
-        return accountMapper.toResponse(accountRepository.save(account));
+        Account blocked = accountRepository.save(account);
+        // El aviso al titular sale tras confirmarse la transacción, para no bloquear la respuesta
+        // ni deshacer el bloqueo si el correo falla
+        eventPublisher.publishEvent(new AccountBlockedEvent(
+                blocked.getCustomerId(), blocked.getAccountNumber(), block.getReason()));
+
+        return accountMapper.toResponse(blocked);
     }
 
     private static void requireBlockable(Account account) {
