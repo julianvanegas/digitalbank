@@ -3,6 +3,7 @@ package com.udea.digitalbank.accounts.service;
 import com.udea.digitalbank.accounts.domain.AccountActionType;
 import com.udea.digitalbank.customer.api.CustomerApi;
 import com.udea.digitalbank.customer.api.CustomerView;
+import com.udea.digitalbank.shared.utils.AccountNumbers;
 import com.udea.digitalbank.shared.utils.EmailService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -23,9 +24,6 @@ public class AccountActionListener {
     private static final String BLOCKED_SUBJECT = "Tu cuenta fue bloqueada";
     private static final String UNLOCKED_SUBJECT = "Tu cuenta fue desbloqueada";
     private static final String CLOSED_SUBJECT = "Tu cuenta fue cerrada";
-    // Solo los últimos dígitos: el titular distingue cuál de sus cuentas es sin que el correo
-    // lleve el número completo
-    private static final int VISIBLE_DIGITS = 4;
 
     private final CustomerApi customerApi;
     private final EmailService emailService;
@@ -61,14 +59,8 @@ public class AccountActionListener {
             case CLOSED -> "fue cerrada.";
         };
         return "Hola " + customer.firstNames() + ",\n\n"
-                + "Tu cuenta terminada en " + lastDigits(event.accountNumber()) + " " + outcome + "\n\n"
+                + "Tu cuenta terminada en " + AccountNumbers.lastDigits(event.accountNumber()) + " " + outcome + "\n\n"
                 + "Motivo: " + event.reason() + "\n\n"
                 + "Si no reconoces esta acción, comunícate con el banco.";
-    }
-
-    private static String lastDigits(String accountNumber) {
-        return accountNumber.length() <= VISIBLE_DIGITS
-                ? accountNumber
-                : accountNumber.substring(accountNumber.length() - VISIBLE_DIGITS);
     }
 }
