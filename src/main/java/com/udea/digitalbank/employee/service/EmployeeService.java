@@ -83,7 +83,7 @@ public class EmployeeService {
         return employees.map(e -> employeeMapper.toResponse(e, users.get(e.getUserId())));
     }
 
-    // Solo se debe llamar desde un endpoint protegido con @PreAuthorize("hasRole('ADMIN')").
+    // Solo se debe llamar desde un endpoint que la seguridad reserve a administradores.
     // Un administrador no cambia su propio estado: evita que se bloquee o inactive a sí mismo.
     // auth valida que el estado exista en el catálogo user_status
     @Transactional
