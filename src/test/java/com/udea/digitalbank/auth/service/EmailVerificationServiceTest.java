@@ -7,6 +7,7 @@ import com.udea.digitalbank.auth.domain.Role;
 import com.udea.digitalbank.auth.domain.User;
 import com.udea.digitalbank.auth.domain.UserStatus;
 import com.udea.digitalbank.auth.repository.UserRepository;
+import com.udea.digitalbank.shared.exception.InvalidRequestException;
 import com.udea.digitalbank.shared.exception.auth.InvalidVerificationCodeException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -120,7 +121,7 @@ class EmailVerificationServiceTest {
         void deberiaRechazarSiLaConfirmacionNoCoincideSinConsumirElCodigo() {
             // Act & Assert
             assertThatThrownBy(() -> emailVerificationService.verifyEmail(EMAIL, CODE, PASSWORD, "Otra0ContraseñA!"))
-                    .isInstanceOf(IllegalArgumentException.class)
+                    .isInstanceOf(InvalidRequestException.class)
                     .hasMessageContaining("no coinciden");
             verifyNoInteractions(verificationService, userRepository, passwordEncoder, userStatusService);
         }
