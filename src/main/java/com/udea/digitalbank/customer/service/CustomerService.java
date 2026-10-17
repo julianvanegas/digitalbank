@@ -8,17 +8,21 @@ import com.udea.digitalbank.customer.domain.Customer;
 import com.udea.digitalbank.customer.domain.DocumentType;
 import com.udea.digitalbank.customer.dto.CreateCustomerRequest;
 import com.udea.digitalbank.customer.dto.CustomerResponse;
+import com.udea.digitalbank.customer.dto.DocumentTypeResponse;
 import com.udea.digitalbank.customer.mapper.CustomerMapper;
 import com.udea.digitalbank.customer.repository.CustomerRepository;
 import com.udea.digitalbank.customer.repository.DocumentTypeRepository;
+import com.udea.digitalbank.shared.exception.InvalidRequestException;
 import com.udea.digitalbank.shared.exception.customer.DuplicateCustomerException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.Period;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -50,11 +54,11 @@ public class CustomerService {
     public CustomerResponse create(CreateCustomerRequest request) {
         int age = Period.between(request.getBirthDate(), LocalDate.now()).getYears();
         if (age < MINIMUM_AGE) {
-            throw new IllegalArgumentException("El cliente debe ser mayor de " + MINIMUM_AGE + " años");
+            throw new InvalidRequestException("El cliente debe ser mayor de " + MINIMUM_AGE + " años");
         }
 
         DocumentType documentType = documentTypeRepository.findById(request.getDocumentTypeId())
-                .orElseThrow(() -> new IllegalArgumentException(
+                .orElseThrow(() -> new InvalidRequestException(
                         "Tipo de documento inexistente: " + request.getDocumentTypeId()));
 
         if (customerRepository.existsByDocumentTypeIdAndDocumentNumber(documentType.getId(), request.getDocumentNumber())) {
@@ -77,6 +81,14 @@ public class CustomerService {
         return customerMapper.toResponse(customerRepository.save(customer), user);
     }
 
+    // Catálogo para el formulario de registro: los ids que exige CreateCustomerRequest.documentTypeId
+    @Transactional(readOnly = true)
+    public List<DocumentTypeResponse> getDocumentTypes() {
+        return documentTypeRepository.findAll(Sort.by("id")).stream()
+                .map(customerMapper::toResponse)
+                .toList();
+    }
+
     // Perfil propio: se identifica por el id del usuario que viaja en el JWT
     @Transactional(readOnly = true)
     public CustomerResponse getProfile(UUID userId) {
@@ -84,8 +96,8 @@ public class CustomerService {
     }
 
     @Transactional(readOnly = true)
-    public CustomerResponse getCustomer(UUID customerId) {
-        return toResponse(customerLookup.byId(customerId));
+    public CustomerResponse getCustomer(Short documentTypeId, String documentNumber) {
+        return toResponse(customerLookup.byDocument(documentTypeId, documentNumber));
     }
 
     @Transactional
@@ -111,11 +123,11 @@ public class CustomerService {
         return customers.map(c -> customerMapper.toResponse(c, users.get(c.getUserId())));
     }
 
-    // Solo se debe llamar desde un endpoint protegido con @PreAuthorize("hasRole('ADMIN')")
+    // Solo se debe llamar desde un endpoint que la seguridad reserve a administradores
     // auth valida que el estado exista en el catálogo user_status
     @Transactional
-    public void changeStatus(UUID customerId, UserStatusEnum statusEnum) {
-        Customer customer = customerLookup.byId(customerId);
+    public void changeStatus(Short documentTypeId, String documentNumber, UserStatusEnum statusEnum) {
+        Customer customer = customerLookup.byDocument(documentTypeId, documentNumber);
         userApi.changeStatus(customer.getUserId(), statusEnum);
     }
 
