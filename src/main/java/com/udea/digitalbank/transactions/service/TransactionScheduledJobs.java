@@ -5,7 +5,8 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 /**
- * Todo lo que transactions ejecuta por reloj. Solo decide cuándo: la lógica vive en los servicios.
+ * Tareas programadas del módulo {@code transactions}. Esta clase solo decide cuándo se ejecuta cada una; la lógica
+ * está en los servicios.
  */
 @Slf4j
 @Service
@@ -17,7 +18,10 @@ public class TransactionScheduledJobs {
         this.transferService = transferService;
     }
 
-    // Higiene, no seguridad: una confirmación tardía ya se rechaza por código vencido
+    /**
+     * Cada minuto rechaza las transferencias pendientes cuyo código ya ha vencido. Es una limpieza y no una regla de
+     * seguridad: una confirmación tardía igualmente se rechaza por código vencido.
+     */
     @Scheduled(cron = "0 * * * * *")
     public void rejectExpiredPending() {
         int rejected = transferService.rejectExpiredPending();

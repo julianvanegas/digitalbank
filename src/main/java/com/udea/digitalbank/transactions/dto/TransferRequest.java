@@ -9,19 +9,26 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 
-// Quién ordena la transferencia no viaja aquí: sale del token
+/**
+ * Solicitud para iniciar una transferencia. El ordenante no viaja en el cuerpo: se toma del token de autenticación.
+ */
 @Data
 public class TransferRequest {
 
+    /** Número de la cuenta de origen (12 dígitos); debe pertenecer al ordenante. */
     @NotBlank(message = "La cuenta de origen es obligatoria")
     @Pattern(regexp = "\\d{12}", message = "El número de cuenta debe tener 12 dígitos")
     private String senderAccountNumber;
 
+    /** Número de la cuenta de destino (12 dígitos); puede ser propia o de un tercero. */
     @NotBlank(message = "La cuenta de destino es obligatoria")
     @Pattern(regexp = "\\d{12}", message = "El número de cuenta debe tener 12 dígitos")
     private String receiverAccountNumber;
 
-    // Decimal exacto con la escala de la columna (19,2): nunca punto flotante
+    /**
+     * Monto a transferir: positivo y con máximo dos decimales. Se usa {@link BigDecimal} (decimal exacto) para evitar
+     * errores de redondeo; los límites coinciden con la columna {@code NUMERIC(19,2)}.
+     */
     @NotNull(message = "El monto es obligatorio")
     @DecimalMin(value = "0.01", message = "El monto debe ser mayor que cero")
     @Digits(integer = 17, fraction = 2, message = "El monto admite como máximo 2 decimales")

@@ -26,12 +26,22 @@ class TransactionReferenceGenerator {
     static final int CODE_LENGTH = 22;
     private static final BigInteger BASE = BigInteger.valueOf(ALPHABET.length());
 
+    /**
+     * Arma la referencia de una transferencia.
+     *
+     * @param transactionId identificador de la transacción
+     * @param createdAt     instante de creación; aporta la fecha de la referencia
+     * @return la referencia, de 35 caracteres
+     */
     String forTransfer(UUID transactionId, LocalDateTime createdAt) {
         return PREFIX + createdAt.toLocalDate().format(DateTimeFormatter.BASIC_ISO_DATE) + '-'
                 + encode(transactionId);
     }
 
-    // El UUID como número sin signo de 128 bits, escrito en base 58 y rellenado a 22 con el primer símbolo (el cero)
+    /**
+     * Escribe el UUID como número sin signo de 128 bits en base 58, rellenado a 22 caracteres con el símbolo del
+     * cero.
+     */
     private static String encode(UUID id) {
         byte[] bytes = ByteBuffer.allocate(Long.BYTES * 2)
                 .putLong(id.getMostSignificantBits())

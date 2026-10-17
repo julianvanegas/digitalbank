@@ -8,7 +8,10 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.Immutable;
 
-// Catálogo de solo lectura de los estados de una transacción
+/**
+ * Fila del catálogo {@code status_transaction}. Es de solo lectura: los estados los define la migración y
+ * {@link TransactionStatusEnum} es su contrato en el código.
+ */
 @Entity
 @Immutable
 @Table(name = "status_transaction")
@@ -22,6 +25,7 @@ public class TransactionStatus {
     @Column(nullable = false, unique = true, length = 30)
     private String code;
 
+    /** @return {@code true} si esta fila corresponde al estado indicado. */
     public boolean is(TransactionStatusEnum expected) {
         return code.equals(expected.name());
     }

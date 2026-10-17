@@ -370,7 +370,7 @@ class TransferServiceTest {
         }
 
         @Test
-        @DisplayName("Tercer fallo: cancela la transferencia en curso y responde que hay que empezar de nuevo")
+        @DisplayName("Tercer fallo: cancela la transferencia en curso y responde que se debe empezar de nuevo")
         void deberiaCancelarLaTransferenciaAlAgotarLosIntentos() {
             // Arrange
             Transaction transaction = pending();
