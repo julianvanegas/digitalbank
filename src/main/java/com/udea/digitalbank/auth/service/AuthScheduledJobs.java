@@ -22,7 +22,7 @@ public class AuthScheduledJobs {
         this.sessionService = sessionService;
     }
 
-    // Higiene, no seguridad: los códigos y las sesiones vencidos ya se rechazan al usarlos
+    /** Higiene, no seguridad: los códigos y las sesiones vencidos ya se rechazan al usarlos. */
     @Scheduled(cron = "0 */15 * * * *")
     public void cleanExpired() {
         verificationService.deleteExpired();

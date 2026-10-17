@@ -9,7 +9,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Pruebas unitarias de {@link CodeHasher}. No requiere mocks: es una función pura de HMAC-SHA256,
- * así que aquí se prueba el algoritmo real (antes solo se mockeaba desde VerificationServiceTest).
+ * así que aquí se prueba el algoritmo real; VerificationServiceTest lo simula con un mock.
  */
 class CodeHasherTest {
 

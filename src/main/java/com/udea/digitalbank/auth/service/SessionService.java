@@ -36,7 +36,7 @@ public class SessionService {
         this.inactivityTimeout = Duration.ofMinutes(inactivityTimeoutMinutes);
     }
 
-    // Abre la sesión del usuario y devuelve el token firmado que la representa
+    /** Abre la sesión del usuario y devuelve el token firmado que la representa. */
     @Transactional
     public String start(User user) {
         LocalDateTime issuedAt = LocalDateTime.now();
@@ -53,21 +53,23 @@ public class SessionService {
         sessionRepository.save(new AuthSession(userId, UUID.fromString(jti), issuedAt, expiresAt));
     }
 
-    // Logout, reset de contraseña, bloqueo o inactividad: el token deja de valer aunque no haya expirado
+    /** Logout, reset de contraseña, bloqueo o inactividad: el token deja de valer aunque no haya expirado. */
     @Transactional
     public void revoke(UUID userId) {
         sessionRepository.deleteByUser(userId);
     }
 
-    // Cierra las sesiones de varios usuarios con una sola sentencia (trabajos masivos)
+    /** Cierra las sesiones de varios usuarios con una sola sentencia (trabajos masivos). */
     @Transactional
     public void revokeAll(Collection<UUID> userIds) {
         sessionRepository.deleteByUsers(userIds);
     }
 
-    // Un token solo vale si su jti es el de la fila del usuario, la sesión no ha vencido y el usuario está ACTIVE.
-    // expires_at es "última actividad + inactividad": si vale, la petición cuenta como actividad y lo desplaza.
-    // Todo en una sola sentencia: la petición autenticada no hace otra consulta para el estado del usuario
+    /**
+     * Un token solo vale si su jti es el de la fila del usuario, la sesión no ha vencido y el usuario está ACTIVE.
+     * expires_at es "última actividad + inactividad": si vale, la petición cuenta como actividad y lo desplaza.
+     * Todo en una sola sentencia: la petición autenticada no hace otra consulta para el estado del usuario.
+     */
     @Transactional
     public boolean validateAndTouch(UUID userId, String jti) {
         if (jti == null) {
@@ -84,7 +86,7 @@ public class SessionService {
                 UserStatusEnum.ACTIVE.name()) > 0;
     }
 
-    // Las sesiones vencidas ya no valen (validateAndTouch las rechaza); esto solo evita que se acumulen
+    /** Las sesiones vencidas ya no valen (validateAndTouch las rechaza); esto solo evita que se acumulen. */
     @Transactional
     public void deleteExpired() {
         sessionRepository.deleteExpired(LocalDateTime.now());

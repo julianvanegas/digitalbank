@@ -21,9 +21,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 /**
- * Pruebas unitarias de {@link PasswordResetService} (HU05 Recuperar contraseña).
- * Esta clase no tenía ninguna prueba: solo se conocía indirectamente a través del mock en otros
- * tests, así que ninguna de las 19 CA de HU05 estaba realmente verificada.
+ * Pruebas unitarias de {@link PasswordResetService} (recuperar contraseña).
+ * Verifica el flujo real: en los demás tests el servicio solo aparece como mock.
  */
 @ExtendWith(MockitoExtension.class)
 class PasswordResetServiceTest {
@@ -43,11 +42,11 @@ class PasswordResetServiceTest {
     private PasswordResetService passwordResetService;
 
     @Nested
-    @DisplayName("requestPasswordReset - CA01/CA02 (mensaje genérico, no revela si el correo existe)")
+    @DisplayName("requestPasswordReset - mensaje genérico, no revela si el correo existe")
     class RequestPasswordReset {
 
         @Test
-        @DisplayName("CA02 - Correo registrado: emite y envía el código de recuperación")
+        @DisplayName("Correo registrado: emite y envía el código de recuperación")
         void deberiaEmitirYEnviarElCodigoCuandoElCorreoEstaRegistrado() {
             // Arrange
             User user = new User();
@@ -63,7 +62,7 @@ class PasswordResetServiceTest {
         }
 
         @Test
-        @DisplayName("CA01 - Correo no registrado: no hace nada observable (mismo comportamiento externo)")
+        @DisplayName("Correo no registrado: no hace nada observable (mismo comportamiento externo)")
         void noDeberiaHacerNadaCuandoElCorreoNoEstaRegistrado() {
             // Arrange
             when(userRepository.findByEmail("noexiste@example.com")).thenReturn(Optional.empty());
@@ -77,11 +76,11 @@ class PasswordResetServiceTest {
     }
 
     @Nested
-    @DisplayName("resetPassword - CA12 (éxito) y propagación de errores del código")
+    @DisplayName("resetPassword - éxito y propagación de errores del código")
     class ResetPassword {
 
         @Test
-        @DisplayName("CA12/CA19 - Código válido y contraseña válida: actualiza la contraseña y revoca la sesión")
+        @DisplayName("Código válido y contraseña válida: actualiza la contraseña y revoca la sesión")
         void deberiaActualizarLaContraseñaYRevocarLaSesionCuandoElCodigoEsValido() {
             // Arrange
             UUID userId = UUID.randomUUID();
@@ -102,7 +101,7 @@ class PasswordResetServiceTest {
             assertThat(user.getPasswordChangedAt()).isNotNull();
             assertThat(user.getFailedAttempts()).isZero();
             verify(userRepository).save(user);
-            verify(sessionService).revoke(userId); // CA19: no continúa con una sesión antigua
+            verify(sessionService).revoke(userId); // no continúa con una sesión antigua
         }
 
         @Test

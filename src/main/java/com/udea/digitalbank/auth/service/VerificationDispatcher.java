@@ -20,30 +20,40 @@ public class VerificationDispatcher {
         this.emailService = emailService;
     }
 
-    // Devuelve el id del reto: el flujo LOGIN lo entrega al cliente
+    /** Devuelve el id del reto: el flujo LOGIN lo entrega al cliente. */
     public IssuedChallenge issueAndSend(User user, PurposeEnum purpose) {
         return issueAndSend(user, purpose, null);
     }
 
-    // El detalle (p. ej. el monto de una transferencia) va en el correo para que el titular sepa qué autoriza
+    /**
+     * Emite el código y lo envía por correo, precedido de una descripción de la operación que autoriza.
+     *
+     * @param user    destinatario del código
+     * @param purpose propósito del código
+     * @param detail  descripción de la operación (por ejemplo, el monto de una transferencia); puede ser {@code null}
+     * @return el código emitido
+     */
     public IssuedChallenge issueAndSend(User user, PurposeEnum purpose, String detail) {
         IssuedChallenge challenge = verificationService.issue(user, purpose);
         send(user, purpose, challenge, detail);
         return challenge;
     }
 
-    // Para los flujos públicos que no deben permitir llenar la bandeja de otra persona:
-    // si el último código es muy reciente, no emite ni envía nada
+    /**
+     * Para los flujos públicos que no deben permitir llenar la bandeja de otra persona:
+     * si el último código es muy reciente, no emite ni envía nada.
+     */
     public void issueAndSendThrottled(User user, PurposeEnum purpose) {
         verificationService.issueThrottled(user, purpose)
                 .ifPresent(challenge -> send(user, purpose, challenge));
     }
 
-    // Envía un código que ya emitió VerificationService (p. ej. al reenviarlo)
+    /** Envía un código que VerificationService ya ha emitido (p. ej. al reenviarlo). */
     public void send(User user, PurposeEnum purpose, IssuedChallenge challenge) {
         send(user, purpose, challenge, null);
     }
 
+    /** Arma y envía el correo; si hay detalle, va antes del código. */
     private void send(User user, PurposeEnum purpose, IssuedChallenge challenge, String detail) {
         String body = "Tu código es: " + challenge.code() + ". Expira en " + challenge.ttlMinutes() + " minutos.";
         emailService.send(user.getEmail(), subject(purpose), detail == null ? body : detail + "\n\n" + body);

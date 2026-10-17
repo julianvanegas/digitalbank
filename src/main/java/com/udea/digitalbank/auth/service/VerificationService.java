@@ -48,7 +48,7 @@ public class VerificationService {
         this.resendIntervalSeconds = resendIntervalSeconds;
     }
 
-    // Un reto por (usuario, propósito): pedir uno nuevo reemplaza el anterior
+    /** Un reto por (usuario, propósito): pedir uno nuevo reemplaza el anterior. */
     @Transactional
     public IssuedChallenge issue(User user, PurposeEnum purposeEnum) {
         ChallengePurpose purpose = catalogs.purpose(purposeEnum);
@@ -67,7 +67,7 @@ public class VerificationService {
         return new IssuedChallenge(challenge.getId(), code, purpose.getTtlMinutes());
     }
 
-    // Igual que issue, pero vacío si el último reto se emitió hace menos del intervalo mínimo
+    /** Igual que issue, pero vacío si el último reto se ha emitido hace menos del intervalo mínimo. */
     @Transactional
     public Optional<IssuedChallenge> issueThrottled(User user, PurposeEnum purposeEnum) {
         Optional<VerificationChallenge> current =
@@ -116,8 +116,10 @@ public class VerificationService {
                 remainingResends, resendIntervalSeconds);
     }
 
-    // Flujo LOGIN: el cliente conoce el id del reto
-    // noRollbackFor: el conteo de fallos y el borrado del reto deben persistir aunque se lance la excepción
+    /**
+     * Flujo LOGIN: el cliente conoce el id del reto
+     * noRollbackFor: el conteo de fallos y el borrado del reto deben persistir aunque se lance la excepción.
+     */
     @Transactional(noRollbackFor = InvalidVerificationCodeException.class)
     public UUID verifyById(UUID challengeId, PurposeEnum purposeEnum, String code) {
         VerificationChallenge challenge = challengeRepository.lockByIdAndPurpose(challengeId, purposeEnum.name())
@@ -125,7 +127,7 @@ public class VerificationService {
         return consume(challenge, code);
     }
 
-    // Flujos que no revelan si un email existe: se resuelve por (email, propósito)
+    /** Flujos que no revelan si un email existe: se resuelve por (email, propósito). */
     @Transactional(noRollbackFor = InvalidVerificationCodeException.class)
     public UUID verifyByEmail(String email, PurposeEnum purposeEnum, String code) {
         User user = userRepository.findByEmail(email)
@@ -137,11 +139,19 @@ public class VerificationService {
     }
 
     /**
-     * Verifica el código vigente de un usuario para un propósito y dice qué pasó, sin lanzar excepción: quien llama
-     * decide qué hacer con cada resultado (p. ej. cancelar la transacción que el código autorizaba). Un código que
-     * ya no existe se trata como vencido: solo desaparece por vencimiento, por agotar los intentos o por haberse
-     * reemplazado, y los dos últimos casos los conoce quien llama. Mismas reglas que {@link #verifyById}, porque
-     * ambos pasan por {@link #evaluate}.
+     * Verifica el código vigente de un usuario para un propósito y devuelve qué ocurre, sin lanzar excepción. Quien
+     * llama decide qué hacer con cada resultado; por ejemplo, cancelar la operación que el código autorizaba.
+     *
+     * <p>Un código que no existe se trata como vencido. Solo puede faltar por vencimiento, por haberse agotado los
+     * intentos o por haberse reemplazado, y estos dos últimos casos los conoce quien llama.
+     *
+     * <p>Aplica las mismas reglas que los flujos que sí lanzan excepción ({@link #verifyById} y
+     * {@link #verifyByEmail}), porque todos pasan por {@link #evaluate}.
+     *
+     * @param userId       usuario dueño del código
+     * @param purposeEnum  propósito del código
+     * @param code         código recibido por el usuario
+     * @return el resultado de la verificación
      */
     @Transactional
     public CodeCheckResult check(UUID userId, PurposeEnum purposeEnum, String code) {
@@ -155,8 +165,14 @@ public class VerificationService {
         challengeRepository.deleteExpired(LocalDateTime.now());
     }
 
-    // Los flujos que lanzan excepción (login, email, recuperación) no distinguen por qué falló el código: para ellos
-    // incorrecto, agotado y vencido son lo mismo
+    /**
+     * Adapta {@link #evaluate} a los flujos que lanzan excepción (login, confirmación de correo y recuperación de
+     * contraseña). Esos flujos no distinguen por qué falla el código: incorrecto, agotado y vencido responden igual,
+     * para no dar pistas sobre el estado del código.
+     *
+     * @return el usuario dueño del código, si es válido
+     * @throws InvalidVerificationCodeException si el código no es válido por cualquier motivo
+     */
     private UUID consume(VerificationChallenge challenge, String code) {
         if (evaluate(challenge, code).outcome() != CodeCheckResult.Outcome.VALID) {
             throw new InvalidVerificationCodeException(INVALID_MESSAGE);
@@ -165,8 +181,16 @@ public class VerificationService {
     }
 
     /**
-     * Las reglas del código, en un solo lugar: vencido se elimina sin comparar; correcto se consume (uso único);
-     * incorrecto cuenta como intento y, al agotarlos, el código se borra. Las usan {@link #check} y {@link #consume}.
+     * Reglas del código de verificación, definidas en un solo lugar para {@link #check} y {@link #consume}:
+     * <ul>
+     *   <li>Vencido: se elimina sin comparar el código.</li>
+     *   <li>Correcto: se elimina, porque el código es de un solo uso.</li>
+     *   <li>Incorrecto: cuenta como intento fallido y, al alcanzar el máximo del propósito, se elimina.</li>
+     * </ul>
+     *
+     * @param challenge código vigente, ya leído con bloqueo de escritura
+     * @param code      código que presenta el usuario; {@code null} cuenta como incorrecto
+     * @return el resultado de la verificación
      */
     private CodeCheckResult evaluate(VerificationChallenge challenge, String code) {
         if (challenge.getExpiresAt().isBefore(LocalDateTime.now())) {

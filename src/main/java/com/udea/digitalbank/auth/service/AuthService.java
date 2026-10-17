@@ -45,7 +45,10 @@ public class AuthService {
         this.unknownUserHash = passwordEncoder.encode(UUID.randomUUID().toString());
     }
 
-    // noRollbackFor: el fallo de contraseña debe persistir el contador (y el bloqueo) aunque se lance la excepción
+    /**
+     * Con {@code noRollbackFor}, el fallo de contraseña persiste el contador (y el bloqueo) aunque se lance la
+     * excepción.
+     */
     @Transactional(noRollbackFor = {InvalidCredentialsException.class, UserNotEnabledException.class})
     public LoginResponse login(LoginRequest request) {
         User user = userRepository.findByEmail(request.getEmail()).orElse(null);
@@ -102,8 +105,10 @@ public class AuthService {
         return new AuthResponse(sessionService.start(user));
     }
 
-    // Reglas del reenvío en VerificationService. Si el usuario dejó de estar ACTIVE, la excepción revierte
-    // el reenvío (el reto vuelve a su estado anterior) y no se envía ningún correo.
+    /**
+     * Reglas del reenvío en VerificationService. Si el usuario ya no está ACTIVE, la excepción revierte
+     * el reenvío (el reto vuelve a su estado anterior) y no se envía ningún correo.
+     */
     @Transactional
     public ResendTwoFactorResponse resendTwoFactor(UUID challengeId) {
         ResentChallenge resent = verificationService.resend(challengeId, PurposeEnum.LOGIN);

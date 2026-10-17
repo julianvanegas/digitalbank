@@ -8,5 +8,5 @@ import java.util.UUID;
 @Data
 public class ResendTwoFactorRequest {
     @NotNull
-    private UUID challengeId;     // el que devolvió /login: no cambia entre reenvíos
+    private UUID challengeId;     // el que devuelve /login: no cambia entre reenvíos
 }

@@ -26,7 +26,7 @@ public class CodeHasher {
         this.key = secret.getBytes(StandardCharsets.UTF_8);
     }
 
-    // El usuario y el propósito van en el mensaje: el mismo código produce hashes distintos por reto
+    /** El usuario y el propósito van en el mensaje: el mismo código produce hashes distintos por reto. */
     public String hash(UUID userId, short purposeId, String code) {
         try {
             Mac mac = Mac.getInstance(ALGORITHM);
