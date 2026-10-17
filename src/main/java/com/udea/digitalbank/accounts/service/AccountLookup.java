@@ -38,7 +38,7 @@ class AccountLookup {
     }
 
     // La cuenta de otro cliente se trata como inexistente: un 403 confirmaría que el número existe.
-    // El mensaje lleva el número que envió el cliente, nunca el id interno: así "no existe" y
+    // El mensaje lleva el número que envía el cliente, nunca el id interno: así "no existe" y
     // "es de otro cliente" producen exactamente la misma respuesta
     Account byNumberOwnedBy(String accountNumber, UUID customerId) {
         return requireOwner(byNumber(accountNumber), accountNumber, customerId);

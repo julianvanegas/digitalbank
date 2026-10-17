@@ -9,8 +9,9 @@ import org.springframework.stereotype.Component;
 import java.util.UUID;
 
 /**
- * Arma el comprobante de una transacción para TransferService y TransactionQueryService. La transacción guarda ids
- * de cuenta y el cliente conoce números, así que el número se completa aquí, en un solo lugar.
+ * Arma el comprobante ({@link TransactionResponse}) de una transacción para {@code TransferService} y
+ * {@code TransactionQueryService}. La transacción guarda ids de cuenta pero el ordenante conoce números de cuenta, así
+ * que la traducción se hace aquí, en un solo lugar.
  */
 @Component
 class TransactionResponses {
@@ -23,13 +24,26 @@ class TransactionResponses {
         this.accountApi = accountApi;
     }
 
-    /** Busca los números de cuenta; un depósito no tiene emisora ni un retiro receptora, y esa queda nula. */
+    /**
+     * Arma el comprobante consultando los números de cuenta. Un depósito no tiene cuenta de origen ni un retiro cuenta
+     * de destino; en ese caso el número correspondiente queda {@code null}.
+     *
+     * @param transaction transacción a convertir
+     * @return el comprobante, sin vencimiento de código
+     */
     TransactionResponse of(Transaction transaction) {
         return of(transaction, numberOf(transaction.getSenderAccountId()),
                 numberOf(transaction.getReceiverAccountId()));
     }
 
-    /** Para quien ya tiene los números a mano y evita consultarlos de nuevo. */
+    /**
+     * Arma el comprobante con los números de cuenta que quien llama ya conoce, sin consultarlos de nuevo.
+     *
+     * @param transaction    transacción a convertir
+     * @param senderNumber   número de la cuenta de origen
+     * @param receiverNumber número de la cuenta de destino
+     * @return el comprobante, sin vencimiento de código
+     */
     TransactionResponse of(Transaction transaction, String senderNumber, String receiverNumber) {
         TransactionResponse response = mapper.toResponse(transaction);
         response.setSenderAccountNumber(senderNumber);
@@ -37,6 +51,7 @@ class TransactionResponses {
         return response;
     }
 
+    /** Número de la cuenta, o {@code null} si la transacción no tiene cuenta de ese lado. */
     private String numberOf(UUID accountId) {
         return accountId == null ? null : accountApi.getAccount(accountId).accountNumber();
     }

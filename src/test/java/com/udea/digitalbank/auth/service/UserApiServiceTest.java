@@ -37,12 +37,12 @@ import static org.mockito.Mockito.when;
 
 /**
  * Pruebas unitarias (AAA) para UserApiService.
- * Aquí quedó, tras la reestructuración, la parte de HU01 que antes vivía en CustomerService:
- * unicidad de email (CA06/CA07) y el hash de la contraseña. El registro completo de HU01 se
- * cubre combinando esta clase con CustomerServiceTest (edad, tipo de documento, documento duplicado).
+ * Cubre la parte del registro de clientes que corresponde a UserApiService: unicidad de email y hash de la
+ * contraseña. El registro completo se cubre combinando esta clase con CustomerServiceTest (edad, tipo de documento,
+ * documento duplicado).
  */
 @ExtendWith(MockitoExtension.class)
-@DisplayName("UserApiService - soporte de HU01 (unicidad de email, creación de usuario)")
+@DisplayName("UserApiService - soporte del registro (unicidad de email, creación de usuario)")
 class UserApiServiceTest {
 
     @Mock
@@ -82,11 +82,11 @@ class UserApiServiceTest {
     }
 
     @Nested
-    @DisplayName("createUser - HU01 (CA06, CA07, y parte de CA01)")
+    @DisplayName("createUser - unicidad de email y creación del usuario")
     class CreateUserTests {
 
         @Test
-        @DisplayName("CA07 - Rechaza la creación si el email ya está registrado")
+        @DisplayName("Rechaza la creación si el email ya está registrado")
         void hu01_ca07_deberiaRechazarCreacionSiEmailYaExiste() {
             // Arrange
             when(userRepository.existsByEmail("ana@example.com")).thenReturn(true);
@@ -101,7 +101,7 @@ class UserApiServiceTest {
         }
 
         @Test
-        @DisplayName("CA06 - Acepta la creación si el email no está registrado")
+        @DisplayName("Acepta la creación si el email no está registrado")
         void hu01_ca06_deberiaAceptarCreacionSiEmailNoExiste() {
             // Arrange
             when(userRepository.existsByEmail("ana@example.com")).thenReturn(false);
@@ -166,7 +166,7 @@ class UserApiServiceTest {
             // Act
             userApi.createUser("ana@example.com", RoleEnum.CUSTOMER);
 
-            // Assert: se pidió explícitamente el estado PENDING_VERIFICATION al catálogo
+            // Assert: se solicita explícitamente el estado PENDING_VERIFICATION al catálogo
             verify(catalogs).status(UserStatusEnum.PENDING_VERIFICATION);
         }
 

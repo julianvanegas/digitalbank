@@ -22,13 +22,13 @@ public class AuthSecurity implements SecurityModule {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
 
-    // BCrypt: nunca se guarda el password en texto plano
+    /** BCrypt: nunca se guarda el password en texto plano. */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    // /api/v1/auth/logout no es público a propósito: exige autenticación (ver roleRoutes)
+    /** /api/v1/auth/logout no es público a propósito: exige autenticación (ver roleRoutes). */
     @Override
     public List<PublicRoute> publicRoutes() {
         return List.of(
@@ -41,7 +41,7 @@ public class AuthSecurity implements SecurityModule {
                 PublicRoute.post("/api/v1/auth/reset-password"));
     }
 
-    // Cerrar sesión lo puede hacer cualquier usuario autenticado, sea cual sea su rol
+    /** Cerrar sesión lo puede hacer cualquier usuario autenticado, sea cual sea su rol. */
     @Override
     public List<RoleRoute> roleRoutes() {
         return List.of(RoleRoute.anyAuthenticated(HttpMethod.POST, "/api/v1/auth/logout"));

@@ -1,34 +1,44 @@
 package com.udea.digitalbank.auth.api;
 
 /**
- * Resultado de verificar un código de segundo factor. Lleva los intentos que quedan solo cuando el código fue
- * incorrecto pero sigue vigente; en los demás resultados vale 0.
+ * Resultado de verificar un código de segundo factor.
+ *
+ * @param outcome           qué ocurre con el código
+ * @param remainingAttempts intentos que quedan; solo tiene valor cuando el código es incorrecto pero sigue vigente
+ *                          ({@link Outcome#WRONG}), y vale 0 en los demás resultados
  */
 public record CodeCheckResult(Outcome outcome, int remainingAttempts) {
 
     public enum Outcome {
-        /** El código es correcto y vigente: queda consumido. */
+        /** Código correcto y vigente; queda consumido. */
         VALID,
-        /** Incorrecto, con intentos disponibles: el código sigue vigente. */
+        /** Código incorrecto con intentos disponibles; sigue vigente. */
         WRONG,
-        /** Incorrecto y era el último intento: el código quedó invalidado. */
+        /** Código incorrecto en el último intento; queda invalidado. */
         EXHAUSTED,
-        /** Venció o ya no existe: hay que emitir uno nuevo. */
+        /** El código ha vencido o ya no existe; se debe emitir uno nuevo. */
         EXPIRED
     }
 
+    /** @return resultado de un código correcto */
     public static CodeCheckResult valid() {
         return new CodeCheckResult(Outcome.VALID, 0);
     }
 
+    /**
+     * @param remainingAttempts intentos que quedan
+     * @return resultado de un código incorrecto que sigue vigente
+     */
     public static CodeCheckResult wrong(int remainingAttempts) {
         return new CodeCheckResult(Outcome.WRONG, remainingAttempts);
     }
 
+    /** @return resultado de un código incorrecto en el último intento */
     public static CodeCheckResult exhausted() {
         return new CodeCheckResult(Outcome.EXHAUSTED, 0);
     }
 
+    /** @return resultado de un código vencido o inexistente */
     public static CodeCheckResult expired() {
         return new CodeCheckResult(Outcome.EXPIRED, 0);
     }

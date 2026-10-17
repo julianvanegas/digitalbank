@@ -21,7 +21,7 @@ public interface CustomerApi {
      * Busca por tipo y número de documento juntos: el mismo número puede pertenecer a otra persona con
      * otro tipo de documento. Lanza CustomerNotFoundException si no existe.
      * El mensaje de no encontrado incluye el documento consultado; está pensado para un endpoint de ADMIN,
-     * que fue quien lo envió. Si alguna vez se expone esta búsqueda a un cliente, hay que revisarlo.
+     * que es quien lo envía. Si alguna vez se expone esta búsqueda a un cliente, se debe revisar.
      */
     CustomerView getCustomerByDocument(Short documentTypeId, String documentNumber);
 

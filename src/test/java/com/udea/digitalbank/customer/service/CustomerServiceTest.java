@@ -57,7 +57,7 @@ class CustomerServiceTest {
 
     private CustomerService customerService;
 
-    // CustomerLookup se usa real sobre los mismos mocks: así se sigue verificando contra el repositorio y UserApi
+    /** CustomerLookup se usa real sobre los mismos mocks: así se sigue verificando contra el repositorio y UserApi. */
     @BeforeEach
     void setUp() {
         customerService = new CustomerService(customerRepository, documentTypeRepository, userApi, customerMapper,
@@ -96,11 +96,11 @@ class CustomerServiceTest {
     }
 
     @Nested
-    @DisplayName("create - HU01 Registrar cliente")
+    @DisplayName("create - registrar cliente")
     class Create {
 
         @Test
-        @DisplayName("CA01 - Registro exitoso con todos los datos válidos")
+        @DisplayName("Registro exitoso con todos los datos válidos")
         void deberiaCrearClienteCuandoTodosLosDatosSonValidos() {
             // Arrange
             CreateCustomerRequest request = buildValidRequest();
@@ -137,7 +137,7 @@ class CustomerServiceTest {
         }
 
         @Test
-        @DisplayName("CA02 - Se permite el registro cuando el usuario cumple 18 años exactamente hoy")
+        @DisplayName("Se permite el registro cuando el usuario cumple 18 años exactamente hoy")
         void deberiaPermitirRegistroCuandoElUsuarioCumple18AñosHoy() {
             // Arrange
             CreateCustomerRequest request = buildValidRequest();
@@ -166,7 +166,7 @@ class CustomerServiceTest {
         }
 
         @Test
-        @DisplayName("CA03 - Rechaza el registro cuando el usuario es menor de 18 años")
+        @DisplayName("Rechaza el registro cuando el usuario es menor de 18 años")
         void deberiaRechazarRegistroCuandoElUsuarioEsMenorDeEdad() {
             // Arrange
             CreateCustomerRequest request = buildValidRequest();
@@ -198,7 +198,7 @@ class CustomerServiceTest {
         }
 
         @Test
-        @DisplayName("CA05 - Rechaza el registro cuando el número de documento ya está registrado")
+        @DisplayName("Rechaza el registro cuando el número de documento ya está registrado")
         void deberiaRechazarRegistroCuandoElDocumentoYaExiste() {
             // Arrange
             CreateCustomerRequest request = buildValidRequest();
@@ -219,7 +219,7 @@ class CustomerServiceTest {
         }
 
         @Test
-        @DisplayName("CA07 - Rechaza el registro cuando el correo electrónico ya está registrado")
+        @DisplayName("Rechaza el registro cuando el correo electrónico ya está registrado")
         void deberiaRechazarRegistroCuandoElCorreoYaExiste() {
             // Arrange
             CreateCustomerRequest request = buildValidRequest();
@@ -265,11 +265,11 @@ class CustomerServiceTest {
     }
 
     @Nested
-    @DisplayName("getProfile - HU06 Consultar perfil")
+    @DisplayName("getProfile - consultar perfil")
     class GetProfile {
 
         @Test
-        @DisplayName("CA01 - Retorna el perfil del cliente autenticado")
+        @DisplayName("Retorna el perfil del cliente autenticado")
         void deberiaRetornarElPerfilCuandoElClienteExiste() {
             // Arrange
             UUID userId = UUID.randomUUID();
@@ -304,11 +304,11 @@ class CustomerServiceTest {
     }
 
     @Nested
-    @DisplayName("updateProfile - HU07 Actualizar datos de perfil")
+    @DisplayName("updateProfile - actualizar datos de perfil")
     class UpdateProfile {
 
         @Test
-        @DisplayName("CA01 / CA04 - Actualiza solo el dato enviado y conserva los demás sin cambios")
+        @DisplayName("Actualiza solo el dato enviado y conserva los demás sin cambios")
         void deberiaActualizarSoloElCampoEnviadoYConservarLosDemas() {
             // Arrange
             UUID userId = UUID.randomUUID();

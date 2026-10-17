@@ -14,24 +14,34 @@ import java.util.UUID;
 
 public interface AccountRepository extends JpaRepository<Account, UUID> {
 
-    // Siguiente valor de la secuencia de números de cuenta (V10): único y atómico, sin mirar la tabla
+    /**
+     * Siguiente valor de la secuencia {@code account_number_seq}. Es único y se entrega de forma atómica sin consultar
+     * la tabla; el generador lo convierte en un número de cuenta.
+     */
     @Query(value = "select nextval('account_number_seq')", nativeQuery = true)
     long nextAccountNumberValue();
 
-    // Las llaves que ya usan un prefijo, para saber en una sola consulta qué consecutivo está libre
+    /** Las llaves que ya usan un prefijo, para saber en una sola consulta qué consecutivo está libre. */
     @Query("select a.accountKey from Account a where a.accountKey like concat(:prefix, '%')")
     List<String> findKeysByPrefix(@Param("prefix") String prefix);
 
     Optional<Account> findByAccountNumber(String accountNumber);
 
-    // Misma búsqueda, pero bloquea la fila hasta el fin de la transacción (SELECT ... FOR UPDATE): quien
-    // cambia el estado de la cuenta espera a que termine el cambio anterior y lo ve ya aplicado
+    /**
+     * Misma búsqueda, pero bloquea la fila hasta el fin de la transacción (SELECT ... FOR UPDATE): quien
+     * cambia el estado de la cuenta espera a que termine el cambio anterior y lo ve ya aplicado.
+     */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select a from Account a where a.accountNumber = :accountNumber")
     Optional<Account> findByAccountNumberForUpdate(@Param("accountNumber") String accountNumber);
 
-    // Varias cuentas con la fila bloqueada, siempre en el mismo orden (por id): dos transferencias cruzadas entre las
-    // mismas cuentas piden los bloqueos en el mismo orden y se turnan en vez de quedar en un interbloqueo
+    /**
+     * Cuentas con la fila bloqueada para escritura, siempre ordenadas por id. Dos transferencias cruzadas entre las
+     * mismas cuentas piden los bloqueos en el mismo orden y se serializan, en lugar de quedar en un interbloqueo.
+     *
+     * @param ids identificadores de las cuentas a bloquear
+     * @return las cuentas encontradas, ordenadas por id
+     */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select a from Account a where a.id in :ids order by a.id")
     List<Account> findAllByIdForUpdate(@Param("ids") Collection<UUID> ids);

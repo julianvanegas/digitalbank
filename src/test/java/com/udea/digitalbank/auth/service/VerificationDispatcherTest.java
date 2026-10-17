@@ -42,7 +42,7 @@ class VerificationDispatcherTest {
     }
 
     @Nested
-    @DisplayName("issueAndSend - HU03 CA01 (emitir y enviar el código de verificación)")
+    @DisplayName("issueAndSend - emitir y enviar el código de verificación")
     class IssueAndSend {
 
         @Test

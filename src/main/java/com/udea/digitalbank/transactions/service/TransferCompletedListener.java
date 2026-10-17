@@ -12,8 +12,10 @@ import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 /**
- * Envía al ordenante el comprobante de la transferencia. Corre después de confirmarse la transacción: un fallo del
- * correo no deshace una transferencia que ya movió el dinero.
+ * Envía al ordenante el comprobante de la transferencia por correo.
+ *
+ * <p>Se ejecuta después de confirmarse la transacción de base de datos, en una transacción propia: un fallo del correo
+ * no deshace una transferencia que ya ha movido el dinero. Por eso los errores se registran en el log y no se propagan.
  */
 @Slf4j
 @Component
@@ -29,6 +31,11 @@ public class TransferCompletedListener {
         this.emailService = emailService;
     }
 
+    /**
+     * Envía el comprobante de una transferencia completada.
+     *
+     * @param event datos de la transferencia y usuario al que se le envía
+     */
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void onTransferCompleted(TransferCompletedEvent event) {
@@ -40,6 +47,7 @@ public class TransferCompletedListener {
         }
     }
 
+    /** Cuerpo del correo. Las cuentas se muestran enmascaradas: solo los últimos dígitos. */
     private static String body(TransferCompletedEvent event) {
         return "Tu transferencia fue exitosa.\n\n"
                 + "Referencia: " + event.reference() + "\n"

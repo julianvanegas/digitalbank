@@ -5,10 +5,10 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
-// El email no se edita aquí: pertenece a users
+/** El email no se edita aquí: pertenece a users. */
 @Data
 public class UpdateCustomerProfileRequest {
-    // Todos los campos son opcionales, pero uno presente no puede estar en blanco
+    /** Todos los campos son opcionales, pero uno presente no puede estar en blanco. */
     @Size(max = 100) @Pattern(regexp = ".*\\S.*", message = "no puede estar en blanco")
     private String firstNames;
 

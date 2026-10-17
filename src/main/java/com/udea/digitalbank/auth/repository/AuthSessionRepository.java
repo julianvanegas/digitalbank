@@ -12,10 +12,12 @@ import java.util.UUID;
 
 public interface AuthSessionRepository extends JpaRepository<AuthSession, UUID> {
 
-    // Valida y renueva en una sola sentencia atómica: devuelve 1 si la sesión sigue vigente y su usuario tiene el
-    // estado indicado (y desplaza su vencimiento), 0 si no existe, es otro jti, ya venció por inactividad o el
-    // usuario ya no está en ese estado.
-    // Va a la base (no findById): un DELETE masivo previo no actualiza la caché de la transacción
+    /**
+     * Valida y renueva en una sola sentencia atómica: devuelve 1 si la sesión sigue vigente y su usuario tiene el
+     * estado indicado (y desplaza su vencimiento), 0 si no existe, es otro jti, ya ha vencido por inactividad o el
+     * usuario ya no está en ese estado.
+     * Va a la base (no findById): un DELETE masivo previo no actualiza la caché de la transacción.
+     */
     @Modifying
     @Query("""
             update AuthSession s set s.expiresAt = :newExpiresAt

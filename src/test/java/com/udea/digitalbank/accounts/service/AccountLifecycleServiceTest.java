@@ -208,7 +208,7 @@ class AccountLifecycleServiceTest {
         }
 
         @Test
-        @DisplayName("Rechaza cerrar una cuenta bloqueada: primero hay que desbloquearla")
+        @DisplayName("Rechaza cerrar una cuenta bloqueada: primero se debe desbloquearla")
         void deberiaRechazarUnaCuentaBloqueada() {
             // Arrange
             Account account = accountOf(AccountStatusEnum.BLOCKED, "0.00", UUID.randomUUID());

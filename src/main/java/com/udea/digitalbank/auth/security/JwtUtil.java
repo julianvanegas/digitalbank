@@ -18,7 +18,7 @@ public class JwtUtil {
 
     private static final int MIN_SECRET_BYTES = 32;
 
-    // definidos en application.properties: jwt.secret (32+ caracteres) y jwt.expiration-ms
+    /** Valores definidos en application.properties: {@code jwt.secret} (32+ caracteres) y {@code jwt.expiration-ms}. */
     @Value("${jwt.secret}")
     private String secret;
 
@@ -46,8 +46,11 @@ public class JwtUtil {
         return signingKey;
     }
 
-    // el jti sirve para invalidar sesiones anteriores (ver AuthService.verifyTwoFactor)
-    // issuedAt y expiresAt vienen de fuera para que el token y la fila de auth_session coincidan
+    /**
+     * El {@code jti} sirve para invalidar sesiones anteriores (ver {@code AuthService.verifyTwoFactor}). Las fechas
+     * {@code issuedAt} y {@code expiresAt} vienen de fuera para que el token y la fila de {@code auth_session}
+     * coincidan.
+     */
     public String generateToken(UUID userId, String role, String jti, Date issuedAt, Date expiresAt) {
         return Jwts.builder()
                 .subject(String.valueOf(userId))
@@ -75,7 +78,7 @@ public class JwtUtil {
                 .getPayload();
     }
 
-    // Vacío si la firma no coincide, el token expiró o está mal formado: parsea y verifica una sola vez
+    /** Vacío si la firma no coincide, el token ha expirado o está mal formado: parsea y verifica una sola vez. */
     public Optional<Claims> tryParse(String token) {
         try {
             return Optional.of(parseClaims(token));

@@ -8,7 +8,10 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.Immutable;
 
-// Catálogo de solo lectura de los tipos de movimiento
+/**
+ * Fila del catálogo {@code transaction_types}. Es de solo lectura: los tipos los define la migración y
+ * {@link TransactionTypeEnum} es su contrato en el código.
+ */
 @Entity
 @Immutable
 @Table(name = "transaction_types")
@@ -22,6 +25,7 @@ public class TransactionType {
     @Column(nullable = false, unique = true, length = 30)
     private String code;
 
+    /** @return {@code true} si esta fila corresponde al tipo indicado. */
     public boolean is(TransactionTypeEnum expected) {
         return code.equals(expected.name());
     }

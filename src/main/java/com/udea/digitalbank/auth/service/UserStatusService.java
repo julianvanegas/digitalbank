@@ -54,7 +54,7 @@ public class UserStatusService {
         userRepository.save(user);
     }
 
-    // Cambio interno sin matriz (p. ej. confirmar el correo). Los estados válidos son los del catálogo user_status
+    /** Cambio interno sin matriz (p. ej. confirmar el correo). Los estados válidos son los del catálogo user_status. */
     @Transactional
     public void changeStatus(UUID userId, UserStatusEnum statusEnum) {
         User user = userRepository.findById(userId)
@@ -63,7 +63,7 @@ public class UserStatusService {
         userRepository.save(user);
     }
 
-    // Suma un fallo y bloquea al llegar al máximo
+    /** Suma un fallo y bloquea al llegar al máximo. */
     @Transactional
     public void registerFailedAttempt(User user) {
         user.setFailedAttempts((short) (user.getFailedAttempts() + 1));

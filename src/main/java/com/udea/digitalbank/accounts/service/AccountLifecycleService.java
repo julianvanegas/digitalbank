@@ -55,14 +55,14 @@ public class AccountLifecycleService {
     }
 
     /**
-     * Bloqueo temporal de una cuenta por parte de un administrador (HU15). Deja la cuenta en BLOCKED
+     * Bloqueo temporal de una cuenta por parte de un administrador. Deja la cuenta en BLOCKED
      * y registra la acción BLOCKED con su motivo y el administrador; el registro no se modifica después.
      * Solo se debe llamar desde un endpoint que la seguridad reserve a administradores.
      * La fila de la cuenta se bloquea al leerla: de dos bloqueos simultáneos, el segundo espera y ve la cuenta
      * ya BLOCKED, así que se rechaza y no queda una acción duplicada en el registro.
      * <p>
-     * Solo se bloquea una cuenta ACTIVE: una ya bloqueada se rechaza por CA02, y una inactiva o
-     * cerrada también, porque CA01 parte de que la cuenta está activa.
+     * Solo se bloquea una cuenta ACTIVE: una ya bloqueada se rechaza, y una inactiva o
+     * cerrada también, porque el bloqueo parte de que la cuenta está activa.
      */
     @Transactional
     public AccountResponse blockAccount(String accountNumber, String reason, UUID actingUserId) {
@@ -93,7 +93,7 @@ public class AccountLifecycleService {
      * <p>
      * Solo se desbloquea una cuenta BLOCKED: una activa, inactiva o cerrada se rechaza, para que esta
      * operación no reactive por accidente una cuenta que no fue bloqueada. Queda una acción UNLOCKED
-     * en el registro, con el motivo, el administrador que lo ordenó (del token) y la fecha, y se avisa al titular.
+     * en el registro, con el motivo, el administrador que lo ordena (del token) y la fecha, y se avisa al titular.
      */
     @Transactional
     public AccountResponse unblockAccount(String accountNumber, String reason, UUID actingUserId) {
@@ -119,7 +119,7 @@ public class AccountLifecycleService {
 
     /**
      * Cierre de una cuenta. Un cliente cierra las suyas (una ajena responde igual que una inexistente); un
-     * administrador, cualquiera, sin pasar por customerApi. Queda registrado quién la cerró: el motivo dice si fue
+     * administrador, cualquiera, sin pasar por customerApi. Queda registrado quién la cierra: el motivo dice si fue
      * el cliente o un administrador. Las reglas están en {@link #close(Account, String, UUID)}.
      */
     @Transactional
@@ -137,8 +137,8 @@ public class AccountLifecycleService {
      * CLOSED con quién la hizo y avisa al titular. La fila llega bloqueada, así que dos cierres simultáneos se
      * turnan y el segundo ya la ve cerrada.
      * <p>
-     * Solo se cierra una cuenta ACTIVE o INACTIVE y con saldo cero: con dinero hay que retirarlo antes, y una
-     * bloqueada hay que desbloquearla primero, para que cerrarla no sirva para esquivar un bloqueo.
+     * Solo se cierra una cuenta ACTIVE o INACTIVE y con saldo cero: con dinero se debe retirar antes, y una
+     * bloqueada se debe desbloquear primero, para que cerrarla no sirva para esquivar un bloqueo.
      */
     private AccountResponse close(Account account, String reason, UUID actingUserId) {
         account.close(accountCatalog.status(AccountStatusEnum.CLOSED), LocalDateTime.now());

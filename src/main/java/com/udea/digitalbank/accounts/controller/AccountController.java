@@ -19,8 +19,10 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.UUID;
 
-// Los controllers solo traducen HTTP: qué rol entra a cada ruta lo decide AccountSecurity (roleRoutes) antes de llegar
-// aquí, y el servicio decide qué ve o hace el Actor
+/**
+ * Los controllers solo traducen HTTP: qué rol entra a cada ruta lo decide AccountSecurity (roleRoutes) antes de llegar
+ * aquí, y el servicio decide qué ve o hace el Actor.
+ */
 @RestController
 @RequestMapping("/api/v1/accounts")
 public class AccountController {
@@ -49,7 +51,7 @@ public class AccountController {
         return ResponseEntity.status(HttpStatus.CREATED).body(openingService.open(actor, customerId, accountType));
     }
 
-    // Sin paginar: un cliente tiene como máximo tres cuentas abiertas
+    /** Sin paginar: un cliente tiene como máximo tres cuentas abiertas. */
     @GetMapping
     public ResponseEntity<List<AccountResponse>> myAccounts(@CurrentActor Actor actor) {
         return ResponseEntity.ok(queryService.getMyAccounts(actor.userId()));
@@ -64,31 +66,37 @@ public class AccountController {
         return ResponseEntity.ok(queryService.getAccount(actor, accountNumber));
     }
 
-    // Solo administradores: cuentas de un cliente a partir de su documento, en cualquier estado.
-    // Sin paginar: un cliente tiene como máximo tres cuentas abiertas. Tipo y número juntos, como el UNIQUE de customers
+    /**
+     * Solo administradores: cuentas de un cliente a partir de su documento, en cualquier estado.
+     * Sin paginar: un cliente tiene como máximo tres cuentas abiertas. Tipo y número juntos, como el UNIQUE de
+     * customers.
+     */
     @GetMapping("/by-customer")
     public ResponseEntity<List<AccountResponse>> accountsByCustomer(@RequestParam Short documentTypeId,
                                                                     @RequestParam String documentNumber) {
         return ResponseEntity.ok(queryService.getAccountsByDocument(documentTypeId, documentNumber));
     }
 
-    // Solo administradores: saldos de todas las cuentas de un cliente a partir de su documento.
-    // Tipo y número juntos, como el UNIQUE de customers
+    /**
+     * Solo administradores: saldos de todas las cuentas de un cliente a partir de su documento.
+     * Tipo y número juntos, como el UNIQUE de
+     * customers.
+     */
     @GetMapping("/by-customer/balances")
     public ResponseEntity<List<AccountBalanceResponse>> balancesByCustomer(@RequestParam Short documentTypeId,
                                                                            @RequestParam String documentNumber) {
         return ResponseEntity.ok(queryService.getBalancesByDocument(documentTypeId, documentNumber));
     }
 
-    // Mismas reglas que el detalle: el cliente solo ve el saldo de sus cuentas, el administrador el de cualquiera
+    /** Mismas reglas que el detalle: el cliente solo ve el saldo de sus cuentas, el administrador el de cualquiera. */
     @GetMapping("/{accountNumber}/balance")
     public ResponseEntity<AccountBalanceResponse> balance(@CurrentActor Actor actor, @PathVariable String accountNumber) {
         return ResponseEntity.ok(queryService.getBalance(actor, accountNumber));
     }
 
     /**
-     * Bloqueo temporal de una cuenta activa (HU15), solo para administradores. El motivo es obligatorio y queda
-     * en el historial junto con el administrador que lo ordenó, que se toma del token y no del cuerpo.
+     * Bloqueo temporal de una cuenta activa, solo para administradores. El motivo es obligatorio y queda
+     * en el historial junto con el administrador que lo ordena, que se toma del token y no del cuerpo.
      */
     @PatchMapping("/{accountNumber}/block")
     public ResponseEntity<AccountResponse> blockAccount(@CurrentActor Actor actor,
@@ -97,8 +105,10 @@ public class AccountController {
         return ResponseEntity.ok(lifecycleService.blockAccount(accountNumber, request.getReason(), actor.userId()));
     }
 
-    // Solo administradores: devuelve la cuenta de BLOCKED a ACTIVE. El motivo es obligatorio, como en el bloqueo,
-    // y quien lo hizo se toma del token
+    /**
+     * Solo administradores: devuelve la cuenta de BLOCKED a ACTIVE. El motivo es obligatorio, como en el bloqueo,
+     * y quien lo hizo se toma del token.
+     */
     @PatchMapping("/{accountNumber}/unlock")
     public ResponseEntity<AccountResponse> unblockAccount(@CurrentActor Actor actor,
                                                           @PathVariable String accountNumber,
@@ -109,7 +119,7 @@ public class AccountController {
     /**
      * Cierre de una cuenta por su número, sin cuerpo. Un cliente solo cierra las suyas (una ajena responde igual
      * que una inexistente); un administrador, cualquiera. Debe tener saldo cero y no estar bloqueada. Queda
-     * registrado quién la cerró y se avisa al titular por correo.
+     * registrado quién la cierra y se avisa al titular por correo.
      */
     @PatchMapping("/{accountNumber}/close")
     public ResponseEntity<AccountResponse> closeAccount(@CurrentActor Actor actor, @PathVariable String accountNumber) {

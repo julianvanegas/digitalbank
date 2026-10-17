@@ -27,13 +27,13 @@ public class CustomerController {
         this.customerService = customerService;
     }
 
-    // Público (ver SecurityConfig): crea el cliente y su usuario en un solo request
+    /** Público (ver SecurityConfig): crea el cliente y su usuario en un solo request. */
     @PostMapping
     public ResponseEntity<CustomerResponse> create(@Valid @RequestBody CreateCustomerRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(customerService.create(request));
     }
 
-    // Público (ver CustomerSecurity): el formulario de registro necesita los ids antes de tener token
+    /** Público (ver CustomerSecurity): el formulario de registro necesita los ids antes de tener token. */
     @GetMapping("/document-types")
     public ResponseEntity<List<DocumentTypeResponse>> documentTypes() {
         return ResponseEntity.ok(customerService.getDocumentTypes());
@@ -57,7 +57,7 @@ public class CustomerController {
         return ResponseEntity.ok(customerService.getAllCustomers(pageable));
     }
 
-    // Tipo y número juntos, como el UNIQUE de customers (igual que /accounts/by-customer)
+    /** Tipo y número juntos, como el UNIQUE de customers (igual que /accounts/by-customer). */
     @GetMapping("/by-document")
     public ResponseEntity<CustomerResponse> getCustomer(@RequestParam Short documentTypeId,
                                                         @RequestParam String documentNumber) {

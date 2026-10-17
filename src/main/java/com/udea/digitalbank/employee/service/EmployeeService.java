@@ -36,9 +36,11 @@ public class EmployeeService {
         this.employeeLookup = employeeLookup;
     }
 
-    // Usuario y perfil en una sola transacción: si algo falla no quedan usuarios sin perfil ni al revés.
-    // La contraseña inicial es aleatoria y no se entrega a nadie: el empleado confirma su correo con el
-    // código que recibe y define la suya en ese mismo paso (verify-email); queda ACTIVE al verificar.
+    /**
+     * Usuario y perfil en una sola transacción: si algo falla no quedan usuarios sin perfil ni al revés.
+     * La contraseña inicial es aleatoria y no se entrega a nadie: el empleado confirma su correo con el
+     * código que recibe y define la suya en ese mismo paso (verify-email); queda ACTIVE al verificar.
+     */
     @Transactional
     public EmployeeResponse create(CreateEmployeeRequest request) {
         // Valida el email único, guarda el hash y deja al usuario en PENDING_VERIFICATION
@@ -52,7 +54,7 @@ public class EmployeeService {
         return employeeMapper.toResponse(employeeRepository.save(employee), user);
     }
 
-    // Perfil propio: se identifica por el id del usuario que viaja en el JWT
+    /** Perfil propio: se identifica por el id del usuario que viaja en el JWT. */
     @Transactional(readOnly = true)
     public EmployeeResponse getProfile(UUID userId) {
         return toResponse(employeeLookup.byUserId(userId));
@@ -83,9 +85,11 @@ public class EmployeeService {
         return employees.map(e -> employeeMapper.toResponse(e, users.get(e.getUserId())));
     }
 
-    // Solo se debe llamar desde un endpoint que la seguridad reserve a administradores.
-    // Un administrador no cambia su propio estado: evita que se bloquee o inactive a sí mismo.
-    // auth valida que el estado exista en el catálogo user_status
+    /**
+     * Solo se debe llamar desde un endpoint que la seguridad reserve a administradores.
+     * Un administrador no cambia su propio estado: evita que se bloquee o inactive a sí mismo.
+     * auth valida que el estado exista en el catálogo user_status.
+     */
     @Transactional
     public void changeStatus(UUID employeeId, UserStatusEnum statusEnum, UUID actingUserId) {
         Employee employee = employeeLookup.byId(employeeId);

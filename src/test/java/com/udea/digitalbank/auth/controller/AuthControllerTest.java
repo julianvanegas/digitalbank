@@ -54,7 +54,7 @@ class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("verifyEmail - HU01 (confirmación de correo): delega con la contraseña y su confirmación y responde 204")
+    @DisplayName("verifyEmail - confirmación de correo: delega con la contraseña y su confirmación y responde 204")
     void verifyEmail_deberiaDelegarYResponder204() {
         // Arrange
         VerifyEmailRequest request = new VerifyEmailRequest();
@@ -87,7 +87,7 @@ class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("login - HU02: responde 200 con el resultado de AuthService, sin emitir el JWT todavía")
+    @DisplayName("login - responde 200 con el resultado de AuthService, sin emitir el JWT todavía")
     void login_deberiaResponder200ConResultadoDelService() {
         // Arrange
         LoginRequest request = new LoginRequest();
@@ -106,7 +106,7 @@ class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("verifyTwoFactor - HU03: delega challengeId y code, responde 200 con el token")
+    @DisplayName("verifyTwoFactor - delega challengeId y code, responde 200 con el token")
     void verifyTwoFactor_deberiaDelegarYResponder200() {
         // Arrange
         UUID challengeId = UUID.randomUUID();
@@ -125,7 +125,7 @@ class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("logout - HU04: obtiene el userId del principal autenticado y responde 204")
+    @DisplayName("logout - obtiene el userId del principal autenticado y responde 204")
     void logout_deberiaUsarPrincipalYResponder204() {
         // Arrange
         UUID userId = UUID.randomUUID();
@@ -139,7 +139,7 @@ class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("recoverPassword - HU05: delega el email y responde 204 (mensaje siempre genérico)")
+    @DisplayName("recoverPassword - delega el email y responde 204 (mensaje siempre genérico)")
     void recoverPassword_deberiaDelegarYResponder204() {
         // Arrange
         EmailRequest request = new EmailRequest();
@@ -154,7 +154,7 @@ class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("resetPassword - HU05: delega email, código y nueva contraseña, responde 204")
+    @DisplayName("resetPassword - delega email, código y nueva contraseña, responde 204")
     void resetPassword_deberiaDelegarYResponder204() {
         // Arrange
         PasswordResetRequest request = new PasswordResetRequest();

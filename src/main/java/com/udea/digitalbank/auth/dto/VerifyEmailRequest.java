@@ -5,7 +5,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
-// La persona define su contraseña al confirmar el correo; la confirmación se compara en el service
+/** La persona define su contraseña al confirmar el correo; la confirmación se compara en el service. */
 @Data
 public class VerifyEmailRequest {
     @NotBlank @Email

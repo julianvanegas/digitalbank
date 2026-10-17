@@ -34,33 +34,35 @@ public class Account {
 
     public static final int ACCOUNT_NUMBER_LENGTH = 12;
 
-    // El consecutivo de la llave puede crecer, así que la columna deja margen de sobra
+    /** El consecutivo de la llave puede crecer, así que la columna deja margen de sobra. */
     public static final int MAX_KEY_LENGTH = 64;
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    // Identificador público de la cuenta: 12 dígitos (CHAR(12)), único e inmutable
+    /** Identificador público de la cuenta: 12 dígitos (CHAR(12)), único e inmutable. */
     @JdbcTypeCode(SqlTypes.CHAR)
     @Column(nullable = false, unique = true, updatable = false, length = ACCOUNT_NUMBER_LENGTH)
     private String accountNumber;
 
     /**
-     * Llave visible de la cuenta, con la estructura de CA01: arroba, dos letras del primer nombre,
+     * Llave visible de la cuenta, con esta estructura: arroba, dos letras del primer nombre,
      * tres dígitos del documento y un consecutivo. Se calcula una sola vez al abrir la cuenta y no
      * se recalcula después: si el cliente corrige su nombre, la llave de una cuenta existente no cambia.
      */
     @Column(nullable = false, unique = true, updatable = false, length = MAX_KEY_LENGTH)
     private String accountKey;
 
-    // Sin @ManyToOne hacia customer para mantener los módulos desacoplados
+    /** Sin {@code @ManyToOne} hacia customer para mantener los módulos desacoplados. */
     @Column(nullable = false, updatable = false)
     private UUID customerId;
 
-    // Posición dentro del cupo del titular (1 a 3): junto con el UNIQUE parcial (customer_id, account_index)
-    // de la base, que solo mira las cuentas no cerradas, impide una cuarta cuenta abierta incluso con dos
-    // aperturas simultáneas. Una cuenta cerrada libera su posición para la siguiente
+    /**
+     * Posición dentro del cupo del titular (1 a 3): junto con el UNIQUE parcial (customer_id, account_index)
+     * de la base, que solo mira las cuentas no cerradas, impide una cuarta cuenta abierta incluso con dos
+     * aperturas simultáneas. Una cuenta cerrada libera su posición para la siguiente.
+     */
     @Column(nullable = false, updatable = false)
     private Short accountIndex;
 
@@ -72,8 +74,10 @@ public class Account {
     @JoinColumn(name = "status_id", nullable = false)
     private AccountStatus status;
 
-    // Con la escala de la columna desde el principio: así el saldo se serializa igual
-    // recién creada la cuenta ("0.00") que leída de la base, y no como "0"
+    /**
+     * Con la escala de la columna desde el principio: así el saldo se serializa igual
+     * recién creada la cuenta ("0.00") que leída de la base, y no como "0".
+     */
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal balance = INITIAL_BALANCE;
 
@@ -114,7 +118,7 @@ public class Account {
         return status.is(expected);
     }
 
-    /** Bloqueo temporal (CA01): solo una cuenta activa; una ya bloqueada se rechaza por CA02. */
+    /** Bloqueo temporal: solo una cuenta activa; una ya bloqueada se rechaza. */
     public void block(AccountStatus blockedStatus) {
         if (is(AccountStatusEnum.BLOCKED)) {
             throw new AccountNotBlockableException("La cuenta " + accountNumber + " ya está bloqueada");
@@ -138,8 +142,8 @@ public class Account {
     }
 
     /**
-     * Cierre: solo una cuenta ACTIVE o INACTIVE y con saldo cero. Con dinero hay que retirarlo antes, y una
-     * bloqueada hay que desbloquearla primero, para que cerrarla no sirva para esquivar un bloqueo. Deja el estado
+     * Cierre: solo una cuenta ACTIVE o INACTIVE y con saldo cero. Con dinero se debe retirar antes, y una
+     * bloqueada se debe desbloquear primero, para que cerrarla no sirva para esquivar un bloqueo. Deja el estado
      * y la fecha de cierre a la vez, porque la base exige las dos cosas juntas.
      */
     public void close(AccountStatus closedStatus, LocalDateTime closedAt) {
@@ -160,23 +164,42 @@ public class Account {
     }
 
     /**
-     * Retiro de saldo por una transferencia: solo una cuenta ACTIVE y con saldo suficiente. El saldo nunca queda
-     * negativo (la base también lo exige con un CHECK). Quien la llama debe haberla leído con bloqueo.
+     * Retira un monto del saldo por una transferencia. La cuenta debe estar {@code ACTIVE} y tener saldo suficiente;
+     * el saldo nunca queda negativo (la base también lo exige con un {@code CHECK}). Quien la llama debe haber leído
+     * la cuenta con bloqueo de escritura.
+     *
+     * @param amount monto positivo a retirar
+     * @throws AccountNotActiveException    si la cuenta no está {@code ACTIVE}
+     * @throws InsufficientFundsException   si el saldo es menor que el monto
+     * @throws IllegalArgumentException     si el monto no es positivo
      */
     public void debit(BigDecimal amount) {
         requireCanDebit(amount);
         balance = balance.subtract(amount);
     }
 
-    /** Abono de saldo por una transferencia: solo a una cuenta ACTIVE. */
+    /**
+     * Abona un monto al saldo por una transferencia. La cuenta debe estar {@code ACTIVE}. Quien la llama debe haber
+     * leído la cuenta con bloqueo de escritura.
+     *
+     * @param amount monto positivo a abonar
+     * @throws AccountNotActiveException si la cuenta no está {@code ACTIVE}
+     * @throws IllegalArgumentException  si el monto no es positivo
+     */
     public void credit(BigDecimal amount) {
         requireCanCredit(amount);
         balance = balance.add(amount);
     }
 
     /**
-     * Lo que debe cumplirse para retirar el monto, sin cambiar nada. Existe aparte para que una transferencia
-     * valide las dos cuentas antes de mover dinero en cualquiera: si la segunda falla, la primera no queda a medias.
+     * Comprueba que se puede retirar el monto, sin modificar el saldo. Existe por separado para que una transferencia
+     * valide las dos cuentas antes de mover dinero en cualquiera de ellas: si la segunda falla, la primera no queda
+     * a medias.
+     *
+     * @param amount monto positivo a retirar
+     * @throws AccountNotActiveException  si la cuenta no está {@code ACTIVE}
+     * @throws InsufficientFundsException si el saldo es menor que el monto
+     * @throws IllegalArgumentException   si el monto no es positivo
      */
     public void requireCanDebit(BigDecimal amount) {
         requirePositive(amount);
@@ -186,13 +209,19 @@ public class Account {
         }
     }
 
-    /** Lo que debe cumplirse para abonar el monto, sin cambiar nada. */
+    /**
+     * Comprueba que se puede abonar el monto, sin modificar el saldo. Véase {@link #requireCanDebit}.
+     *
+     * @param amount monto positivo a abonar
+     * @throws AccountNotActiveException si la cuenta no está {@code ACTIVE}
+     * @throws IllegalArgumentException  si el monto no es positivo
+     */
     public void requireCanCredit(BigDecimal amount) {
         requirePositive(amount);
         requireActiveForMovement();
     }
 
-    // Una cuenta inactiva, bloqueada o cerrada no mueve dinero, ni para entregarlo ni para recibirlo
+    // Una cuenta inactiva, bloqueada o cerrada no mueve dinero: ni para entregarlo ni para recibirlo
     private void requireActiveForMovement() {
         if (!is(AccountStatusEnum.ACTIVE)) {
             throw new AccountNotActiveException("La cuenta " + accountNumber + " no está activa; su estado es "
@@ -200,6 +229,7 @@ public class Account {
         }
     }
 
+    // Un monto nulo, cero o negativo es un error de programación, no una entrada del cliente: esa se valida antes
     private static void requirePositive(BigDecimal amount) {
         if (amount == null || amount.signum() <= 0) {
             throw new IllegalArgumentException("El monto de un movimiento debe ser positivo");

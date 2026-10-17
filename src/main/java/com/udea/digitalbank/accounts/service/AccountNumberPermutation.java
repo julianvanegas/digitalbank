@@ -23,10 +23,14 @@ import java.security.GeneralSecurityException;
 @Component
 class AccountNumberPermutation {
 
+    /** Cantidad de dígitos de un número de cuenta. */
     static final int DIGITS = 12;
-    // Primer número válido: 100000000000 (el primer dígito nunca es cero)
+    /** Primer número de cuenta válido: {@code 100000000000}, porque el primer dígito nunca es cero. */
     static final long FIRST = 100_000_000_000L;
-    // Cuántos números válidos hay: de 100000000000 a 999999999999. También es el máximo de la secuencia
+    /**
+     * Cantidad de números válidos (de {@code 100000000000} a {@code 999999999999}); es también el máximo de la
+     * secuencia.
+     */
     static final long SIZE = 900_000_000_000L;
 
     private static final BigInteger N = BigInteger.valueOf(SIZE);
@@ -41,7 +45,13 @@ class AccountNumberPermutation {
         this.offset = derive(key, "offset");
     }
 
-    /** El número de cuenta (12 dígitos) que corresponde al valor de la secuencia, de 1 a {@link #SIZE}. */
+    /**
+     * Convierte un valor de la secuencia en un número de cuenta.
+     *
+     * @param sequenceValue valor de la secuencia, de 1 a {@link #SIZE}
+     * @return el número de cuenta de 12 dígitos que le corresponde; valores distintos dan números distintos
+     * @throws IllegalArgumentException si el valor está fuera de rango
+     */
     String apply(long sequenceValue) {
         if (sequenceValue < 1 || sequenceValue > SIZE) {
             throw new IllegalArgumentException("Valor de la secuencia fuera de rango: " + sequenceValue);
@@ -50,7 +60,7 @@ class AccountNumberPermutation {
         return Long.toString(FIRST + position);
     }
 
-    // Un valor derivado del secreto y una etiqueta, dentro de [0, N)
+    // Deriva del secreto, con HMAC-SHA256 y una etiqueta, un valor dentro de [0, N): así K y C salen de un solo secreto
     private static BigInteger derive(byte[] key, String label) {
         try {
             Mac mac = Mac.getInstance(ALGORITHM);

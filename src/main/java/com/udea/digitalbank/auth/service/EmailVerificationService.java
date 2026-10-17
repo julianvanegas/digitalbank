@@ -66,7 +66,7 @@ public class EmailVerificationService {
         userStatusService.changeStatus(userId, next);
     }
 
-    // Responde igual exista o no el usuario, para no revelar qué emails están registrados
+    /** Responde igual exista o no el usuario, para no revelar qué emails están registrados. */
     @Transactional
     public void resendVerification(String email) {
         userRepository.findByEmail(email)

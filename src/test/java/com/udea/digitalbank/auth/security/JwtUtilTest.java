@@ -13,7 +13,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Pruebas unitarias de {@link JwtUtil}. Sin mocks: se genera y valida un JWT real, porque es
- * exactamente el comportamiento de seguridad que hay que garantizar (nadie debería confiar en un
+ * exactamente el comportamiento de seguridad que se debe garantizar (nadie debería confiar en un
  * doble de esta clase para algo tan sensible como la firma de tokens).
  */
 class JwtUtilTest {
@@ -131,7 +131,7 @@ class JwtUtilTest {
     }
 
     @Nested
-    @DisplayName("tryParse - CA09/CA10 de HU02/HU04 (token expirado o alterado no debe validar)")
+    @DisplayName("tryParse - token expirado o alterado no debe validar")
     class IsValid {
 
         @Test
@@ -149,7 +149,7 @@ class JwtUtilTest {
         @Test
         @DisplayName("Un token con fecha de expiración en el pasado no es válido")
         void noDeberiaSerValidoUnTokenExpirado() {
-            // Arrange: se genera ya vencido (expiró hace 1 minuto)
+            // Arrange: se genera ya vencido (con 1 minuto de vencido)
             Date issuedAt = new Date(System.currentTimeMillis() - 120_000L);
             Date expiresAt = new Date(System.currentTimeMillis() - 60_000L);
             String token = jwtUtil.generateToken(UUID.randomUUID(), "CUSTOMER", "jti-1", issuedAt, expiresAt);

@@ -18,7 +18,7 @@ public class ChallengePurpose {
     @Id
     private Short id;
 
-    // Se mantiene como "purpose" por decisión de diseño del modelo, aunque los demás catálogos usan "code"
+    /** Se mantiene como "purpose" por decisión de diseño del modelo, aunque los demás catálogos usan "code". */
     @Column(nullable = false, unique = true, length = 30)
     private String purpose;
 

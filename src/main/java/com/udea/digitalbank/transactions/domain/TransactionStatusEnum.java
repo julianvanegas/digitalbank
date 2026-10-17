@@ -1,6 +1,16 @@
 package com.udea.digitalbank.transactions.domain;
 
-// Contrato del código con la tabla status_transaction: TransactionCatalog comprueba al arrancar que coinciden
+/**
+ * Estados de una transacción. Deben coincidir con la tabla {@code status_transaction}; {@code TransactionCatalog}
+ * lo comprueba al arrancar y la aplicación no inicia si difieren.
+ */
 public enum TransactionStatusEnum {
-    PENDING, COMPLETED, REJECTED, REVERSED
+    /** Creada y a la espera del segundo factor; todavía no se ha movido dinero. */
+    PENDING,
+    /** El segundo factor está verificado y el dinero se ha movido. */
+    COMPLETED,
+    /** Cancelada sin mover dinero: código agotado o vencido, reemplazada por otra o inválida al confirmar. */
+    REJECTED,
+    /** Revertida mediante una operación compensatoria. Reservado: ningún flujo lo asigna. */
+    REVERSED
 }

@@ -72,7 +72,7 @@ Es una excepción acotada a «solo el inmediato superior»: la flecha sigue yend
 | --- | --- |
 | Que `accounts` exponga métodos de 2FA que solo reenvíen a `auth` | Respeta la letra de la ADR-0002 pero mete en `accounts` una responsabilidad que no es suya y añade una capa sin lógica. |
 | Mover el dinero al iniciar y revertirlo si el código falla | Deja dinero comprometido mientras el cliente decide, exige un REVERSED por cada cancelación y rompe «no existe una lectura aceptable con el dinero a medio camino». |
-| 2FA solo por encima de un umbral de monto | Dos caminos que probar y un umbral que las HU no definen. Con un solo tipo de movimiento implementado, exigirlo siempre es lo más simple y seguro. |
+| 2FA solo por encima de un umbral de monto | Dos caminos que probar y un umbral que el negocio no ha definido. Con un solo tipo de movimiento implementado, exigirlo siempre es lo más simple y seguro. |
 | Vincular el código a la transacción en `verification_challenges` | Obligaría a `auth` a conocer a `transactions`, invirtiendo la dirección de las dependencias. |
 | Registrar también las validaciones fallidas del primer paso como REJECTED | Llenaría la tabla de operaciones que nunca existieron y exigiría una columna de motivo que el modelo no tiene. |
 

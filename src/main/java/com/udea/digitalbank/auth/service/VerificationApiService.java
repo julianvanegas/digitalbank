@@ -11,6 +11,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
+/**
+ * Implementación de {@link VerificationApi}: traduce el contrato que {@code auth} ofrece a otros módulos a los
+ * servicios internos de verificación, con el propósito {@code TRANSACTION}. No contiene reglas propias del código
+ * (vigencia, intentos, uso único): esas viven en {@code VerificationService}.
+ */
 @Service
 public class VerificationApiService implements VerificationApi {
 

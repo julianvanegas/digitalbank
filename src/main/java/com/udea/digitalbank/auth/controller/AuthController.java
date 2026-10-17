@@ -21,8 +21,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-// No hay endpoint de registro: los usuarios se crean desde el módulo de la persona (UserApi.createUser)
-// y definen su contraseña al confirmar su correo (verify-email)
+/**
+ * No hay endpoint de registro: los usuarios se crean desde el módulo de la persona (UserApi.createUser)
+ * y definen su contraseña al confirmar su correo (verify-email).
+ */
 @RestController
 @RequestMapping("/api/v1/auth")
 public class AuthController {
@@ -64,7 +66,7 @@ public class AuthController {
         return ResponseEntity.ok(authService.verifyTwoFactor(request.getChallengeId(), request.getCode()));
     }
 
-    // Público como /verify-2fa: el challengeId que devolvió /login prueba que el primer factor ya se pasó
+    /** Público como /verify-2fa: el challengeId que devuelve /login prueba que el primer factor ya se supera. */
     @PostMapping("/resend-2fa")
     public ResponseEntity<ResendTwoFactorResponse> resendTwoFactor(@Valid @RequestBody ResendTwoFactorRequest request) {
         return ResponseEntity.ok(authService.resendTwoFactor(request.getChallengeId()));

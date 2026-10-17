@@ -11,7 +11,7 @@ import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 /**
- * Emite el reto EMAIL_CONFIRMATION cuando la transacción que creó al usuario ya confirmó.
+ * Emite el reto EMAIL_CONFIRMATION cuando la transacción que crea al usuario ya se ha confirmado.
  * Un fallo del correo no deshace la creación: la persona pide otro código con resend-verification.
  */
 @Slf4j

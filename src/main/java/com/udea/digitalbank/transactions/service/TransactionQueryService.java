@@ -20,8 +20,14 @@ public class TransactionQueryService {
     }
 
     /**
-     * Comprobante por referencia. Quien ordenó la transacción la obtiene; un administrador, cualquiera. La de otro
-     * cliente responde igual que una inexistente: un 403 confirmaría que la referencia existe.
+     * Devuelve el comprobante de una transacción por su referencia. Lo obtiene su ordenante, o un administrador
+     * para cualquiera. La de otro usuario responde igual que una inexistente, porque un 403 confirmaría que la
+     * referencia existe.
+     *
+     * @param actor     usuario autenticado
+     * @param reference comprobante de la transacción
+     * @return el comprobante con los números de cuenta
+     * @throws TransactionNotFoundException si no existe o el usuario no tiene acceso a ella
      */
     @Transactional(readOnly = true)
     public TransactionResponse getTransaction(Actor actor, String reference) {

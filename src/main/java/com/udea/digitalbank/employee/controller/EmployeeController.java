@@ -17,7 +17,10 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
-// Todos los endpoints son de administradores (lo exige EmployeeSecurity): los empleados son los únicos usuarios con rol ADMIN
+/**
+ * Todos los endpoints son de administradores (lo exige EmployeeSecurity): los empleados son los únicos usuarios con
+ * rol ADMIN.
+ */
 @RestController
 @RequestMapping("/api/v1/employees")
 public class EmployeeController {

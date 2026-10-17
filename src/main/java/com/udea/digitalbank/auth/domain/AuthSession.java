@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-// Única sesión vigente de cada usuario: un login nuevo sobrescribe la fila
+/** Única sesión vigente de cada usuario: un login nuevo sobrescribe la fila. */
 @Entity
 @Table(name = "auth_sessions")
 @Getter

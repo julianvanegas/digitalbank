@@ -35,9 +35,9 @@ import static org.mockito.Mockito.*;
 
 /**
  * Pruebas unitarias de {@link UserStatusService}.
- * Es la clase que de verdad implementa el bloqueo tras 3 intentos fallidos (HU02 CA05) y los
- * cambios de estado que revocan la sesión (HU04): antes solo se mockeaba desde AuthServiceTest,
- * así que esa regla nunca se había verificado de forma directa.
+ * Es la clase que de verdad implementa el bloqueo tras 3 intentos fallidos y los
+ * cambios de estado que revocan la sesión. AuthServiceTest solo la simula con mocks, así que esta clase
+ * verifica la regla de forma directa.
  */
 @ExtendWith(MockitoExtension.class)
 class UserStatusServiceTest {
@@ -78,7 +78,7 @@ class UserStatusServiceTest {
     }
 
     @Nested
-    @DisplayName("registerFailedAttempt - HU02 CA05 (bloqueo tras 3 intentos fallidos)")
+    @DisplayName("registerFailedAttempt - bloqueo tras 3 intentos fallidos")
     class RegisterFailedAttempt {
 
         @Test
@@ -133,7 +133,7 @@ class UserStatusServiceTest {
     }
 
     @Nested
-    @DisplayName("changeStatus - usado por HU04 (invalidar sesión al cambiar de estado)")
+    @DisplayName("changeStatus - invalida la sesión al cambiar de estado")
     class ChangeStatus {
 
         @Test
@@ -301,7 +301,7 @@ class UserStatusServiceTest {
                         .isInstanceOf(InvalidStatusTransitionException.class)
                         .hasMessageContaining(from.name())
                         .hasMessageContaining(to.name());
-                // Assert: nada cambió y no se cerró ninguna sesión
+                // Assert: nada cambia y no se cierra ninguna sesión
                 assertThat(user.getStatus().getCode()).isEqualTo(from.name());
                 verifyNoInteractions(sessionService);
                 verify(userRepository, never()).save(any());

@@ -15,15 +15,17 @@ import java.util.UUID;
 
 public interface UserRepository extends JpaRepository<User, UUID> {
 
-    // El email se guarda en minúsculas: la búsqueda normaliza el dato recibido igual que lo hace setEmail
+    /** El email se guarda en minúsculas: la búsqueda normaliza el dato recibido igual que lo hace setEmail. */
     @Query("select u from User u where u.email = lower(trim(:email))")
     Optional<User> findByEmail(@Param("email") String email);
 
     @Query("select count(u) > 0 from User u where u.email = lower(trim(:email))")
     boolean existsByEmail(@Param("email") String email);
 
-    // Sin ingresar y sin cambio de estado desde el corte (statusChangedAt nace igual a createdAt). Solo los ids:
-    // el trabajo de inactividad no necesita cargar las entidades
+    /**
+     * Sin ingresar y sin cambio de estado desde el corte (statusChangedAt nace igual a createdAt). Solo los ids:
+     * el trabajo de inactividad no necesita cargar las entidades.
+     */
     @Query("""
             select a.id from User a
             where a.role.code = :role
@@ -35,8 +37,10 @@ public interface UserRepository extends JpaRepository<User, UUID> {
                            @Param("status") String status,
                            @Param("cutoff") LocalDateTime cutoff);
 
-    // Cambio de estado en bloque con una sola sentencia. Solo mueve a quien siga en el estado de origen: si alguien
-    // cambió entre la consulta de ids y este UPDATE (p. ej. un administrador lo reactivó), no se toca
+    /**
+     * Cambio de estado en bloque con una sola sentencia. Solo mueve a quien siga en el estado de origen: si alguien
+     * cambia entre la consulta de ids y este UPDATE (p. ej. un administrador lo reactiva), no se toca.
+     */
     @Modifying
     @Query("""
             update User u set u.status = :target, u.statusChangedAt = :now

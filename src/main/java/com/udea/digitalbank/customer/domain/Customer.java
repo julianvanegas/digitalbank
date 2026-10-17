@@ -11,7 +11,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-// Solo datos personales: credenciales, estado y sesión viven en auth (users)
+/** Solo datos personales: credenciales, estado y sesión viven en auth (users). */
 @Entity
 @Table(name = "customers",
         uniqueConstraints = @UniqueConstraint(columnNames = {"document_type_id", "document_number"}))
@@ -26,11 +26,11 @@ public class Customer {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    // Sin @ManyToOne hacia auth para mantener los módulos desacoplados
+    /** Sin {@code @ManyToOne} hacia auth para mantener los módulos desacoplados. */
     @Column(nullable = false, unique = true)
     private UUID userId;
 
-    // Junto con userId forma la FK compuesta que impide que un ADMIN tenga fila aquí
+    /** Junto con userId forma la FK compuesta que impide que un ADMIN tenga fila aquí. */
     @Column(nullable = false, updatable = false)
     private Short roleId = CUSTOMER_ROLE_ID;
 

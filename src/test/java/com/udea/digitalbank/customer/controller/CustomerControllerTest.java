@@ -49,7 +49,7 @@ class CustomerControllerTest {
     }
 
     @Test
-    @DisplayName("create - HU01: responde 201 Created con el cliente creado")
+    @DisplayName("create - responde 201 Created con el cliente creado")
     void create_deberiaResponder201ConClienteCreado() {
         // Arrange
         CreateCustomerRequest request = new CreateCustomerRequest();
@@ -74,7 +74,7 @@ class CustomerControllerTest {
     }
 
     @Test
-    @DisplayName("myProfile - HU06: usa el userId del principal autenticado y responde 200")
+    @DisplayName("myProfile - usa el userId del principal autenticado y responde 200")
     void myProfile_deberiaUsarPrincipalYResponder200() {
         // Arrange
         UUID userId = UUID.randomUUID();
@@ -91,7 +91,7 @@ class CustomerControllerTest {
     }
 
     @Test
-    @DisplayName("updateProfile - HU07: delega userId y los 3 campos editables, responde 200")
+    @DisplayName("updateProfile - delega userId y los 3 campos editables, responde 200")
     void updateProfile_deberiaDelegarCamposYResponder200() {
         // Arrange
         UUID userId = UUID.randomUUID();

@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Pruebas unitarias del validator {@link Phone}: formato E.164 simplificado, obligatorio
- * en el registro (HU01) y opcional en la actualización de perfil (HU07).
+ * en el registro y opcional en la actualización de perfil.
  */
 class PhoneConstraintTest {
 

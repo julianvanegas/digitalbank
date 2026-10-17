@@ -33,7 +33,7 @@ public class PasswordResetService {
         this.sessionService = sessionService;
     }
 
-    // Responde igual exista o no el usuario, para no revelar qué emails están registrados
+    /** Responde igual exista o no el usuario, para no revelar qué emails están registrados. */
     @Transactional
     public void requestPasswordReset(String email) {
         userRepository.findByEmail(email)

@@ -14,7 +14,7 @@ import java.util.UUID;
 
 public interface VerificationChallengeRepository extends JpaRepository<VerificationChallenge, UUID> {
 
-    // Bloqueo de escritura: evita que intentos en paralelo se salten el conteo de fallos
+    /** Bloqueo de escritura: evita que intentos en paralelo se salten el conteo de fallos. */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select c from VerificationChallenge c where c.id = :id and c.purpose.purpose = :purpose")
     Optional<VerificationChallenge> lockByIdAndPurpose(@Param("id") UUID id, @Param("purpose") String purpose);

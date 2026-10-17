@@ -10,7 +10,7 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface EmployeeMapper {
 
-    // Datos del perfil (Employee) más los del usuario (UserView, que llega por UserApi)
+    /** Datos del perfil (Employee) más los del usuario (UserView, que llega por UserApi). */
     @Mapping(target = "id", source = "employee.id")
     @Mapping(target = "userId", source = "user.id")
     @Mapping(target = "email", source = "user.email")
@@ -18,7 +18,7 @@ public interface EmployeeMapper {
     @Mapping(target = "status", source = "user.status")
     EmployeeResponse toResponse(Employee employee, UserView user);
 
-    // Vista para otros módulos (EmployeeApi)
+    /** Vista para otros módulos (EmployeeApi). */
     @Mapping(target = "id", source = "employee.id")
     @Mapping(target = "userId", source = "employee.userId")
     @Mapping(target = "email", source = "user.email")

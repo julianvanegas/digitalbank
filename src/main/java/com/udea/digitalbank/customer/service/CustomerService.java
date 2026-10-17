@@ -49,7 +49,7 @@ public class CustomerService {
         this.customerLookup = customerLookup;
     }
 
-    // Usuario y perfil en una sola transacción: si algo falla no quedan usuarios sin perfil ni al revés
+    /** Usuario y perfil en una sola transacción: si algo falla no quedan usuarios sin perfil ni al revés. */
     @Transactional
     public CustomerResponse create(CreateCustomerRequest request) {
         int age = Period.between(request.getBirthDate(), LocalDate.now()).getYears();
@@ -81,7 +81,7 @@ public class CustomerService {
         return customerMapper.toResponse(customerRepository.save(customer), user);
     }
 
-    // Catálogo para el formulario de registro: los ids que exige CreateCustomerRequest.documentTypeId
+    /** Catálogo para el formulario de registro: los ids que exige CreateCustomerRequest.documentTypeId. */
     @Transactional(readOnly = true)
     public List<DocumentTypeResponse> getDocumentTypes() {
         return documentTypeRepository.findAll(Sort.by("id")).stream()
@@ -89,7 +89,7 @@ public class CustomerService {
                 .toList();
     }
 
-    // Perfil propio: se identifica por el id del usuario que viaja en el JWT
+    /** Perfil propio: se identifica por el id del usuario que viaja en el JWT. */
     @Transactional(readOnly = true)
     public CustomerResponse getProfile(UUID userId) {
         return toResponse(customerLookup.byUserId(userId));
@@ -123,8 +123,10 @@ public class CustomerService {
         return customers.map(c -> customerMapper.toResponse(c, users.get(c.getUserId())));
     }
 
-    // Solo se debe llamar desde un endpoint que la seguridad reserve a administradores
-    // auth valida que el estado exista en el catálogo user_status
+    /**
+     * Solo se debe llamar desde un endpoint que la seguridad reserve a administradores
+     * auth valida que el estado exista en el catálogo user_status.
+     */
     @Transactional
     public void changeStatus(Short documentTypeId, String documentNumber, UserStatusEnum statusEnum) {
         Customer customer = customerLookup.byDocument(documentTypeId, documentNumber);

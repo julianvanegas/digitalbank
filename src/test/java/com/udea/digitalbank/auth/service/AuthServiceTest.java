@@ -93,11 +93,11 @@ class AuthServiceTest {
     }
 
     @Nested
-    @DisplayName("login - HU02 Iniciar sesión")
+    @DisplayName("login - iniciar sesión")
     class Login {
 
         @Test
-        @DisplayName("CA01 - Credenciales válidas: resetea intentos fallidos y envía el reto 2FA")
+        @DisplayName("Credenciales válidas: resetea intentos fallidos y envía el reto 2FA")
         void deberiaAceptarCredencialesValidasYContinuarConEl2FA() {
             // Arrange
             User user = buildUser("cliente@example.com", "hash", UserStatusEnum.ACTIVE);
@@ -123,7 +123,7 @@ class AuthServiceTest {
         }
 
         @Test
-        @DisplayName("CA02 - Contraseña incorrecta con usuario activo: registra el intento fallido")
+        @DisplayName("Contraseña incorrecta con usuario activo: registra el intento fallido")
         void deberiaRechazarYRegistrarIntentoCuandoLaContraseñaEsIncorrectaYElUsuarioEstaActivo() {
             // Arrange
             User user = buildUser("cliente@example.com", "hash", UserStatusEnum.ACTIVE);
@@ -160,7 +160,7 @@ class AuthServiceTest {
         }
 
         @Test
-        @DisplayName("CA03 - Correo no registrado: mismo mensaje genérico y mismo gasto de BCrypt que un usuario real")
+        @DisplayName("Correo no registrado: mismo mensaje genérico y mismo gasto de BCrypt que un usuario real")
         void deberiaRechazarConMensajeGenericoCuandoElCorreoNoExiste() {
             // Arrange
             LoginRequest request = buildLoginRequest("noexiste@example.com", "cualquiera");
@@ -178,7 +178,7 @@ class AuthServiceTest {
         }
 
         @Test
-        @DisplayName("CA06 - Usuario bloqueado con credenciales correctas: acceso rechazado")
+        @DisplayName("Usuario bloqueado con credenciales correctas: acceso rechazado")
         void deberiaRechazarInicioDeSesionCuandoElUsuarioEstaBloqueado() {
             // Arrange
             User user = buildUser("cliente@example.com", "hash", UserStatusEnum.BLOCKED);
@@ -196,7 +196,7 @@ class AuthServiceTest {
         }
 
         @Test
-        @DisplayName("CA08 - Usuario con correo aún no confirmado: acceso rechazado")
+        @DisplayName("Usuario con correo aún no confirmado: acceso rechazado")
         void deberiaRechazarInicioDeSesionCuandoElUsuarioNoEstaHabilitado() {
             // Arrange
             User user = buildUser("cliente@example.com", "hash", UserStatusEnum.PENDING_VERIFICATION);
@@ -253,11 +253,11 @@ class AuthServiceTest {
     }
 
     @Nested
-    @DisplayName("verifyTwoFactor - HU03 Verificar identidad mediante 2FA")
+    @DisplayName("verifyTwoFactor - verificar identidad mediante 2FA")
     class VerifyTwoFactor {
 
         @Test
-        @DisplayName("CA02/CA08 - Código válido: crea la sesión y devuelve el token")
+        @DisplayName("Código válido: crea la sesión y devuelve el token")
         void deberiaCompletarLaVerificacionYDevolverElToken() {
             // Arrange
             UUID challengeId = UUID.randomUUID();
@@ -280,7 +280,7 @@ class AuthServiceTest {
         }
 
         @Test
-        @DisplayName("CA04 - Código incorrecto: la excepción de VerificationService se propaga")
+        @DisplayName("Código incorrecto: la excepción de VerificationService se propaga")
         void deberiaPropagarLaExcepcionCuandoElCodigoEsInvalido() {
             // Arrange
             UUID challengeId = UUID.randomUUID();
@@ -294,7 +294,7 @@ class AuthServiceTest {
         }
 
         @Test
-        @DisplayName("CA13 - El usuario se bloqueó entre el login y la verificación: acceso rechazado")
+        @DisplayName("El usuario se bloqueó entre el login y la verificación: acceso rechazado")
         void deberiaRechazarCuandoElUsuarioYaNoEstaActivoAlVerificar() {
             // Arrange
             UUID challengeId = UUID.randomUUID();
@@ -385,11 +385,11 @@ class AuthServiceTest {
     }
 
     @Nested
-    @DisplayName("logout - HU04 Gestionar sesión")
+    @DisplayName("logout - cerrar sesión")
     class Logout {
 
         @Test
-        @DisplayName("CA02 - Cerrar sesión revoca la sesión del usuario")
+        @DisplayName("Cerrar sesión revoca la sesión del usuario")
         void deberiaRevocarLaSesionDelUsuario() {
             // Arrange
             UUID userId = UUID.randomUUID();

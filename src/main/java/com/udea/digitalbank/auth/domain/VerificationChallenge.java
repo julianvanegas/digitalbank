@@ -37,11 +37,11 @@ public class VerificationChallenge {
     @Column(nullable = false)
     private LocalDateTime expiresAt;
 
-    // Cuenta los códigos fallidos y también los reenvíos: ambos gastan el max_attempts del propósito
+    /** Cuenta los códigos fallidos y también los reenvíos: ambos gastan el max_attempts del propósito. */
     @Column(nullable = false)
     private short failedAttempts = 0;
 
-    // Momento de emisión: no se guarda, se deriva de la vigencia del propósito
+    /** Momento de emisión: no se guarda, se deriva de la vigencia del propósito. */
     public LocalDateTime issuedAt() {
         return expiresAt.minusMinutes(purpose.getTtlMinutes());
     }

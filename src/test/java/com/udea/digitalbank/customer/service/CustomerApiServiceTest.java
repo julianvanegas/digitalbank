@@ -37,7 +37,7 @@ class CustomerApiServiceTest {
 
     private CustomerApiService customerApiService;
 
-    // CustomerLookup y CustomerMapper reales sobre los mocks: se prueba el resultado, no la estructura interna
+    /** CustomerLookup y CustomerMapper reales sobre los mocks: se prueba el resultado, no la estructura interna. */
     @BeforeEach
     void setUp() {
         customerApiService = new CustomerApiService(customerRepository,
@@ -122,9 +122,11 @@ class CustomerApiServiceTest {
                 .isInstanceOf(CustomerNotFoundException.class);
     }
 
-    // Cubre que el servicio pase el tipo de documento al repositorio y no solo el número. No cubre que la
-    // consulta real lo filtre: eso lo garantizan el nombre del método de Spring Data y el UNIQUE
-    // (document_type_id, document_number) de V2, y aquí no hay base de datos que lo compruebe.
+    /**
+     * Cubre que el servicio pase el tipo de documento al repositorio y no solo el número. No cubre que la
+     * consulta real lo filtre: eso lo garantizan el nombre del método de Spring Data y el UNIQUE
+     * (document_type_id, document_number) de V2, y aquí no hay base de datos que lo compruebe.
+     */
     @Test
     @DisplayName("getCustomerByDocument no encuentra el mismo número con otro tipo de documento")
     void getCustomerByDocument_sameNumberOtherType_notFound() {

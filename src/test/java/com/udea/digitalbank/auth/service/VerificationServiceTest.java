@@ -32,10 +32,10 @@ import static org.mockito.Mockito.*;
 
 /**
  * Pruebas unitarias de {@link VerificationService}: emisión y consumo de códigos de verificación,
- * usados tanto por HU03 (2FA de login) como por HU05 (recuperación de contraseña).
+ * usados tanto por el 2FA de login como por la recuperación de contraseña.
  *
  * Nota metodológica: el servicio usa {@code LocalDateTime.now()} directamente (no un {@code Clock}
- * inyectado), así que los límites exactos de 5 minutos (CA03/CA04 de HU03, CA04/CA05 de HU05) se
+ * inyectado), así que los límites exactos de 5 minutos se
  * verifican de forma relativa (justo antes/después de "ahora" al momento del test) en vez de con un
  * reloj congelado. Si más adelante refactorizan el servicio para recibir un {@code Clock}, esas
  * pruebas se pueden volver exactas.
@@ -97,7 +97,7 @@ class VerificationServiceTest {
     }
 
     @Nested
-    @DisplayName("issue - CA01 de HU03 (parte de: generar y preparar el envío del código)")
+    @DisplayName("issue - generar y preparar el envío del código")
     class Issue {
 
         @Test
@@ -132,14 +132,14 @@ class VerificationServiceTest {
     }
 
     @Nested
-    @DisplayName("verifyById - HU03 CA02/CA04/CA05/CA06/CA07/CA08/CA09")
+    @DisplayName("verifyById - verificación del código por el id del reto")
     class VerifyById {
 
         private final ChallengePurpose loginPurpose = buildPurpose((short) 1, "LOGIN", 5, 3);
         private final UUID userId = UUID.randomUUID();
 
         @Test
-        @DisplayName("CA02/CA08 - Código correcto y vigente: se acepta y se invalida para reutilizarlo (uso único)")
+        @DisplayName("Código correcto y vigente: se acepta y se invalida para reutilizarlo (uso único)")
         void deberiaAceptarUnCodigoCorrectoYVigente() {
             // Arrange
             UUID challengeId = UUID.randomUUID();
@@ -153,7 +153,7 @@ class VerificationServiceTest {
 
             // Assert
             assertThat(verifiedUserId).isEqualTo(userId);
-            verify(challengeRepository).delete(challenge); // CA09: al consumirse, queda inválido para un futuro uso
+            verify(challengeRepository).delete(challenge); // al consumirse, queda inválido para un futuro uso
             verify(challengeRepository, never()).save(any());
         }
 
@@ -172,7 +172,7 @@ class VerificationServiceTest {
             // Assert
             assertThat(thrown).isInstanceOf(InvalidVerificationCodeException.class);
             verify(challengeRepository).delete(challenge);
-            verifyNoInteractions(codeHasher); // ni siquiera se compara el código si ya expiró
+            verifyNoInteractions(codeHasher); // ni siquiera se compara el código si ya ha expirado
         }
 
         @Test
@@ -233,7 +233,7 @@ class VerificationServiceTest {
     }
 
     @Nested
-    @DisplayName("verifyByEmail - HU05 Recuperar contraseña")
+    @DisplayName("verifyByEmail - recuperar contraseña")
     class VerifyByEmail {
 
         private final ChallengePurpose resetPurpose = buildPurpose((short) 3, "PASSWORD_RESET", 5, 3);

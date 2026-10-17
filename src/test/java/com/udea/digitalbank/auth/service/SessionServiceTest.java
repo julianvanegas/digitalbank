@@ -26,7 +26,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Pruebas unitarias de {@link SessionService} (HU04 Gestionar sesión).
+ * Pruebas unitarias de {@link SessionService} (gestión de la sesión).
  * Se mockean AuthSessionRepository y JwtUtil: no se firma un JWT real ni se toca una base de datos.
  */
 @ExtendWith(MockitoExtension.class)
@@ -62,7 +62,7 @@ class SessionServiceTest {
     }
 
     @Nested
-    @DisplayName("start - CA01 de HU04 (creación de sesión al completar la autenticación)")
+    @DisplayName("start - creación de sesión al completar la autenticación")
     class Start {
 
         @Test
@@ -106,7 +106,7 @@ class SessionServiceTest {
     }
 
     @Nested
-    @DisplayName("revoke - CA02 de HU04 (cerrar sesión manualmente / logout)")
+    @DisplayName("revoke - cerrar sesión manualmente (logout)")
     class Revoke {
 
         @Test
@@ -142,11 +142,11 @@ class SessionServiceTest {
     }
 
     @Nested
-    @DisplayName("validateAndTouch - CA07/CA09/CA10 de HU04 (validez del token e inactividad)")
+    @DisplayName("validateAndTouch - validez del token e inactividad")
     class ValidateAndTouch {
 
         @Test
-        @DisplayName("CA07 - Sesión vigente de un usuario ACTIVE: es válida y la petición renueva la actividad")
+        @DisplayName("Sesión vigente de un usuario ACTIVE: es válida y la petición renueva la actividad")
         void deberiaConsiderarValidaUnaSesionVigenteYRenovarLaActividad() {
             // Arrange
             UUID userId = UUID.randomUUID();
@@ -170,7 +170,7 @@ class SessionServiceTest {
         }
 
         @Test
-        @DisplayName("CA09/CA10 - Sesión cerrada, expirada, con jti distinto o de un usuario que ya no está ACTIVE: es inválida")
+        @DisplayName("Sesión cerrada, expirada, con jti distinto o de un usuario que ya no está ACTIVE: es inválida")
         void deberiaConsiderarInvalidaUnaSesionQueNoCoincideExpiroOEstaInactiva() {
             // Arrange
             UUID userId = UUID.randomUUID();

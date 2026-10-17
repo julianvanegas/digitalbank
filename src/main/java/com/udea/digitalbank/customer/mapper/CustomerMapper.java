@@ -12,7 +12,7 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface CustomerMapper {
 
-    // Datos del perfil (Customer) más los del usuario (UserView, que llega por UserApi)
+    /** Datos del perfil (Customer) más los del usuario (UserView, que llega por UserApi). */
     @Mapping(target = "id", source = "customer.id")
     @Mapping(target = "userId", source = "user.id")
     @Mapping(target = "email", source = "user.email")
@@ -20,7 +20,9 @@ public interface CustomerMapper {
     @Mapping(target = "status", source = "user.status")
     CustomerResponse toResponse(Customer customer, UserView user);
 
-    // Vista para otros módulos (CustomerApi): el subconjunto de CustomerResponse sin teléfono ni fecha de nacimiento
+    /**
+     * Vista para otros módulos (CustomerApi): el subconjunto de CustomerResponse sin teléfono ni fecha de nacimiento.
+     */
     @Mapping(target = "id", source = "customer.id")
     @Mapping(target = "userId", source = "customer.userId")
     @Mapping(target = "documentType", source = "customer.documentType.code")

@@ -14,25 +14,42 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Acceso a las transacciones. Los métodos {@code ...ForUpdate} toman un bloqueo pesimista de escritura
+ * ({@code SELECT ... FOR UPDATE}) que se mantiene hasta que termina la transacción de base de datos.
+ */
 public interface TransactionRepository extends JpaRepository<Transaction, UUID> {
 
+    /** Busca por comprobante sin bloquear la fila; para consultas de solo lectura. */
     Optional<Transaction> findByReference(String reference);
 
-    // Bloquea la fila hasta el fin de la transacción: dos confirmaciones simultáneas de la misma transferencia se
-    // turnan, y la segunda la ve ya completada en vez de intentar moverla de nuevo
+    /**
+     * Busca por comprobante y bloquea la fila. Dos confirmaciones simultáneas de la misma transferencia se
+     * serializan: la segunda la encuentra ya completada en lugar de intentar mover el dinero otra vez.
+     */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select t from Transaction t where t.reference = :reference")
     Optional<Transaction> findByReferenceForUpdate(@Param("reference") String reference);
 
-    // Las transferencias que un usuario dejó sin confirmar, con la fila bloqueada: al iniciar otra, las anteriores
-    // se cancelan porque su código ya no vale
+    /**
+     * Transacciones {@code PENDING} del usuario, con la fila bloqueada. Se usa al iniciar otra transferencia
+     * para cancelar las anteriores, porque su código de verificación deja de ser válido.
+     */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select t from Transaction t where t.userOriginatorId = :userId and t.status = :pending")
     List<Transaction> findPendingOfUserForUpdate(@Param("userId") UUID userId,
                                                  @Param("pending") TransactionStatus pending);
 
-    // Barrido de las PENDING cuyo código ya venció. Una sola sentencia: solo mueve las que sigan PENDING al ejecutarla,
-    // así que una confirmación que ganó la carrera no se pisa
+    /**
+     * Rechaza, en una sola sentencia, las transacciones {@code PENDING} creadas antes de {@code cutoff}. El
+     * {@code UPDATE} solo afecta filas que sigan {@code PENDING} al ejecutarse, así que no sobrescribe una
+     * confirmación ya completada.
+     *
+     * @param cutoff   instante anterior al cual una transacción pendiente se considera vencida
+     * @param pending  fila {@code PENDING} del catálogo de estados
+     * @param rejected fila {@code REJECTED} del catálogo de estados
+     * @return cantidad de transacciones rechazadas
+     */
     @Modifying
     @Query("""
             update Transaction t set t.status = :rejected
