@@ -13,7 +13,9 @@ import java.util.UUID;
 
 public interface AccountRepository extends JpaRepository<Account, UUID> {
 
-    boolean existsByAccountNumber(String accountNumber);
+    // Siguiente valor de la secuencia de números de cuenta (V10): único y atómico, sin mirar la tabla
+    @Query(value = "select nextval('account_number_seq')", nativeQuery = true)
+    long nextAccountNumberValue();
 
     // Las llaves que ya usan un prefijo, para saber en una sola consulta qué consecutivo está libre
     @Query("select a.accountKey from Account a where a.accountKey like concat(:prefix, '%')")

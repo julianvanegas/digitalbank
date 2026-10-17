@@ -1,47 +1,28 @@
 package com.udea.digitalbank.accounts.service;
 
-import com.udea.digitalbank.accounts.domain.Account;
 import com.udea.digitalbank.accounts.repository.AccountRepository;
 import org.springframework.stereotype.Component;
 
-import java.security.SecureRandom;
-
 /**
  * Genera el número público de la cuenta: 12 dígitos, el primero distinto de cero.
- * Es aleatorio y no secuencial para que nadie pueda deducir los números de las cuentas ajenas;
- * la unicidad la garantiza el UNIQUE de la base y aquí solo se evita el choque conocido.
+ * <p>
+ * Cada número sale del siguiente valor de la secuencia de la base, pasado por una permutación secreta
+ * ({@link AccountNumberPermutation}). Así es único por construcción, sin sortear ni consultar si ya existe, y no
+ * es secuencial para que nadie pueda deducir los números de las cuentas ajenas. El UNIQUE de la base queda como
+ * garantía final, por ejemplo frente a un número sorteado al azar antes de esta secuencia.
  */
 @Component
 class AccountNumberGenerator {
 
-    private static final int DIGITS = Account.ACCOUNT_NUMBER_LENGTH;
-    // Con 9 · 10^11 combinaciones posibles, agotar diez intentos seguidos es inconcebible salvo avería
-    private static final int MAX_ATTEMPTS = 10;
-
-    private final SecureRandom secureRandom = new SecureRandom();
     private final AccountRepository accountRepository;
+    private final AccountNumberPermutation permutation;
 
-    AccountNumberGenerator(AccountRepository accountRepository) {
+    AccountNumberGenerator(AccountRepository accountRepository, AccountNumberPermutation permutation) {
         this.accountRepository = accountRepository;
+        this.permutation = permutation;
     }
 
     String next() {
-        for (int attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
-            String candidate = candidate();
-            if (!accountRepository.existsByAccountNumber(candidate)) {
-                return candidate;
-            }
-        }
-        throw new IllegalStateException(
-                "No se pudo generar un número de cuenta libre en " + MAX_ATTEMPTS + " intentos");
-    }
-
-    private String candidate() {
-        StringBuilder number = new StringBuilder(DIGITS);
-        number.append(secureRandom.nextInt(1, 10)); // el primer dígito nunca es cero
-        for (int i = 1; i < DIGITS; i++) {
-            number.append(secureRandom.nextInt(10));
-        }
-        return number.toString();
+        return permutation.apply(accountRepository.nextAccountNumberValue());
     }
 }
