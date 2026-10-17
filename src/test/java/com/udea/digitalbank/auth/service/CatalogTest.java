@@ -77,7 +77,7 @@ class CatalogsTest {
                 status((short) 1, "ACTIVE"), status((short) 2, "PENDING_VERIFICATION"), status((short) 5, "PENDING_REVIEW"),
                 status((short) 3, "INACTIVE"), status((short) 4, "BLOCKED")));
         when(purposeRepository.findAll()).thenReturn(List.of(
-                purpose((short) 1, "LOGIN"), purpose((short) 2, "EMAIL_CONFIRMATION"), purpose((short) 3, "PASSWORD_RESET")));
+                purpose((short) 1, "LOGIN"), purpose((short) 2, "EMAIL_CONFIRMATION"), purpose((short) 3, "PASSWORD_RESET"), purpose((short) 4, "TRANSACTION")));
 
         Catalogs catalogs = new Catalogs(roleRepository, statusRepository, purposeRepository);
         catalogs.load();
@@ -115,7 +115,7 @@ class CatalogsTest {
                     status((short) 1, "ACTIVE"), status((short) 2, "PENDING_VERIFICATION"), status((short) 5, "PENDING_REVIEW"),
                     status((short) 3, "INACTIVE")));
             when(purposeRepository.findAll()).thenReturn(List.of(
-                    purpose((short) 1, "LOGIN"), purpose((short) 2, "EMAIL_CONFIRMATION"), purpose((short) 3, "PASSWORD_RESET")));
+                    purpose((short) 1, "LOGIN"), purpose((short) 2, "EMAIL_CONFIRMATION"), purpose((short) 3, "PASSWORD_RESET"), purpose((short) 4, "TRANSACTION")));
             Catalogs catalogs = new Catalogs(roleRepository, statusRepository, purposeRepository);
 
             // Act & Assert
@@ -134,7 +134,7 @@ class CatalogsTest {
                     status((short) 1, "ACTIVE"), status((short) 2, "PENDING_VERIFICATION"), status((short) 5, "PENDING_REVIEW"),
                     status((short) 3, "INACTIVE"), status((short) 4, "BLOCKED")));
             when(purposeRepository.findAll()).thenReturn(List.of(
-                    purpose((short) 1, "LOGIN"), purpose((short) 2, "EMAIL_CONFIRMATION"), purpose((short) 3, "PASSWORD_RESET")));
+                    purpose((short) 1, "LOGIN"), purpose((short) 2, "EMAIL_CONFIRMATION"), purpose((short) 3, "PASSWORD_RESET"), purpose((short) 4, "TRANSACTION")));
             Catalogs catalogs = new Catalogs(roleRepository, statusRepository, purposeRepository);
 
             // Act & Assert

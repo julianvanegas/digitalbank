@@ -22,8 +22,13 @@ public class VerificationDispatcher {
 
     // Devuelve el id del reto: el flujo LOGIN lo entrega al cliente
     public IssuedChallenge issueAndSend(User user, PurposeEnum purpose) {
+        return issueAndSend(user, purpose, null);
+    }
+
+    // El detalle (p. ej. el monto de una transferencia) va en el correo para que el titular sepa qué autoriza
+    public IssuedChallenge issueAndSend(User user, PurposeEnum purpose, String detail) {
         IssuedChallenge challenge = verificationService.issue(user, purpose);
-        send(user, purpose, challenge);
+        send(user, purpose, challenge, detail);
         return challenge;
     }
 
@@ -36,8 +41,12 @@ public class VerificationDispatcher {
 
     // Envía un código que ya emitió VerificationService (p. ej. al reenviarlo)
     public void send(User user, PurposeEnum purpose, IssuedChallenge challenge) {
-        emailService.send(user.getEmail(), subject(purpose),
-                "Tu código es: " + challenge.code() + ". Expira en " + challenge.ttlMinutes() + " minutos.");
+        send(user, purpose, challenge, null);
+    }
+
+    private void send(User user, PurposeEnum purpose, IssuedChallenge challenge, String detail) {
+        String body = "Tu código es: " + challenge.code() + ". Expira en " + challenge.ttlMinutes() + " minutos.";
+        emailService.send(user.getEmail(), subject(purpose), detail == null ? body : detail + "\n\n" + body);
     }
 
     private static String subject(PurposeEnum purpose) {
@@ -45,6 +54,7 @@ public class VerificationDispatcher {
             case LOGIN -> "Tu código de verificación";
             case EMAIL_CONFIRMATION -> "Confirma tu correo electrónico";
             case PASSWORD_RESET -> "Recuperación de contraseña";
+            case TRANSACTION -> "Confirma tu transacción";
         };
     }
 }

@@ -65,6 +65,25 @@ class VerificationDispatcherTest {
         }
 
         @Test
+        @DisplayName("TRANSACTION - usa su asunto e incluye el detalle de la operación antes del código")
+        void deberiaIncluirElDetalleDeLaOperacionEnElCorreoDeTransaccion() {
+            // Arrange
+            User user = buildUser(UUID.randomUUID(), "cliente@example.com");
+            IssuedChallenge challenge = new IssuedChallenge(UUID.randomUUID(), "123456", 3);
+            when(verificationService.issue(user, PurposeEnum.TRANSACTION)).thenReturn(challenge);
+
+            // Act
+            dispatcher.issueAndSend(user, PurposeEnum.TRANSACTION, "Vas a transferir 10.00 a la cuenta terminada en 0002");
+
+            // Assert
+            verify(emailService).send(
+                    eq("cliente@example.com"),
+                    eq("Confirma tu transacción"),
+                    eq("Vas a transferir 10.00 a la cuenta terminada en 0002\n\n"
+                            + "Tu código es: 123456. Expira en 3 minutos."));
+        }
+
+        @Test
         @DisplayName("Usa el asunto de recuperación de contraseña para PASSWORD_RESET")
         void deberiaUsarElAsuntoDeRecuperacionParaPasswordReset() {
             // Arrange
