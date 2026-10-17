@@ -12,7 +12,10 @@ public class AccountResponse {
     private String accountKey;
     private String accountNumber;
     private UUID customerId;
+    private String accountType;
     private String status;
     private BigDecimal balance;
     private LocalDateTime createdAt;
+    // Solo tiene valor si la cuenta está CLOSED
+    private LocalDateTime closedAt;
 }
