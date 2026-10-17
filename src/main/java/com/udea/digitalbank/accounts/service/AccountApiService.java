@@ -1,7 +1,6 @@
 package com.udea.digitalbank.accounts.service;
 
 import com.udea.digitalbank.accounts.api.AccountApi;
-import com.udea.digitalbank.accounts.api.AccountStatusEnum;
 import com.udea.digitalbank.accounts.api.AccountView;
 import com.udea.digitalbank.accounts.mapper.AccountMapper;
 import com.udea.digitalbank.accounts.repository.AccountRepository;
@@ -51,7 +50,7 @@ public class AccountApiService implements AccountApi {
     @Transactional(readOnly = true)
     public AccountView requireActiveAccount(UUID accountId) {
         AccountView view = getAccount(accountId);
-        if (!AccountStatusEnum.ACTIVE.name().equals(view.status())) {
+        if (!view.isActive()) {
             throw new AccountNotActiveException("La cuenta no está activa: " + accountId);
         }
         return view;
