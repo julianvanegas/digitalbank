@@ -1,5 +1,6 @@
 package com.udea.digitalbank.auth.service;
 
+import com.udea.digitalbank.auth.api.CodeCheckResult;
 import com.udea.digitalbank.auth.domain.PurposeEnum;
 import com.udea.digitalbank.auth.domain.ChallengePurpose;
 import com.udea.digitalbank.auth.domain.User;
@@ -135,34 +136,59 @@ public class VerificationService {
         return consume(challenge, code);
     }
 
+    /**
+     * Verifica el código vigente de un usuario para un propósito y dice qué pasó, sin lanzar excepción: quien llama
+     * decide qué hacer con cada resultado (p. ej. cancelar la transacción que el código autorizaba). Un código que
+     * ya no existe se trata como vencido: solo desaparece por vencimiento, por agotar los intentos o por haberse
+     * reemplazado, y los dos últimos casos los conoce quien llama. Mismas reglas que {@link #verifyById}, porque
+     * ambos pasan por {@link #evaluate}.
+     */
+    @Transactional
+    public CodeCheckResult check(UUID userId, PurposeEnum purposeEnum, String code) {
+        return challengeRepository.lockByUserAndPurpose(userId, purposeEnum.name())
+                .map(challenge -> evaluate(challenge, code))
+                .orElseGet(CodeCheckResult::expired);
+    }
+
     @Transactional
     public void deleteExpired() {
         challengeRepository.deleteExpired(LocalDateTime.now());
     }
 
+    // Los flujos que lanzan excepción (login, email, recuperación) no distinguen por qué falló el código: para ellos
+    // incorrecto, agotado y vencido son lo mismo
     private UUID consume(VerificationChallenge challenge, String code) {
+        if (evaluate(challenge, code).outcome() != CodeCheckResult.Outcome.VALID) {
+            throw new InvalidVerificationCodeException(INVALID_MESSAGE);
+        }
+        return challenge.getUserId();
+    }
+
+    /**
+     * Las reglas del código, en un solo lugar: vencido se elimina sin comparar; correcto se consume (uso único);
+     * incorrecto cuenta como intento y, al agotarlos, el código se borra. Las usan {@link #check} y {@link #consume}.
+     */
+    private CodeCheckResult evaluate(VerificationChallenge challenge, String code) {
         if (challenge.getExpiresAt().isBefore(LocalDateTime.now())) {
             challengeRepository.delete(challenge);
-            throw new InvalidVerificationCodeException(INVALID_MESSAGE);
+            return CodeCheckResult.expired();
         }
 
         ChallengePurpose purpose = challenge.getPurpose();
         boolean matches = code != null && codeHasher.matches(
                 challenge.getUserId(), purpose.getId(), code, challenge.getCodeHash());
-
-        if (!matches) {
-            challenge.setFailedAttempts((short) (challenge.getFailedAttempts() + 1));
-            if (challenge.getFailedAttempts() >= purpose.getMaxAttempts()) {
-                challengeRepository.delete(challenge);
-            } else {
-                challengeRepository.save(challenge);
-            }
-            throw new InvalidVerificationCodeException(INVALID_MESSAGE);
+        if (matches) {
+            challengeRepository.delete(challenge);
+            return CodeCheckResult.valid();
         }
 
-        // Uso único: se borra al verificarse
-        challengeRepository.delete(challenge);
-        return challenge.getUserId();
+        challenge.setFailedAttempts((short) (challenge.getFailedAttempts() + 1));
+        if (challenge.getFailedAttempts() >= purpose.getMaxAttempts()) {
+            challengeRepository.delete(challenge);
+            return CodeCheckResult.exhausted();
+        }
+        challengeRepository.save(challenge);
+        return CodeCheckResult.wrong(purpose.getMaxAttempts() - challenge.getFailedAttempts());
     }
 
     private String generateNumericCode() {

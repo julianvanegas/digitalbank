@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -28,6 +29,12 @@ public interface AccountRepository extends JpaRepository<Account, UUID> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select a from Account a where a.accountNumber = :accountNumber")
     Optional<Account> findByAccountNumberForUpdate(@Param("accountNumber") String accountNumber);
+
+    // Varias cuentas con la fila bloqueada, siempre en el mismo orden (por id): dos transferencias cruzadas entre las
+    // mismas cuentas piden los bloqueos en el mismo orden y se turnan en vez de quedar en un interbloqueo
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select a from Account a where a.id in :ids order by a.id")
+    List<Account> findAllByIdForUpdate(@Param("ids") Collection<UUID> ids);
 
     // Un cliente tiene como máximo tres cuentas, así que la lista completa sirve tanto para
     // consultarlas como para decidir si queda cupo, sin una consulta de conteo aparte

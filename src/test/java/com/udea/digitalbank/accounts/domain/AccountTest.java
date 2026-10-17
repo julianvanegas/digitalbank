@@ -2,14 +2,17 @@ package com.udea.digitalbank.accounts.domain;
 
 import com.udea.digitalbank.accounts.api.AccountStatusEnum;
 import com.udea.digitalbank.accounts.api.AccountTypeEnum;
+import com.udea.digitalbank.shared.exception.accounts.AccountNotActiveException;
 import com.udea.digitalbank.shared.exception.accounts.AccountNotBlockableException;
 import com.udea.digitalbank.shared.exception.accounts.AccountNotClosableException;
 import com.udea.digitalbank.shared.exception.accounts.AccountNotUnblockableException;
+import com.udea.digitalbank.shared.exception.accounts.InsufficientFundsException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.lang.reflect.Method;
@@ -220,6 +223,74 @@ class AccountTest {
             assertThatThrownBy(() -> account.close(status(AccountStatusEnum.BLOCKED), LocalDateTime.now()))
                     .isInstanceOf(IllegalArgumentException.class);
             assertThat(account.getClosedAt()).isNull();
+        }
+    }
+
+    @Nested
+    @DisplayName("debit y credit")
+    class Movements {
+
+        @Test
+        @DisplayName("debit - descuenta el monto de una cuenta activa con saldo suficiente")
+        void deberiaDescontarElMonto() {
+            Account account = account(AccountStatusEnum.ACTIVE, "100.00");
+
+            account.debit(new BigDecimal("40.50"));
+
+            assertThat(account.getBalance()).isEqualByComparingTo("59.50");
+        }
+
+        @Test
+        @DisplayName("debit - puede dejar el saldo en cero, nunca por debajo")
+        void deberiaPermitirDejarElSaldoEnCero() {
+            Account account = account(AccountStatusEnum.ACTIVE, "100.00");
+
+            account.debit(new BigDecimal("100.00"));
+
+            assertThat(account.getBalance()).isEqualByComparingTo("0.00");
+        }
+
+        @Test
+        @DisplayName("debit - con saldo insuficiente lanza InsufficientFundsException y no cambia el saldo")
+        void deberiaRechazarSiNoHaySaldo() {
+            Account account = account(AccountStatusEnum.ACTIVE, "100.00");
+
+            assertThatThrownBy(() -> account.debit(new BigDecimal("100.01")))
+                    .isInstanceOf(InsufficientFundsException.class)
+                    .hasMessageContaining("123456789012");
+            assertThat(account.getBalance()).isEqualByComparingTo("100.00");
+        }
+
+        @Test
+        @DisplayName("credit - suma el monto a una cuenta activa")
+        void deberiaSumarElMonto() {
+            Account account = account(AccountStatusEnum.ACTIVE, "100.00");
+
+            account.credit(new BigDecimal("0.25"));
+
+            assertThat(account.getBalance()).isEqualByComparingTo("100.25");
+        }
+
+        @ParameterizedTest
+        @EnumSource(value = AccountStatusEnum.class, names = {"INACTIVE", "BLOCKED", "CLOSED"})
+        @DisplayName("debit y credit - una cuenta que no está ACTIVE no mueve dinero y su saldo no cambia")
+        void noDeberiaMoverDineroSiNoEstaActiva(AccountStatusEnum current) {
+            Account account = account(current, "100.00");
+
+            assertThatThrownBy(() -> account.debit(BigDecimal.ONE)).isInstanceOf(AccountNotActiveException.class);
+            assertThatThrownBy(() -> account.credit(BigDecimal.ONE)).isInstanceOf(AccountNotActiveException.class);
+            assertThat(account.getBalance()).isEqualByComparingTo("100.00");
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = {"0", "-5.00"})
+        @DisplayName("debit y credit - un monto que no es positivo es un error de programación")
+        void deberiaExigirUnMontoPositivo(String amount) {
+            Account account = account(AccountStatusEnum.ACTIVE, "100.00");
+
+            assertThatThrownBy(() -> account.debit(new BigDecimal(amount))).isInstanceOf(IllegalArgumentException.class);
+            assertThatThrownBy(() -> account.credit(new BigDecimal(amount))).isInstanceOf(IllegalArgumentException.class);
+            assertThat(account.getBalance()).isEqualByComparingTo("100.00");
         }
     }
 }

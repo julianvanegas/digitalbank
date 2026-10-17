@@ -1,5 +1,6 @@
 package com.udea.digitalbank.auth.service;
 
+import com.udea.digitalbank.auth.api.CodeCheckResult;
 import com.udea.digitalbank.auth.domain.ChallengePurpose;
 import com.udea.digitalbank.auth.domain.PurposeEnum;
 import com.udea.digitalbank.auth.domain.User;
@@ -157,7 +158,7 @@ class VerificationServiceTest {
         }
 
         @Test
-        @DisplayName("CA04 - Código expirado: se rechaza y el reto se elimina")
+        @DisplayName("Código expirado: se rechaza y el reto se elimina")
         void deberiaRechazarUnCodigoExpirado() {
             // Arrange
             UUID challengeId = UUID.randomUUID();
@@ -175,7 +176,7 @@ class VerificationServiceTest {
         }
 
         @Test
-        @DisplayName("CA05 - Código incorrecto sin alcanzar el límite: registra el intento y conserva el reto")
+        @DisplayName("Código incorrecto sin alcanzar el límite: registra el intento y conserva el reto")
         void deberiaRegistrarElIntentoSinInvalidarElRetoAunNoAlcanzaElLimite() {
             // Arrange: ya tiene 1 intento fallido, el límite son 3
             UUID challengeId = UUID.randomUUID();
@@ -195,7 +196,7 @@ class VerificationServiceTest {
         }
 
         @Test
-        @DisplayName("CA06 - Tercer intento incorrecto: invalida el reto en vez de conservarlo")
+        @DisplayName("Tercer intento incorrecto: invalida el reto en vez de conservarlo")
         void deberiaInvalidarElRetoEnElTercerIntentoIncorrecto() {
             // Arrange: ya tiene 2 intentos fallidos, este sería el tercero
             UUID challengeId = UUID.randomUUID();
@@ -214,7 +215,7 @@ class VerificationServiceTest {
         }
 
         @Test
-        @DisplayName("CA07 - Intentar con un reto ya invalidado/inexistente: se rechaza de inmediato")
+        @DisplayName("Intentar con un reto ya invalidado/inexistente: se rechaza de inmediato")
         void deberiaRechazarCuandoElRetoYaNoExiste() {
             // Arrange
             UUID challengeId = UUID.randomUUID();
@@ -250,7 +251,7 @@ class VerificationServiceTest {
         }
 
         @Test
-        @DisplayName("CA03 - Código de recuperación válido: se acepta y permite continuar")
+        @DisplayName("Código de recuperación válido: se acepta y permite continuar")
         void deberiaAceptarUnCodigoDeRecuperacionValido() {
             // Arrange
             UUID userId = UUID.randomUUID();
@@ -435,4 +436,130 @@ class VerificationServiceTest {
         }
     }
 
+
+    @Nested
+    @DisplayName("check - verificación del código de TRANSACTION, sin lanzar excepción")
+    class Check {
+
+        private final ChallengePurpose transactionPurpose = buildPurpose((short) 4, "TRANSACTION", 3, 3);
+        private final UUID userId = UUID.randomUUID();
+
+        private VerificationChallenge challenge(LocalDateTime expiresAt, int failedAttempts) {
+            return buildChallenge(UUID.randomUUID(), userId, transactionPurpose, "hash-esperado", expiresAt,
+                    failedAttempts);
+        }
+
+        @Test
+        @DisplayName("Código correcto dentro de la vigencia: VALID y el código se consume")
+        void deberiaAceptarUnCodigoCorrectoYVigente() {
+            // Arrange
+            VerificationChallenge challenge = challenge(LocalDateTime.now().plusMinutes(2), 0);
+            when(challengeRepository.lockByUserAndPurpose(userId, "TRANSACTION")).thenReturn(Optional.of(challenge));
+            when(codeHasher.matches(userId, (short) 4, "123456", "hash-esperado")).thenReturn(true);
+
+            // Act
+            CodeCheckResult result = verificationService.check(userId, PurposeEnum.TRANSACTION, "123456");
+
+            // Assert
+            assertThat(result.outcome()).isEqualTo(CodeCheckResult.Outcome.VALID);
+            verify(challengeRepository).delete(challenge);
+        }
+
+        @Test
+        @DisplayName("Primer fallo: WRONG con 2 intentos restantes y el código sigue vigente")
+        void deberiaRechazarElPrimerFalloConservandoElCodigo() {
+            // Arrange
+            VerificationChallenge challenge = challenge(LocalDateTime.now().plusMinutes(2), 0);
+            when(challengeRepository.lockByUserAndPurpose(userId, "TRANSACTION")).thenReturn(Optional.of(challenge));
+            when(codeHasher.matches(userId, (short) 4, "000000", "hash-esperado")).thenReturn(false);
+
+            // Act
+            CodeCheckResult result = verificationService.check(userId, PurposeEnum.TRANSACTION, "000000");
+
+            // Assert
+            assertThat(result.outcome()).isEqualTo(CodeCheckResult.Outcome.WRONG);
+            assertThat(result.remainingAttempts()).isEqualTo(2);
+            assertThat(challenge.getFailedAttempts()).isEqualTo((short) 1);
+            verify(challengeRepository).save(challenge);
+            verify(challengeRepository, never()).delete(any());
+        }
+
+        @Test
+        @DisplayName("Segundo fallo: WRONG con 1 intento restante")
+        void deberiaRechazarElSegundoFallo() {
+            // Arrange
+            VerificationChallenge challenge = challenge(LocalDateTime.now().plusMinutes(2), 1);
+            when(challengeRepository.lockByUserAndPurpose(userId, "TRANSACTION")).thenReturn(Optional.of(challenge));
+            when(codeHasher.matches(userId, (short) 4, "000000", "hash-esperado")).thenReturn(false);
+
+            // Act
+            CodeCheckResult result = verificationService.check(userId, PurposeEnum.TRANSACTION, "000000");
+
+            // Assert
+            assertThat(result.outcome()).isEqualTo(CodeCheckResult.Outcome.WRONG);
+            assertThat(result.remainingAttempts()).isEqualTo(1);
+        }
+
+        @Test
+        @DisplayName("Tercer fallo: EXHAUSTED y el código queda invalidado")
+        void deberiaInvalidarElCodigoEnElTercerFallo() {
+            // Arrange
+            VerificationChallenge challenge = challenge(LocalDateTime.now().plusMinutes(2), 2);
+            when(challengeRepository.lockByUserAndPurpose(userId, "TRANSACTION")).thenReturn(Optional.of(challenge));
+            when(codeHasher.matches(userId, (short) 4, "000000", "hash-esperado")).thenReturn(false);
+
+            // Act
+            CodeCheckResult result = verificationService.check(userId, PurposeEnum.TRANSACTION, "000000");
+
+            // Assert
+            assertThat(result.outcome()).isEqualTo(CodeCheckResult.Outcome.EXHAUSTED);
+            verify(challengeRepository).delete(challenge);
+            verify(challengeRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("Código vencido: EXPIRED, se elimina y ni siquiera se compara el código")
+        void deberiaRechazarUnCodigoVencido() {
+            // Arrange
+            VerificationChallenge challenge = challenge(LocalDateTime.now().minusSeconds(1), 0);
+            when(challengeRepository.lockByUserAndPurpose(userId, "TRANSACTION")).thenReturn(Optional.of(challenge));
+
+            // Act
+            CodeCheckResult result = verificationService.check(userId, PurposeEnum.TRANSACTION, "123456");
+
+            // Assert
+            assertThat(result.outcome()).isEqualTo(CodeCheckResult.Outcome.EXPIRED);
+            verify(challengeRepository).delete(challenge);
+            verifyNoInteractions(codeHasher);
+        }
+
+        @Test
+        @DisplayName("Sin código vigente (ya se limpió o se reemplazó): EXPIRED")
+        void deberiaTratarComoVencidoUnCodigoQueYaNoExiste() {
+            // Arrange
+            when(challengeRepository.lockByUserAndPurpose(userId, "TRANSACTION")).thenReturn(Optional.empty());
+
+            // Act
+            CodeCheckResult result = verificationService.check(userId, PurposeEnum.TRANSACTION, "123456");
+
+            // Assert
+            assertThat(result.outcome()).isEqualTo(CodeCheckResult.Outcome.EXPIRED);
+            verifyNoInteractions(codeHasher);
+        }
+
+        @Test
+        @DisplayName("Un código nulo cuenta como intento fallido")
+        void deberiaContarUnCodigoNuloComoFallo() {
+            // Arrange
+            VerificationChallenge challenge = challenge(LocalDateTime.now().plusMinutes(2), 0);
+            when(challengeRepository.lockByUserAndPurpose(userId, "TRANSACTION")).thenReturn(Optional.of(challenge));
+
+            // Act
+            CodeCheckResult result = verificationService.check(userId, PurposeEnum.TRANSACTION, null);
+
+            // Assert
+            assertThat(result.outcome()).isEqualTo(CodeCheckResult.Outcome.WRONG);
+            assertThat(challenge.getFailedAttempts()).isEqualTo((short) 1);
+        }
+    }
 }

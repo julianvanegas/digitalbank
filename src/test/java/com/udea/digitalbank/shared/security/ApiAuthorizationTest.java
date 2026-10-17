@@ -17,6 +17,9 @@ import com.udea.digitalbank.employee.security.EmployeeSecurity;
 import com.udea.digitalbank.employee.service.EmployeeService;
 import com.udea.digitalbank.shared.exception.GlobalExceptionHandler;
 import com.udea.digitalbank.shared.exception.SecurityErrorHandler;
+import com.udea.digitalbank.transactions.security.TransactionSecurity;
+import com.udea.digitalbank.transactions.service.TransactionQueryService;
+import com.udea.digitalbank.transactions.service.TransferService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -64,7 +67,7 @@ import static org.mockito.Mockito.when;
  */
 @WebMvcTest
 @Import({SecurityConfig.class, AuthSecurity.class, CustomerSecurity.class, EmployeeSecurity.class,
-        AccountSecurity.class, ApiAuthorizationTest.UndeclaredEndpointController.class, JwtAuthenticationFilter.class,
+        AccountSecurity.class, TransactionSecurity.class, ApiAuthorizationTest.UndeclaredEndpointController.class, JwtAuthenticationFilter.class,
         JwtUtil.class, SecurityErrorHandler.class, GlobalExceptionHandler.class, ActorWebConfig.class})
 @TestPropertySource(properties = {
         "cors.allowed-origins=http://localhost",
@@ -138,6 +141,10 @@ class ApiAuthorizationTest {
     @MockitoBean
     private AccountLifecycleService accountLifecycleService;
     @MockitoBean
+    private TransferService transferService;
+    @MockitoBean
+    private TransactionQueryService transactionQueryService;
+    @MockitoBean
     private SessionService sessionService;
 
     @BeforeEach
@@ -192,6 +199,13 @@ class ApiAuthorizationTest {
                 new Endpoint("PATCH", "/api/v1/accounts/" + NUMBER + "/unlock", "{\"reason\":\"Verificado\"}",
                         Access.ADMIN_ONLY),
                 new Endpoint("PATCH", "/api/v1/accounts/" + NUMBER + "/close", "", Access.CUSTOMER_OR_ADMIN),
+                // ---- transactions: transferir y confirmar son del cliente; el comprobante lo ve también el admin
+                new Endpoint("POST", "/api/v1/transactions/transfers",
+                        "{\"senderAccountNumber\":\"" + NUMBER + "\",\"receiverAccountNumber\":\"210000000002\","
+                                + "\"amount\":10.00}", Access.CUSTOMER_ONLY),
+                new Endpoint("POST", "/api/v1/transactions/TRF-20261017-7Xk2Pq9RmZ4tNvB8cHdWeA/confirm", "{\"code\":\"123456\"}",
+                        Access.CUSTOMER_ONLY),
+                new Endpoint("GET", "/api/v1/transactions/TRF-20261017-7Xk2Pq9RmZ4tNvB8cHdWeA", "", Access.CUSTOMER_OR_ADMIN),
                 // ---- documentación y salud
                 new Endpoint("GET", "/actuator/health", "", Access.PUBLIC),
                 new Endpoint("GET", "/v3/api-docs", "", Access.PUBLIC),

@@ -6,10 +6,14 @@ import com.udea.digitalbank.accounts.domain.Account;
 import com.udea.digitalbank.accounts.domain.AccountStatus;
 import com.udea.digitalbank.accounts.mapper.AccountMapper;
 import com.udea.digitalbank.accounts.repository.AccountRepository;
+import com.udea.digitalbank.customer.api.CustomerApi;
+import com.udea.digitalbank.customer.api.CustomerView;
 import com.udea.digitalbank.shared.exception.accounts.AccountNotActiveException;
 import com.udea.digitalbank.shared.exception.accounts.AccountNotFoundException;
+import com.udea.digitalbank.shared.exception.accounts.InsufficientFundsException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mapstruct.factory.Mappers;
@@ -24,6 +28,10 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /**
@@ -39,6 +47,8 @@ class AccountApiServiceTest {
 
     @Mock
     private AccountRepository accountRepository;
+    @Mock
+    private CustomerApi customerApi;
 
     private AccountApiService accountApiService;
 
@@ -46,7 +56,7 @@ class AccountApiServiceTest {
     void setUp() {
         AccountMapper accountMapper = Mappers.getMapper(AccountMapper.class);
         accountApiService = new AccountApiService(accountRepository, new AccountLookup(accountRepository),
-                accountMapper);
+                accountMapper, customerApi);
     }
 
     private static Account buildAccount(AccountStatusEnum statusEnum) {
@@ -182,5 +192,120 @@ class AccountApiServiceTest {
         // Act + Assert
         assertThatThrownBy(() -> accountApiService.requireActiveAccount(account.getId()))
                 .isInstanceOf(AccountNotActiveException.class);
+    }
+
+    private static CustomerView customerView() {
+        return new CustomerView(CUSTOMER_ID, UUID.randomUUID(), "Ana", "Gómez", "CC", "1000000001", "ana@example.com",
+                "ACTIVE");
+    }
+
+    @Test
+    @DisplayName("requireOwnedAccount - devuelve la cuenta si es del cliente dueño del usuario")
+    void requireOwnedAccount_deberiaDevolverLaCuentaPropia() {
+        // Arrange
+        UUID userId = UUID.randomUUID();
+        Account account = buildAccount(AccountStatusEnum.BLOCKED);
+        when(customerApi.getCustomerByUserId(userId)).thenReturn(customerView());
+        when(accountRepository.findByAccountNumber(ACCOUNT_NUMBER)).thenReturn(Optional.of(account));
+
+        // Act
+        AccountView view = accountApiService.requireOwnedAccount(userId, ACCOUNT_NUMBER);
+
+        // Assert: en cualquier estado, quien decide si sirve es el llamante
+        assertThat(view.id()).isEqualTo(account.getId());
+        assertThat(view.status()).isEqualTo(AccountStatusEnum.BLOCKED.name());
+    }
+
+    @Test
+    @DisplayName("requireOwnedAccount - una cuenta de otro cliente responde igual que una inexistente")
+    void requireOwnedAccount_deberiaOcultarLaCuentaAjena() {
+        // Arrange
+        UUID userId = UUID.randomUUID();
+        Account foreign = buildAccount(AccountStatusEnum.ACTIVE);
+        ReflectionTestUtils.setField(foreign, "customerId", UUID.randomUUID());
+        when(customerApi.getCustomerByUserId(userId)).thenReturn(customerView());
+        when(accountRepository.findByAccountNumber(ACCOUNT_NUMBER)).thenReturn(Optional.of(foreign));
+
+        // Act + Assert
+        assertThatThrownBy(() -> accountApiService.requireOwnedAccount(userId, ACCOUNT_NUMBER))
+                .isInstanceOf(AccountNotFoundException.class)
+                .hasMessage("Cuenta no encontrada: " + ACCOUNT_NUMBER);
+    }
+
+    @Nested
+    @DisplayName("applyTransfer")
+    class ApplyTransfer {
+
+        private final Account sender = buildAccount(AccountStatusEnum.ACTIVE);
+        private final Account receiver = buildAccount(AccountStatusEnum.ACTIVE);
+
+        private void lock(Account... accounts) {
+            when(accountRepository.findAllByIdForUpdate(List.of(sender.getId(), receiver.getId())))
+                    .thenReturn(List.of(accounts));
+        }
+
+        @Test
+        @DisplayName("Bloquea las dos cuentas, debita a la emisora y acredita a la receptora")
+        void deberiaMoverElDinero() {
+            // Arrange
+            lock(sender, receiver);
+
+            // Act
+            accountApiService.applyTransfer(sender.getId(), receiver.getId(), new BigDecimal("50.25"));
+
+            // Assert
+            assertThat(sender.getBalance()).isEqualByComparingTo("100.50");
+            assertThat(receiver.getBalance()).isEqualByComparingTo("201.00");
+            verify(accountRepository).saveAll(List.of(sender, receiver));
+        }
+
+        @Test
+        @DisplayName("Con saldo insuficiente lanza InsufficientFundsException y no cambia ninguna cuenta")
+        void deberiaRechazarSinMoverNada() {
+            // Arrange
+            lock(sender, receiver);
+
+            // Act + Assert
+            assertThatThrownBy(() -> accountApiService.applyTransfer(sender.getId(), receiver.getId(),
+                    new BigDecimal("150.76")))
+                    .isInstanceOf(InsufficientFundsException.class);
+            assertThat(sender.getBalance()).isEqualByComparingTo("150.75");
+            assertThat(receiver.getBalance()).isEqualByComparingTo("150.75");
+            verify(accountRepository, never()).saveAll(any());
+        }
+
+        @Test
+        @DisplayName("Si la receptora no está activa, la emisora tampoco se debita")
+        void noDeberiaDejarLaTransferenciaAMedias() {
+            // Arrange
+            Account inactive = buildAccount(AccountStatusEnum.INACTIVE);
+            when(accountRepository.findAllByIdForUpdate(List.of(sender.getId(), inactive.getId())))
+                    .thenReturn(List.of(sender, inactive));
+
+            // Act + Assert
+            assertThatThrownBy(() -> accountApiService.applyTransfer(sender.getId(), inactive.getId(), BigDecimal.TEN))
+                    .isInstanceOf(AccountNotActiveException.class);
+            assertThat(sender.getBalance()).isEqualByComparingTo("150.75");
+            assertThat(inactive.getBalance()).isEqualByComparingTo("150.75");
+        }
+
+        @Test
+        @DisplayName("Si una de las cuentas no existe lanza AccountNotFoundException")
+        void deberiaFallarSiFaltaUnaCuenta() {
+            // Arrange
+            lock(sender);
+
+            // Act + Assert
+            assertThatThrownBy(() -> accountApiService.applyTransfer(sender.getId(), receiver.getId(), BigDecimal.TEN))
+                    .isInstanceOf(AccountNotFoundException.class);
+        }
+
+        @Test
+        @DisplayName("Una transferencia de una cuenta a sí misma es un error de programación")
+        void deberiaExigirDosCuentasDistintas() {
+            assertThatThrownBy(() -> accountApiService.applyTransfer(sender.getId(), sender.getId(), BigDecimal.TEN))
+                    .isInstanceOf(IllegalArgumentException.class);
+            verifyNoInteractions(accountRepository);
+        }
     }
 }
