@@ -20,7 +20,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
+import com.udea.digitalbank.shared.security.Actor;
 
 import java.util.UUID;
 
@@ -45,9 +45,6 @@ class AuthControllerTest {
 
     @Mock
     private PasswordResetService passwordResetService;
-
-    @Mock
-    private Authentication authentication;
 
     private AuthController controller;
 
@@ -132,10 +129,9 @@ class AuthControllerTest {
     void logout_deberiaUsarPrincipalYResponder204() {
         // Arrange
         UUID userId = UUID.randomUUID();
-        when(authentication.getPrincipal()).thenReturn(userId);
 
         // Act
-        ResponseEntity<Void> response = controller.logout(authentication);
+        ResponseEntity<Void> response = controller.logout(new Actor(userId, false));
 
         // Assert
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
