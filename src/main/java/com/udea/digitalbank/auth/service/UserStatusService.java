@@ -5,11 +5,13 @@ import com.udea.digitalbank.auth.api.RoleEnum;
 import com.udea.digitalbank.auth.domain.User;
 import com.udea.digitalbank.auth.domain.UserStatus;
 import com.udea.digitalbank.auth.repository.UserRepository;
+import com.udea.digitalbank.shared.exception.auth.InvalidStatusTransitionException;
 import com.udea.digitalbank.shared.exception.auth.UserNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -17,6 +19,8 @@ public class UserStatusService {
 
     static final int MAX_FAILED_ATTEMPTS = 3;
     private static final int INACTIVITY_MONTHS = 12;
+    // Tope de ids por sentencia, para no pasar de los parámetros que admite la base en una sola consulta
+    private static final int INACTIVITY_BATCH_SIZE = 500;
 
     private final UserRepository userRepository;
     private final SessionService sessionService;
@@ -30,19 +34,33 @@ public class UserStatusService {
         this.catalogs = catalogs;
     }
 
-    // Los estados válidos son los del catálogo user_status; un valor fuera de él se rechaza
+    /**
+     * Cambio de estado pedido por un administrador: solo las transiciones de {@link UserStatusTransitions}.
+     * Pedir el estado actual no cambia nada. Es lo que usa UserApi; los flujos internos usan changeStatus.
+     */
+    @Transactional
+    public void requestChange(UUID userId, UserStatusEnum target) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("Usuario no encontrado: " + userId));
+        UserStatusEnum current = UserStatusEnum.valueOf(user.getStatus().getCode());
+        if (current == target) {
+            return;
+        }
+        if (!UserStatusTransitions.isAllowed(current, target)) {
+            throw new InvalidStatusTransitionException(
+                    "No se puede cambiar el estado de un usuario de " + current + " a " + target);
+        }
+        applyStatus(user, target);
+        userRepository.save(user);
+    }
+
+    // Cambio interno sin matriz (p. ej. confirmar el correo). Los estados válidos son los del catálogo user_status
     @Transactional
     public void changeStatus(UUID userId, UserStatusEnum statusEnum) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("Usuario no encontrado: " + userId));
         applyStatus(user, statusEnum);
-    }
-
-    // Un usuario inexistente no está activo. Lo consulta el filtro JWT en cada petición autenticada
-    public boolean isActive(UUID userId) {
-        return userRepository.findById(userId)
-                .map(user -> user.getStatus().is(UserStatusEnum.ACTIVE))
-                .orElse(false);
+        userRepository.save(user);
     }
 
     // Suma un fallo y bloquea al llegar al máximo
@@ -55,15 +73,27 @@ public class UserStatusService {
         userRepository.save(user);
     }
 
-    // Solo mueve clientes ACTIVE -> INACTIVE: los usuarios ADMIN quedan fuera por construcción
+    /**
+     * Pasa a INACTIVE a los clientes ACTIVE sin actividad en {@value #INACTIVITY_MONTHS} meses y cierra sus
+     * sesiones. Los usuarios ADMIN quedan fuera por construcción. Por lotes y con sentencias UPDATE y DELETE:
+     * no carga ni guarda los usuarios uno a uno.
+     */
     @Transactional
     public void markInactiveCustomers() {
-        LocalDateTime cutoff = LocalDateTime.now().minusMonths(INACTIVITY_MONTHS);
-        userRepository.findIdle(RoleEnum.CUSTOMER.name(), UserStatusEnum.ACTIVE.name(), cutoff)
-                .forEach(user -> {
-                    applyStatus(user, UserStatusEnum.INACTIVE);
-                    userRepository.save(user);
-                });
+        LocalDateTime now = LocalDateTime.now();
+        List<UUID> ids = userRepository.findIdleIds(
+                RoleEnum.CUSTOMER.name(), UserStatusEnum.ACTIVE.name(), now.minusMonths(INACTIVITY_MONTHS));
+        if (ids.isEmpty()) {
+            return;
+        }
+
+        UserStatus active = catalogs.status(UserStatusEnum.ACTIVE);
+        UserStatus inactive = catalogs.status(UserStatusEnum.INACTIVE);
+        for (int from = 0; from < ids.size(); from += INACTIVITY_BATCH_SIZE) {
+            List<UUID> batch = ids.subList(from, Math.min(from + INACTIVITY_BATCH_SIZE, ids.size()));
+            userRepository.moveStatus(batch, active, inactive, now);
+            sessionService.revokeAll(batch);
+        }
     }
 
     private void applyStatus(User user, UserStatusEnum statusEnum) {
@@ -77,6 +107,5 @@ public class UserStatusService {
         } else {
             sessionService.revoke(user.getId());
         }
-        userRepository.save(user);
     }
 }

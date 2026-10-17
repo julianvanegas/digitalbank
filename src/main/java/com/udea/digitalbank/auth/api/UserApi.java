@@ -19,6 +19,11 @@ public interface UserApi {
      */
     UserView createUser(String email, RoleEnum roleEnum);
 
+    /**
+     * Cambio de estado pedido por un administrador. Solo admite las transiciones permitidas (por ejemplo
+     * ACTIVE a INACTIVE o BLOCKED, y BLOCKED a ACTIVE) y rechaza el resto con un conflicto; pedir el estado
+     * que el usuario ya tiene no cambia nada. PENDING_VERIFICATION y PENDING_REVIEW nunca se fijan por aquí.
+     */
     void changeStatus(UUID userId, UserStatusEnum statusEnum);
 
     UserView getUser(UUID userId);
