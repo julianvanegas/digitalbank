@@ -58,7 +58,7 @@ import static org.mockito.Mockito.when;
  * simulan; los tokens los firma el JwtUtil real.
  * <p>
  * Tres garantías: la matriz fija qué rol puede usar cada endpoint; {@link #everyEndpointIsInTheMatrix} falla si
- * existe un endpoint que la matriz no conoce (hay que declararle permisos); y una ruta sin regla se deniega
+ * existe un endpoint que la matriz no conoce (se le deben declarar permisos); y una ruta sin regla se deniega
  * ({@link #aRouteWithoutRuleIsDenied}), así que olvidar una la deja cerrada y no abierta.
  * <p>
  * Las peticiones de la matriz llevan parámetros y cuerpos válidos, y {@link #unauthorizedRoleNeverSeesValidationErrors}
@@ -122,8 +122,10 @@ class ApiAuthorizationTest {
     @Autowired
     private JwtUtil jwtUtil;
 
-    // Los servicios que usan los controllers y el filtro: aquí solo importa la seguridad. SessionService decide, en una
-    // sola consulta, si el token es la sesión vigente de un usuario ACTIVE
+    /**
+     * Los servicios que usan los controllers y el filtro: aquí solo importa la seguridad. SessionService decide, en una
+     * sola consulta, si el token es la sesión vigente de un usuario ACTIVE.
+     */
     @MockitoBean
     private AuthService authService;
     @MockitoBean

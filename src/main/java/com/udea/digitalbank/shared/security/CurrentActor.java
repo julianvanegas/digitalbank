@@ -10,7 +10,7 @@ import java.lang.annotation.Target;
 
 /**
  * Marca el parámetro {@link Actor} de un controller que se resuelve con el usuario autenticado (token), no con un dato
- * de la petición. Se oculta de OpenAPI: sin eso Swagger lo mostraría como un parámetro de query que hay que llenar.
+ * de la petición. Se oculta de OpenAPI: sin eso Swagger lo mostraría como un parámetro de query que se debe llenar.
  */
 @Parameter(hidden = true)
 @Documented

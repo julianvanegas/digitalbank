@@ -13,7 +13,7 @@ import java.lang.annotation.Target;
 
 /**
  * Política de contraseña: de 8 a 16 caracteres, con mayúscula, minúscula, número y un carácter
- * especial. Un valor nulo es válido: se combina con @NotBlank donde la contraseña sea obligatoria.
+ * especial. Un valor nulo es válido: se combina con {@code @NotBlank} donde la contraseña sea obligatoria.
  */
 @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&#_.,;+ -]).{8,16}$")
 @ReportAsSingleViolation

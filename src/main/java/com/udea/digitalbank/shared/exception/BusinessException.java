@@ -14,11 +14,11 @@ public abstract class BusinessException extends RuntimeException {
         CONFLICT,
         /** Las credenciales o el código presentados no son válidos. */
         UNAUTHENTICATED,
-        /** Se sabe quién es, pero no puede hacer esto ahora. */
+        /** Se sabe quién es, pero no puede hacer esto en este momento. */
         FORBIDDEN,
         /** El dato recibido no es válido. */
         INVALID,
-        /** Se pidió demasiado pronto o demasiadas veces: hay que esperar o empezar de nuevo. */
+        /** La petición llega demasiado pronto o demasiadas veces: se debe esperar o empezar de nuevo. */
         TOO_MANY_REQUESTS
     }
 

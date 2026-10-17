@@ -32,7 +32,8 @@ public interface SecurityModule {
     }
 
     /**
-     * Ruta restringida por rol. method nulo = cualquier método HTTP; el patrón admite * (un segmento) y ** (varios).
+     * Ruta restringida por rol. Un {@code method} nulo equivale a cualquier método HTTP; el patrón admite {@code *} (un
+     * segmento) y {@code **} (varios).
      * Sin roles (solo con {@link #anyAuthenticated}) basta con estar autenticado, sea cual sea el rol.
      */
     record RoleRoute(HttpMethod method, String pattern, List<String> roles) {
@@ -72,7 +73,7 @@ public interface SecurityModule {
         }
     }
 
-    // method nulo = cualquier método HTTP
+    /** Ruta pública. Un {@code method} nulo equivale a cualquier método HTTP. */
     record PublicRoute(HttpMethod method, String pattern) {
 
         public static PublicRoute get(String pattern) {

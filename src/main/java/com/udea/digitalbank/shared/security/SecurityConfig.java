@@ -22,8 +22,10 @@ import java.util.stream.Collectors;
  */
 @Configuration
 @EnableWebSecurity
-// Los permisos por rol se declaran en SecurityModule.roleRoutes, no con @PreAuthorize. La seguridad por método queda
-// habilitada solo para que una anotación suelta no se ignore en silencio
+/**
+ * Los permisos por rol se declaran en SecurityModule.roleRoutes, no con {@code @PreAuthorize}. La seguridad por
+ * método queda habilitada solo para que una anotación suelta no se ignore en silencio.
+ */
 @EnableMethodSecurity
 public class SecurityConfig {
 
@@ -74,7 +76,7 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // Ajusta el origen según dónde corra tu frontend
+    /** Ajusta el origen según dónde corra el frontend. */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();

@@ -31,14 +31,14 @@ public class SecurityErrorHandler implements AuthenticationEntryPoint, AccessDen
         this.objectMapper = objectMapper;
     }
 
-    // Sin token, token inválido o expirado, o sesión revocada
+    /** Sin token, token inválido o expirado, o sesión revocada. */
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response,
                          AuthenticationException exception) throws IOException {
         write(response, 401, UNAUTHENTICATED_MESSAGE);
     }
 
-    // Autenticado, pero su rol no alcanza para esa ruta
+    /** Autenticado, pero su rol no alcanza para esa ruta. */
     @Override
     public void handle(HttpServletRequest request, HttpServletResponse response,
                        AccessDeniedException exception) throws IOException {

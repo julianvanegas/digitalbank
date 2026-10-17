@@ -19,13 +19,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Pruebas unitarias del validator {@link Password}, que aplica la política de contraseña
- * definida en HU01 (registro) y reutilizada en HU05 (recuperación de contraseña):
+ * definida en el registro y reutilizada en la recuperación de contraseña:
  * 8-16 caracteres, con al menos una mayúscula, una minúscula, un número y un carácter especial.
  * No requiere mocks: se valida directamente contra el motor de Bean Validation (jakarta.validation).
  */
 class PasswordConstraintTest {
 
-    // Envoltorio mínimo para poder aplicar la anotación @Password a un campo y validarlo
+    /** Envoltorio mínimo para poder aplicar la anotación {@code @Password} a un campo y validarlo. */
     @AllArgsConstructor
     static class PasswordHolder {
         @Password
@@ -47,14 +47,14 @@ class PasswordConstraintTest {
     }
 
     @Nested
-    @DisplayName("CA08 / CA12 / CA18 - Contraseñas que cumplen la política")
+    @DisplayName("Contraseñas que cumplen la política")
     class ContraseñasValidas {
 
         @ParameterizedTest(name = "\"{0}\" es una contraseña válida")
         @ValueSource(strings = {
-                "Abcdef1$",       // 8 caracteres exactos (límite inferior, CA18)
+                "Abcdef1$",       // 8 caracteres exactos (límite inferior)
                 "Abcdefghijklm1$", // 15 caracteres
-                "Abcdefghijklmn1$", // 16 caracteres exactos (límite superior, CA18)
+                "Abcdefghijklmn1$", // 16 caracteres exactos (límite superior)
                 "Password1!",
                 "MyBank#2026",
                 "S3guro_Clave"
@@ -85,7 +85,7 @@ class PasswordConstraintTest {
     }
 
     @Nested
-    @DisplayName("CA09 / CA13 - Longitud fuera del rango permitido")
+    @DisplayName("Longitud fuera del rango permitido")
     class LongitudInvalida {
 
         @ParameterizedTest(name = "\"{0}\" debe ser rechazada por longitud")
@@ -107,7 +107,7 @@ class PasswordConstraintTest {
     }
 
     @Nested
-    @DisplayName("CA10 / CA14 - Longitud correcta pero sin todos los requisitos de composición")
+    @DisplayName("Longitud correcta pero sin todos los requisitos de composición")
     class ComposicionInvalida {
 
         @ParameterizedTest(name = "\"{0}\" debe ser rechazada por composición")

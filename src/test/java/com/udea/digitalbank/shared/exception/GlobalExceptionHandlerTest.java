@@ -296,7 +296,7 @@ class GlobalExceptionHandlerTest {
     @DisplayName("Overrides de ResponseEntityExceptionHandler (errores propios de MVC)")
     class MvcHandlersTests {
 
-        // Método señuelo, solo para poder construir un MethodParameter real
+        /** Método señuelo, solo para poder construir un MethodParameter real. */
         @SuppressWarnings("unused")
         private void dummyMethod(Object arg) {
         }
