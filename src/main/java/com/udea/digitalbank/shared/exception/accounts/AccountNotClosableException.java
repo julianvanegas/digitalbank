@@ -3,7 +3,7 @@ package com.udea.digitalbank.shared.exception.accounts;
 import com.udea.digitalbank.shared.exception.BusinessException;
 
 /**
- * La cuenta no se puede cerrar por su situación: ya está cerrada, está bloqueada (primero hay que
+ * La cuenta no se puede cerrar por su situación: ya está cerrada, está bloqueada (primero se debe
  * desbloquearla) o todavía tiene saldo.
  */
 public class AccountNotClosableException extends BusinessException {

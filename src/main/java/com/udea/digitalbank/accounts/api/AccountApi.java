@@ -24,17 +24,34 @@ public interface AccountApi {
     AccountView requireActiveAccount(UUID accountId);
 
     /**
-     * La cuenta con ese número, si es del cliente dueño del usuario, en cualquier estado. Una cuenta ajena responde
-     * igual que una inexistente (AccountNotFoundException): así no se confirma que el número existe.
+     * Devuelve la cuenta con ese número si pertenece al cliente dueño del usuario, en cualquier estado. Una cuenta
+     * ajena responde igual que una inexistente, para no confirmar que el número existe.
+     *
+     * @param userId        usuario autenticado
+     * @param accountNumber número de la cuenta (12 dígitos)
+     * @return la vista de la cuenta
+     * @throws com.udea.digitalbank.shared.exception.accounts.AccountNotFoundException si la cuenta no existe o es de
+     *         otro cliente
      */
     AccountView requireOwnedAccount(UUID userId, String accountNumber);
 
     /**
-     * Mueve el monto de una cuenta a otra de forma atómica: bloquea las dos filas en un orden fijo, exige que ambas
-     * estén ACTIVE y que la emisora tenga saldo, y debita y acredita. Participa en la transacción del llamante: si
-     * algo falla después, el movimiento se revierte. Un rechazo (AccountNotFoundException,
-     * AccountNotActiveException o InsufficientFundsException) no deja nada a medias y tampoco marca la transacción
-     * del llamante para revertir, así que este puede atraparlo y registrar la transferencia como rechazada.
+     * Mueve un monto de una cuenta a otra de forma atómica. Bloquea las dos filas en un orden fijo (por id), exige que
+     * ambas estén {@code ACTIVE} y que la cuenta de origen tenga saldo, y entonces debita y acredita.
+     *
+     * <p><b>Transaccionalidad.</b> Participa en la transacción del llamante: si algo falla después, el movimiento se
+     * revierte. Un rechazo no deja nada a medias, porque las dos cuentas se validan antes de modificar cualquiera, y
+     * tampoco marca la transacción del llamante para revertir; así este puede atrapar la excepción y registrar la
+     * transferencia como rechazada.
+     *
+     * @param senderAccountId   cuenta que entrega el dinero
+     * @param receiverAccountId cuenta que lo recibe; debe ser distinta de la de origen
+     * @param amount            monto positivo
+     * @throws com.udea.digitalbank.shared.exception.accounts.AccountNotFoundException  si alguna cuenta no existe
+     * @throws com.udea.digitalbank.shared.exception.accounts.AccountNotActiveException si alguna cuenta no está activa
+     * @throws com.udea.digitalbank.shared.exception.accounts.InsufficientFundsException si el saldo de origen no
+     *         alcanza
+     * @throws IllegalArgumentException si ambas cuentas son la misma o el monto no es positivo
      */
     void applyTransfer(UUID senderAccountId, UUID receiverAccountId, BigDecimal amount);
 }

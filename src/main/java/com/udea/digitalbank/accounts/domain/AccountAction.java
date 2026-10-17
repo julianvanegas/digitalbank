@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * Una acción del historial de una cuenta: se bloqueó, se desbloqueó o se cerró, con su motivo, quién la hizo y
+ * Una acción del historial de una cuenta: se bloquea, se desbloquea o se cierra, con su motivo, quién la hizo y
  * cuándo. Es historial: solo se inserta, nunca se modifica. El estado actual de la cuenta vive en
  * accounts.status_id.
  */
@@ -28,7 +28,7 @@ public class AccountAction {
     @Column(nullable = false, updatable = false)
     private UUID accountId;
 
-    // Obligatorio en todas las acciones. En un cierre dice quién lo hizo: el cliente o un administrador
+    /** Obligatorio en todas las acciones. En un cierre dice quién lo hizo: el cliente o un administrador. */
     @Column(nullable = false, updatable = false, length = MAX_REASON_LENGTH)
     private String reason;
 
@@ -40,7 +40,7 @@ public class AccountAction {
     @CreationTimestamp
     private LocalDateTime createdAt;
 
-    // Usuario que hizo la acción, tal como viaja en el JWT: un administrador, o el titular si cerró su cuenta
+    /** Usuario que realiza la acción, tal como viaja en el JWT: un administrador, o el titular si cierra su cuenta. */
     @Column(nullable = false, updatable = false)
     private UUID createdBy;
 

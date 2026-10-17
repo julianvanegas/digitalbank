@@ -14,7 +14,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.UUID;
 
-/** Consultas de cuentas, todas de solo lectura: las propias del cliente y las que el administrador mira de cualquiera. */
+/**
+ * Consultas de cuentas, todas de solo lectura: las propias del cliente y las que el administrador mira de cualquiera.
+ */
 @Service
 public class AccountQueryService {
 
@@ -42,7 +44,7 @@ public class AccountQueryService {
     }
 
     /**
-     * Detalle de una cuenta por su número, en cualquier estado (HU13: CA04 y CA05 piden reflejarlo, no rechazarlo).
+     * Detalle de una cuenta por su número, en cualquier estado (se refleja el estado, no se rechaza).
      * Un cliente solo la obtiene si es suya (una ajena responde igual que una inexistente); un administrador, de
      * cualquiera, sin pasar por customerApi: un ADMIN no tiene fila en customers.
      */
@@ -51,7 +53,7 @@ public class AccountQueryService {
         return accountMapper.toResponse(readableAccount(actor, accountNumber));
     }
 
-    // HU12: en cualquier estado, con las mismas reglas de acceso que el detalle, que ya incluye el saldo
+    /** En cualquier estado, con las mismas reglas de acceso que el detalle, que ya incluye el saldo. */
     @Transactional(readOnly = true)
     public AccountBalanceResponse getBalance(Actor actor, String accountNumber) {
         return accountMapper.toBalanceResponse(readableAccount(actor, accountNumber));

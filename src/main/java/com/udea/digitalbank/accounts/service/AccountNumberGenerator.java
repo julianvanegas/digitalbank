@@ -8,8 +8,8 @@ import org.springframework.stereotype.Component;
  * <p>
  * Cada número sale del siguiente valor de la secuencia de la base, pasado por una permutación secreta
  * ({@link AccountNumberPermutation}). Así es único por construcción, sin sortear ni consultar si ya existe, y no
- * es secuencial para que nadie pueda deducir los números de las cuentas ajenas. El UNIQUE de la base queda como
- * garantía final, por ejemplo frente a un número sorteado al azar antes de esta secuencia.
+ * es secuencial para que nadie pueda deducir los números de las cuentas ajenas. El UNIQUE de la base es la
+ * garantía final: rechazaría cualquier número repetido, por ejemplo uno sorteado al azar que ya exista.
  */
 @Component
 class AccountNumberGenerator {
@@ -22,6 +22,9 @@ class AccountNumberGenerator {
         this.permutation = permutation;
     }
 
+    /**
+     * @return el siguiente número de cuenta (12 dígitos); no requiere consultar si ya existe
+     */
     String next() {
         return permutation.apply(accountRepository.nextAccountNumberValue());
     }

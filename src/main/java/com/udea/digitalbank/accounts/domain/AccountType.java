@@ -8,7 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.Immutable;
 
-// Catálogo de solo lectura de los tipos de cuenta: determina qué límites aplican a cada una
+/** Catálogo de solo lectura de los tipos de cuenta: determina qué límites aplican a cada una. */
 @Entity
 @Immutable
 @Table(name = "account_types")

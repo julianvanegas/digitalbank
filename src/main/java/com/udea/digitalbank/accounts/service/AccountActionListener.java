@@ -13,7 +13,7 @@ import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 /**
- * Avisa al titular de que su cuenta fue bloqueada (CA01), desbloqueada o cerrada, con el motivo. Corre después de
+ * Avisa al titular de que su cuenta fue bloqueada, desbloqueada o cerrada, con el motivo. Corre después de
  * confirmarse la transacción: un fallo del correo no deshace el cambio, que es una medida de seguridad y debe
  * quedar aplicada aunque el aviso no salga.
  */

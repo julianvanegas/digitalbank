@@ -9,7 +9,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.Immutable;
 
-// Catálogo de solo lectura de los estados en los que puede estar una cuenta
+/** Catálogo de solo lectura de los estados en los que puede estar una cuenta. */
 @Entity
 @Immutable
 @Table(name = "account_status")

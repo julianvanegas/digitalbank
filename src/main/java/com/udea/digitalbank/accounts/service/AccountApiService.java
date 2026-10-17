@@ -75,9 +75,13 @@ public class AccountApiService implements AccountApi {
         return accountMapper.toView(accountLookup.byNumberOwnedBy(accountNumber, customer.id()));
     }
 
-    // noRollbackFor: el rechazo es un resultado esperado que el llamante atrapa para registrar la transferencia como
-    // REJECTED. Sin esto, la excepción marcaría la transacción del llamante como solo-revertir y ese registro se perdería.
-    // No queda nada a medias: las dos cuentas se validan antes de mover dinero en cualquiera
+    /**
+     * {@inheritDoc}
+     *
+     * <p>Se declara {@code noRollbackFor = BusinessException.class} porque el rechazo es un resultado esperado que el
+     * llamante atrapa para registrar la transferencia como {@code REJECTED}. Sin esa opción, la excepción marcaría la
+     * transacción del llamante como "solo revertir" y ese registro se perdería.
+     */
     @Override
     @Transactional(noRollbackFor = BusinessException.class)
     public void applyTransfer(UUID senderAccountId, UUID receiverAccountId, BigDecimal amount) {
@@ -97,6 +101,7 @@ public class AccountApiService implements AccountApi {
         accountRepository.saveAll(List.of(sender, receiver));
     }
 
+    // Cuenta de las bloqueadas, o AccountNotFoundException si la consulta no la devuelve
     private static Account require(Map<UUID, Account> accounts, UUID accountId) {
         Account account = accounts.get(accountId);
         if (account == null) {

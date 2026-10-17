@@ -104,7 +104,7 @@ class AccountTest {
         }
 
         @Test
-        @DisplayName("Una cuenta ya bloqueada se rechaza (CA02)")
+        @DisplayName("Una cuenta ya bloqueada se rechaza")
         void deberiaRechazarUnaCuentaYaBloqueada() {
             Account account = account(AccountStatusEnum.BLOCKED, "0");
 
@@ -193,7 +193,7 @@ class AccountTest {
         }
 
         @Test
-        @DisplayName("Bloqueada no se cierra: primero hay que desbloquearla")
+        @DisplayName("Bloqueada no se cierra: primero se debe desbloquearla")
         void deberiaRechazarUnaCuentaBloqueada() {
             Account account = account(AccountStatusEnum.BLOCKED, "0");
 
