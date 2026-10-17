@@ -267,7 +267,7 @@ class UserApiServiceTest {
     class ChangeStatusTests {
 
         @Test
-        @DisplayName("Delega el cambio de estado en UserStatusService")
+        @DisplayName("Delega el cambio de estado en UserStatusService.requestChange, que aplica la matriz de transiciones")
         void deberiaDelegarCambioDeEstado() {
             // Arrange
             UUID userId = UUID.randomUUID();
@@ -276,7 +276,7 @@ class UserApiServiceTest {
             userApi.changeStatus(userId, UserStatusEnum.BLOCKED);
 
             // Assert
-            verify(userStatusService).changeStatus(userId, UserStatusEnum.BLOCKED);
+            verify(userStatusService).requestChange(userId, UserStatusEnum.BLOCKED);
         }
     }
 }

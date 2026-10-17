@@ -70,7 +70,7 @@ public class UserApiService implements UserApi {
     @Override
     @Transactional
     public void changeStatus(UUID userId, UserStatusEnum statusEnum) {
-        userStatusService.changeStatus(userId, statusEnum);
+        userStatusService.requestChange(userId, statusEnum);
     }
 
     @Override
