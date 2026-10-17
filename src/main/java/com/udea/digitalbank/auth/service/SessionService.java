@@ -1,5 +1,6 @@
 package com.udea.digitalbank.auth.service;
 
+import com.udea.digitalbank.auth.api.UserStatusEnum;
 import com.udea.digitalbank.auth.domain.AuthSession;
 import com.udea.digitalbank.auth.domain.User;
 import com.udea.digitalbank.auth.repository.AuthSessionRepository;
@@ -11,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.Collection;
 import java.util.Date;
 import java.util.UUID;
 
@@ -45,9 +47,9 @@ public class SessionService {
         return jwtUtil.generateToken(user.getId(), user.getRole().getCode(), jti, toDate(issuedAt), toDate(tokenExpiresAt));
     }
 
-    // Sesión única: sobrescribe la fila del usuario y con ello invalida el jti anterior
-    @Transactional
-    void open(UUID userId, String jti, LocalDateTime issuedAt, LocalDateTime expiresAt) {
+    // Sesión única: sobrescribe la fila del usuario y con ello invalida el jti anterior. Va dentro de la transacción
+    // de start(), que es quien la declara
+    private void open(UUID userId, String jti, LocalDateTime issuedAt, LocalDateTime expiresAt) {
         sessionRepository.save(new AuthSession(userId, UUID.fromString(jti), issuedAt, expiresAt));
     }
 
@@ -57,8 +59,15 @@ public class SessionService {
         sessionRepository.deleteByUser(userId);
     }
 
-    // Un token solo vale si su jti es el de la fila del usuario y la sesión no ha vencido. expires_at es
-    // "última actividad + inactividad": si vale, la petición cuenta como actividad y lo desplaza
+    // Cierra las sesiones de varios usuarios con una sola sentencia (trabajos masivos)
+    @Transactional
+    public void revokeAll(Collection<UUID> userIds) {
+        sessionRepository.deleteByUsers(userIds);
+    }
+
+    // Un token solo vale si su jti es el de la fila del usuario, la sesión no ha vencido y el usuario está ACTIVE.
+    // expires_at es "última actividad + inactividad": si vale, la petición cuenta como actividad y lo desplaza.
+    // Todo en una sola sentencia: la petición autenticada no hace otra consulta para el estado del usuario
     @Transactional
     public boolean validateAndTouch(UUID userId, String jti) {
         if (jti == null) {
@@ -71,7 +80,8 @@ public class SessionService {
             return false;
         }
         LocalDateTime now = LocalDateTime.now();
-        return sessionRepository.touch(userId, jtiValue, now, now.plus(inactivityTimeout)) > 0;
+        return sessionRepository.touch(userId, jtiValue, now, now.plus(inactivityTimeout),
+                UserStatusEnum.ACTIVE.name()) > 0;
     }
 
     // Las sesiones vencidas ya no valen (validateAndTouch las rechaza); esto solo evita que se acumulen
