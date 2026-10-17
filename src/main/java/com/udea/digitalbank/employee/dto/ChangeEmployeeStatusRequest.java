@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
-public class ChangeStatusRequest {
+public class ChangeEmployeeStatusRequest {
     @NotNull
     private UserStatusEnum status;
 }
