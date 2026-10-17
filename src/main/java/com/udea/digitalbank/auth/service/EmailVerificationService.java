@@ -5,6 +5,7 @@ import com.udea.digitalbank.auth.api.UserStatusEnum;
 import com.udea.digitalbank.auth.domain.PurposeEnum;
 import com.udea.digitalbank.auth.domain.User;
 import com.udea.digitalbank.auth.repository.UserRepository;
+import com.udea.digitalbank.shared.exception.InvalidRequestException;
 import com.udea.digitalbank.shared.exception.auth.InvalidVerificationCodeException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -43,11 +44,12 @@ public class EmailVerificationService {
     @Transactional(noRollbackFor = InvalidVerificationCodeException.class)
     public void verifyEmail(String email, String code, String password, String confirmPassword) {
         if (password == null || !password.equals(confirmPassword)) {
-            throw new IllegalArgumentException("La contraseña y su confirmación no coinciden");
+            throw new InvalidRequestException("La contraseña y su confirmación no coinciden");
         }
 
         UUID userId = verificationService.verifyByEmail(email, PurposeEnum.EMAIL_CONFIRMATION, code);
-        User user = userRepository.findById(userId).orElseThrow();
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new InvalidVerificationCodeException("Código de verificación inválido o expirado"));
         // Solo confirma usuarios pendientes: un reto viejo no debe cambiar la contraseña de una cuenta ya
         // habilitada, bloqueada o inactiva
         if (!user.getStatus().is(UserStatusEnum.PENDING_VERIFICATION)) {
