@@ -9,6 +9,7 @@ import java.util.Date;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Pruebas unitarias de {@link JwtUtil}. Sin mocks: se genera y valida un JWT real, porque es
@@ -25,6 +26,7 @@ class JwtUtilTest {
         // @Value se resuelve normalmente vía Spring; aquí se fija por reflexión al no levantar contexto.
         setField(jwtUtil, "secret", "clave-de-prueba-con-mas-de-32-caracteres-para-hmac");
         setField(jwtUtil, "expirationMs", 900_000L); // 15 minutos
+        jwtUtil.init(); // lo que Spring hace al crear el bean (@PostConstruct)
     }
 
     private static void setField(Object target, String fieldName, Object value) {
@@ -34,6 +36,62 @@ class JwtUtilTest {
             field.set(target, value);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    @Nested
+    @DisplayName("init - el secreto se valida al arrancar")
+    class SecretValidation {
+
+        private JwtUtil withSecret(String secret) {
+            JwtUtil util = new JwtUtil();
+            setField(util, "secret", secret);
+            setField(util, "expirationMs", 900_000L);
+            return util;
+        }
+
+        @Test
+        @DisplayName("Un secreto de menos de 32 bytes impide que la app arranque, con un mensaje claro")
+        void deberiaRechazarUnSecretoCorto() {
+            assertThatThrownBy(() -> withSecret("a".repeat(31)).init())
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("jwt.secret")
+                    .hasMessageContaining("32")
+                    .hasMessageContaining("tiene 31");
+        }
+
+        @Test
+        @DisplayName("Un secreto ausente o vacío también se rechaza")
+        void deberiaRechazarUnSecretoAusenteOVacio() {
+            assertThatThrownBy(() -> withSecret(null).init()).isInstanceOf(IllegalStateException.class);
+            assertThatThrownBy(() -> withSecret("").init()).isInstanceOf(IllegalStateException.class);
+        }
+
+        @Test
+        @DisplayName("Exactamente 32 bytes es suficiente y el token se puede firmar y leer")
+        void deberiaAceptarExactamente32Bytes() {
+            JwtUtil util = withSecret("a".repeat(32));
+            util.init();
+
+            Date now = new Date();
+            UUID userId = UUID.randomUUID();
+            String token = util.generateToken(userId, "ADMIN", UUID.randomUUID().toString(), now,
+                    new Date(now.getTime() + 60_000));
+
+            assertThat(util.tryParse(token)).isPresent();
+        }
+
+        @Test
+        @DisplayName("Se miden bytes UTF-8, no caracteres: 20 letras ñ son 40 bytes y bastan")
+        void deberiaMedirBytesYNoCaracteres() {
+            String secret = "ñ".repeat(20);
+            assertThat(secret.length()).isEqualTo(20);
+
+            JwtUtil util = withSecret(secret);
+            util.init();
+
+            assertThat(util.tryParse(util.generateToken(UUID.randomUUID(), "CUSTOMER",
+                    UUID.randomUUID().toString(), new Date(), new Date(System.currentTimeMillis() + 60_000)))).isPresent();
         }
     }
 
@@ -73,7 +131,7 @@ class JwtUtilTest {
     }
 
     @Nested
-    @DisplayName("isValid - CA09/CA10 de HU02/HU04 (token expirado o alterado no debe validar)")
+    @DisplayName("tryParse - CA09/CA10 de HU02/HU04 (token expirado o alterado no debe validar)")
     class IsValid {
 
         @Test
@@ -85,7 +143,7 @@ class JwtUtilTest {
             String token = jwtUtil.generateToken(UUID.randomUUID(), "CUSTOMER", "jti-1", issuedAt, expiresAt);
 
             // Act & Assert
-            assertThat(jwtUtil.isValid(token)).isTrue();
+            assertThat(jwtUtil.tryParse(token)).isPresent();
         }
 
         @Test
@@ -97,7 +155,7 @@ class JwtUtilTest {
             String token = jwtUtil.generateToken(UUID.randomUUID(), "CUSTOMER", "jti-1", issuedAt, expiresAt);
 
             // Act & Assert
-            assertThat(jwtUtil.isValid(token)).isFalse();
+            assertThat(jwtUtil.tryParse(token)).isEmpty();
         }
 
         @Test
@@ -107,18 +165,19 @@ class JwtUtilTest {
             JwtUtil otraInstancia = new JwtUtil();
             setField(otraInstancia, "secret", "otra-clave-completamente-distinta-de-32-caracteres");
             setField(otraInstancia, "expirationMs", 900_000L);
+            otraInstancia.init();
             Date issuedAt = new Date();
             Date expiresAt = new Date(issuedAt.getTime() + 900_000L);
             String tokenFalsificado = otraInstancia.generateToken(UUID.randomUUID(), "CUSTOMER", "jti-1", issuedAt, expiresAt);
 
             // Act & Assert
-            assertThat(jwtUtil.isValid(tokenFalsificado)).isFalse();
+            assertThat(jwtUtil.tryParse(tokenFalsificado)).isEmpty();
         }
 
         @Test
         @DisplayName("Un texto que no es un JWT no es válido")
         void noDeberiaSerValidoUnTextoQueNoEsUnToken() {
-            assertThat(jwtUtil.isValid("esto-no-es-un-token")).isFalse();
+            assertThat(jwtUtil.tryParse("esto-no-es-un-token")).isEmpty();
         }
     }
 }
