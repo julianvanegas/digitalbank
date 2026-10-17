@@ -27,6 +27,8 @@ public class AuthService {
     private final VerificationService verificationService;
     private final VerificationDispatcher verificationDispatcher;
     private final UserStatusService userStatusService;
+    // Hash con el costo del codificador configurado, contra el que se compara cuando el correo no existe
+    private final String unknownUserHash;
 
     public AuthService(UserRepository userRepository,
                        SessionService sessionService,
@@ -40,13 +42,18 @@ public class AuthService {
         this.verificationService = verificationService;
         this.verificationDispatcher = verificationDispatcher;
         this.userStatusService = userStatusService;
+        this.unknownUserHash = passwordEncoder.encode(UUID.randomUUID().toString());
     }
 
     // noRollbackFor: el fallo de contraseña debe persistir el contador (y el bloqueo) aunque se lance la excepción
     @Transactional(noRollbackFor = {InvalidCredentialsException.class, UserNotEnabledException.class})
     public LoginResponse login(LoginRequest request) {
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new InvalidCredentialsException("Email o contraseña incorrectos"));
+        User user = userRepository.findByEmail(request.getEmail()).orElse(null);
+        if (user == null) {
+            // Gasta el mismo tiempo de BCrypt que un usuario real: si no, responder rápido delataría qué correos no existen
+            passwordEncoder.matches(request.getPassword(), unknownUserHash);
+            throw new InvalidCredentialsException("Email o contraseña incorrectos");
+        }
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
             // Solo usuarios ACTIVE acumulan intentos: el resto ya no puede iniciar sesión

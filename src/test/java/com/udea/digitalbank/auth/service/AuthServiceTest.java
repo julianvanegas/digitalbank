@@ -29,6 +29,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 /**
@@ -159,7 +160,7 @@ class AuthServiceTest {
         }
 
         @Test
-        @DisplayName("CA03 - Correo no registrado: mismo mensaje genérico que credenciales incorrectas")
+        @DisplayName("CA03 - Correo no registrado: mismo mensaje genérico y mismo gasto de BCrypt que un usuario real")
         void deberiaRechazarConMensajeGenericoCuandoElCorreoNoExiste() {
             // Arrange
             LoginRequest request = buildLoginRequest("noexiste@example.com", "cualquiera");
@@ -169,8 +170,11 @@ class AuthServiceTest {
             Throwable thrown = catchThrowableFrom(() -> authService.login(request));
 
             // Assert
-            assertThat(thrown).isInstanceOf(InvalidCredentialsException.class);
-            verifyNoInteractions(passwordEncoder, userStatusService, verificationDispatcher);
+            assertThat(thrown).isInstanceOf(InvalidCredentialsException.class)
+                    .hasMessage("Email o contraseña incorrectos");
+            // Compara contra un hash de relleno para igualar el tiempo de respuesta con el de un usuario real
+            verify(passwordEncoder).matches(eq("cualquiera"), any());
+            verifyNoInteractions(userStatusService, verificationDispatcher);
         }
 
         @Test

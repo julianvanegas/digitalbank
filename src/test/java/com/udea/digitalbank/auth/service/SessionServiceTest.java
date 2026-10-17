@@ -17,6 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -123,17 +124,35 @@ class SessionServiceTest {
     }
 
     @Nested
+    @DisplayName("revokeAll - cierre masivo de sesiones")
+    class RevokeAll {
+
+        @Test
+        @DisplayName("Borra las sesiones de todos los usuarios indicados con una sola sentencia")
+        void deberiaBorrarLasSesionesDeVariosUsuarios() {
+            // Arrange
+            List<UUID> userIds = List.of(UUID.randomUUID(), UUID.randomUUID());
+
+            // Act
+            sessionService.revokeAll(userIds);
+
+            // Assert
+            verify(sessionRepository).deleteByUsers(userIds);
+        }
+    }
+
+    @Nested
     @DisplayName("validateAndTouch - CA07/CA09/CA10 de HU04 (validez del token e inactividad)")
     class ValidateAndTouch {
 
         @Test
-        @DisplayName("CA07 - Sesión vigente y activa: es válida y la petición renueva la actividad")
+        @DisplayName("CA07 - Sesión vigente de un usuario ACTIVE: es válida y la petición renueva la actividad")
         void deberiaConsiderarValidaUnaSesionVigenteYRenovarLaActividad() {
             // Arrange
             UUID userId = UUID.randomUUID();
             String jti = UUID.randomUUID().toString();
             when(sessionRepository.touch(eq(userId), eq(UUID.fromString(jti)),
-                    any(LocalDateTime.class), any(LocalDateTime.class)))
+                    any(LocalDateTime.class), any(LocalDateTime.class), eq("ACTIVE")))
                     .thenReturn(1);
 
             LocalDateTime before = LocalDateTime.now();
@@ -144,19 +163,20 @@ class SessionServiceTest {
             // El nuevo vencimiento es "ahora" más 5 minutos de inactividad
             ArgumentCaptor<LocalDateTime> now = ArgumentCaptor.forClass(LocalDateTime.class);
             ArgumentCaptor<LocalDateTime> newExpiresAt = ArgumentCaptor.forClass(LocalDateTime.class);
-            verify(sessionRepository).touch(eq(userId), eq(UUID.fromString(jti)), now.capture(), newExpiresAt.capture());
+            verify(sessionRepository).touch(eq(userId), eq(UUID.fromString(jti)), now.capture(), newExpiresAt.capture(),
+                    eq("ACTIVE"));
             assertThat(now.getValue()).isCloseTo(before, within(2, ChronoUnit.SECONDS));
             assertThat(newExpiresAt.getValue()).isEqualTo(now.getValue().plusMinutes(5));
         }
 
         @Test
-        @DisplayName("CA09/CA10 - Sesión cerrada, expirada, inactiva o con jti distinto: es inválida")
+        @DisplayName("CA09/CA10 - Sesión cerrada, expirada, con jti distinto o de un usuario que ya no está ACTIVE: es inválida")
         void deberiaConsiderarInvalidaUnaSesionQueNoCoincideExpiroOEstaInactiva() {
             // Arrange
             UUID userId = UUID.randomUUID();
             String jti = UUID.randomUUID().toString();
             when(sessionRepository.touch(eq(userId), eq(UUID.fromString(jti)),
-                    any(LocalDateTime.class), any(LocalDateTime.class)))
+                    any(LocalDateTime.class), any(LocalDateTime.class), eq("ACTIVE")))
                     .thenReturn(0);
 
             // Act & Assert
