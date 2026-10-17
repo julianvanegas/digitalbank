@@ -1,23 +1,36 @@
 package com.udea.digitalbank.accounts.domain;
 
+import com.udea.digitalbank.accounts.api.AccountStatusEnum;
+import com.udea.digitalbank.shared.exception.accounts.AccountNotBlockableException;
+import com.udea.digitalbank.shared.exception.accounts.AccountNotClosableException;
+import com.udea.digitalbank.shared.exception.accounts.AccountNotUnblockableException;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-// Cuenta de ahorros de un cliente. Los datos del titular viven en customer: aquí solo su id.
+/**
+ * Cuenta de un cliente. Los datos del titular viven en customer: aquí solo su id.
+ * <p>
+ * Es la dueña de sus reglas: el estado y el saldo no tienen setters, solo cambian con {@link #block},
+ * {@link #unlock} y {@link #close}, que validan que el cambio sea posible. La cuenta nace con {@link #open}.
+ */
 @Entity
 @Table(name = "accounts")
 @Getter
-@Setter
 @NoArgsConstructor
 public class Account {
 
     public static final BigDecimal INITIAL_BALANCE = new BigDecimal("0.00");
+
+    public static final int ACCOUNT_NUMBER_LENGTH = 12;
 
     // El consecutivo de la llave puede crecer, así que la columna deja margen de sobra
     public static final int MAX_KEY_LENGTH = 64;
@@ -26,8 +39,9 @@ public class Account {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    // Identificador público de la cuenta: 11 dígitos, único e inmutable
-    @Column(nullable = false, unique = true, updatable = false, length = 11)
+    // Identificador público de la cuenta: 12 dígitos (CHAR(12)), único e inmutable
+    @JdbcTypeCode(SqlTypes.CHAR)
+    @Column(nullable = false, unique = true, updatable = false, length = ACCOUNT_NUMBER_LENGTH)
     private String accountNumber;
 
     /**
@@ -42,10 +56,15 @@ public class Account {
     @Column(nullable = false, updatable = false)
     private UUID customerId;
 
-    // Posición dentro del cupo del titular (1 a 3): junto con el UNIQUE (customer_id, account_index)
-    // de la base es lo que impide una cuarta cuenta incluso con dos aperturas simultáneas
+    // Posición dentro del cupo del titular (1 a 3): junto con el UNIQUE parcial (customer_id, account_index)
+    // de la base, que solo mira las cuentas no cerradas, impide una cuarta cuenta abierta incluso con dos
+    // aperturas simultáneas. Una cuenta cerrada libera su posición para la siguiente
     @Column(nullable = false, updatable = false)
     private Short accountIndex;
+
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
+    @JoinColumn(name = "account_type_id", nullable = false, updatable = false)
+    private AccountType accountType;
 
     @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "status_id", nullable = false)
@@ -57,19 +76,91 @@ public class Account {
     private BigDecimal balance = INITIAL_BALANCE;
 
     @Column(nullable = false, updatable = false)
+    @CreationTimestamp
     private LocalDateTime createdAt;
 
     @Column(nullable = false)
+    @UpdateTimestamp
     private LocalDateTime updatedAt;
 
-    @PrePersist
-    void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = createdAt;
+    // Solo tiene valor mientras la cuenta está CLOSED: un CHECK de la base lo exige en ambos sentidos
+    private LocalDateTime closedAt;
+
+    /**
+     * Control optimista de concurrencia: Hibernate la incrementa en cada UPDATE y rechaza una escritura hecha sobre
+     * una versión vieja. Protege los cambios que no leen la fila con bloqueo, como los de saldo del módulo de
+     * transacciones; bloquear, desbloquear y cerrar además la leen con bloqueo pesimista.
+     */
+    @Version
+    private Long version;
+
+    /** Una cuenta nueva: activa y sin saldo, porque la apertura no exige depósito inicial. */
+    public static Account open(UUID customerId, String accountNumber, String accountKey, short accountIndex,
+                               AccountType accountType, AccountStatus activeStatus) {
+        requireTarget(activeStatus, AccountStatusEnum.ACTIVE);
+        Account account = new Account();
+        account.customerId = customerId;
+        account.accountNumber = accountNumber;
+        account.accountKey = accountKey;
+        account.accountIndex = accountIndex;
+        account.accountType = accountType;
+        account.status = activeStatus;
+        return account;
     }
 
-    @PreUpdate
-    void onUpdate() {
-        updatedAt = LocalDateTime.now();
+    public boolean is(AccountStatusEnum expected) {
+        return status.is(expected);
+    }
+
+    /** Bloqueo temporal (CA01): solo una cuenta activa; una ya bloqueada se rechaza por CA02. */
+    public void block(AccountStatus blockedStatus) {
+        if (is(AccountStatusEnum.BLOCKED)) {
+            throw new AccountNotBlockableException("La cuenta " + accountNumber + " ya está bloqueada");
+        }
+        if (!is(AccountStatusEnum.ACTIVE)) {
+            throw new AccountNotBlockableException("Solo se puede bloquear una cuenta activa; la cuenta "
+                    + accountNumber + " está en estado " + status.getCode());
+        }
+        requireTarget(blockedStatus, AccountStatusEnum.BLOCKED);
+        status = blockedStatus;
+    }
+
+    /** Desbloqueo: solo una cuenta bloqueada, para no reactivar por accidente una que no lo estaba. */
+    public void unlock(AccountStatus activeStatus) {
+        if (!is(AccountStatusEnum.BLOCKED)) {
+            throw new AccountNotUnblockableException("Solo se puede desbloquear una cuenta bloqueada; la cuenta "
+                    + accountNumber + " está en estado " + status.getCode());
+        }
+        requireTarget(activeStatus, AccountStatusEnum.ACTIVE);
+        status = activeStatus;
+    }
+
+    /**
+     * Cierre: solo una cuenta ACTIVE o INACTIVE y con saldo cero. Con dinero hay que retirarlo antes, y una
+     * bloqueada hay que desbloquearla primero, para que cerrarla no sirva para esquivar un bloqueo. Deja el estado
+     * y la fecha de cierre a la vez, porque la base exige las dos cosas juntas.
+     */
+    public void close(AccountStatus closedStatus, LocalDateTime closedAt) {
+        if (is(AccountStatusEnum.CLOSED)) {
+            throw new AccountNotClosableException("La cuenta " + accountNumber + " ya está cerrada");
+        }
+        if (is(AccountStatusEnum.BLOCKED)) {
+            throw new AccountNotClosableException(
+                    "La cuenta " + accountNumber + " está bloqueada; hay que desbloquearla antes de cerrarla");
+        }
+        if (balance.compareTo(BigDecimal.ZERO) != 0) {
+            throw new AccountNotClosableException(
+                    "La cuenta " + accountNumber + " tiene saldo; debe estar en cero para poder cerrarla");
+        }
+        requireTarget(closedStatus, AccountStatusEnum.CLOSED);
+        this.status = closedStatus;
+        this.closedAt = closedAt;
+    }
+
+    // El estado que se pasa debe ser el del cambio que se pide: evita dejar una cuenta en un estado equivocado
+    private static void requireTarget(AccountStatus target, AccountStatusEnum expected) {
+        if (target == null || !target.is(expected)) {
+            throw new IllegalArgumentException("Se esperaba el estado " + expected + " del catálogo");
+        }
     }
 }

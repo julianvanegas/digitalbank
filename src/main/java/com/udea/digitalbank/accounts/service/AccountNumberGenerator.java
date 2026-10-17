@@ -1,20 +1,21 @@
 package com.udea.digitalbank.accounts.service;
 
+import com.udea.digitalbank.accounts.domain.Account;
 import com.udea.digitalbank.accounts.repository.AccountRepository;
 import org.springframework.stereotype.Component;
 
 import java.security.SecureRandom;
 
 /**
- * Genera el número público de la cuenta: 11 dígitos, el primero distinto de cero.
+ * Genera el número público de la cuenta: 12 dígitos, el primero distinto de cero.
  * Es aleatorio y no secuencial para que nadie pueda deducir los números de las cuentas ajenas;
  * la unicidad la garantiza el UNIQUE de la base y aquí solo se evita el choque conocido.
  */
 @Component
 class AccountNumberGenerator {
 
-    private static final int DIGITS = 11;
-    // Con 9 · 10^10 combinaciones posibles, agotar diez intentos seguidos es inconcebible salvo avería
+    private static final int DIGITS = Account.ACCOUNT_NUMBER_LENGTH;
+    // Con 9 · 10^11 combinaciones posibles, agotar diez intentos seguidos es inconcebible salvo avería
     private static final int MAX_ATTEMPTS = 10;
 
     private final SecureRandom secureRandom = new SecureRandom();
