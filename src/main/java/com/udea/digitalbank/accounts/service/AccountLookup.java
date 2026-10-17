@@ -30,19 +30,26 @@ class AccountLookup {
                 .orElseThrow(() -> new AccountNotFoundException("Cuenta no encontrada: " + accountNumber));
     }
 
-    // La cuenta de otro cliente se trata como inexistente: un 403 confirmaría que el id existe
-    Account ownedBy(UUID accountId, UUID customerId) {
-        Account account = byId(accountId);
-        if (!account.getCustomerId().equals(customerId)) {
-            throw new AccountNotFoundException("Cuenta no encontrada: " + accountId);
-        }
-        return account;
+    // Para los casos de uso que cambian el estado de la cuenta (bloquear, desbloquear): dos peticiones
+    // simultáneas se turnan en vez de leer el mismo estado y registrar la misma acción dos veces
+    Account byNumberForUpdate(String accountNumber) {
+        return accountRepository.findByAccountNumberForUpdate(accountNumber)
+                .orElseThrow(() -> new AccountNotFoundException("Cuenta no encontrada: " + accountNumber));
     }
 
-    // Igual que ownedBy, pero por número. El mensaje lleva el número que envió el cliente, nunca el id
-    // interno: así "no existe" y "es de otro cliente" producen exactamente la misma respuesta
+    // La cuenta de otro cliente se trata como inexistente: un 403 confirmaría que el número existe.
+    // El mensaje lleva el número que envió el cliente, nunca el id interno: así "no existe" y
+    // "es de otro cliente" producen exactamente la misma respuesta
     Account byNumberOwnedBy(String accountNumber, UUID customerId) {
-        Account account = byNumber(accountNumber);
+        return requireOwner(byNumber(accountNumber), accountNumber, customerId);
+    }
+
+    // Igual que byNumberOwnedBy, pero con la fila bloqueada: para cambiar el estado de la cuenta del titular
+    Account byNumberOwnedByForUpdate(String accountNumber, UUID customerId) {
+        return requireOwner(byNumberForUpdate(accountNumber), accountNumber, customerId);
+    }
+
+    private static Account requireOwner(Account account, String accountNumber, UUID customerId) {
         if (!account.getCustomerId().equals(customerId)) {
             throw new AccountNotFoundException("Cuenta no encontrada: " + accountNumber);
         }
