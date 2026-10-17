@@ -2,14 +2,17 @@ package com.udea.digitalbank.customer.service;
 
 import com.udea.digitalbank.auth.api.UserApi;
 import com.udea.digitalbank.auth.api.RoleEnum;
+import com.udea.digitalbank.auth.api.UserStatusEnum;
 import com.udea.digitalbank.auth.api.UserView;
 import com.udea.digitalbank.customer.domain.Customer;
 import com.udea.digitalbank.customer.domain.DocumentType;
 import com.udea.digitalbank.customer.dto.CreateCustomerRequest;
 import com.udea.digitalbank.customer.dto.CustomerResponse;
+import com.udea.digitalbank.customer.dto.DocumentTypeResponse;
 import com.udea.digitalbank.customer.mapper.CustomerMapper;
 import com.udea.digitalbank.customer.repository.CustomerRepository;
 import com.udea.digitalbank.customer.repository.DocumentTypeRepository;
+import com.udea.digitalbank.shared.exception.InvalidRequestException;
 import com.udea.digitalbank.shared.exception.auth.DuplicateUserException;
 import com.udea.digitalbank.shared.exception.customer.CustomerNotFoundException;
 import com.udea.digitalbank.shared.exception.customer.DuplicateCustomerException;
@@ -21,8 +24,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Sort;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -171,7 +176,7 @@ class CustomerServiceTest {
             Throwable thrown = catchThrowable(() -> customerService.create(request));
 
             // Assert
-            assertThat(thrown).isInstanceOf(IllegalArgumentException.class)
+            assertThat(thrown).isInstanceOf(InvalidRequestException.class)
                     .hasMessageContaining("18");
             verifyNoInteractions(documentTypeRepository, customerRepository, userApi);
         }
@@ -188,7 +193,7 @@ class CustomerServiceTest {
             Throwable thrown = catchThrowable(() -> customerService.create(request));
 
             // Assert
-            assertThat(thrown).isInstanceOf(IllegalArgumentException.class);
+            assertThat(thrown).isInstanceOf(InvalidRequestException.class);
             verifyNoInteractions(customerRepository, userApi);
         }
 
@@ -232,6 +237,30 @@ class CustomerServiceTest {
             // Assert
             assertThat(thrown).isInstanceOf(DuplicateUserException.class);
             verify(customerRepository, never()).save(any());
+        }
+    }
+
+    @Nested
+    @DisplayName("getDocumentTypes - catálogo para el registro")
+    class GetDocumentTypes {
+
+        @Test
+        @DisplayName("Devuelve los tipos de documento ordenados por id, ya mapeados")
+        void deberiaDevolverElCatalogoOrdenadoPorId() {
+            // Arrange
+            DocumentType cedula = buildDocumentType();
+            DocumentTypeResponse mapped = new DocumentTypeResponse();
+            mapped.setId((short) 1);
+            mapped.setName("Cédula de ciudadanía");
+            when(documentTypeRepository.findAll(Sort.by("id"))).thenReturn(List.of(cedula));
+            when(customerMapper.toResponse(cedula)).thenReturn(mapped);
+
+            // Act
+            List<DocumentTypeResponse> result = customerService.getDocumentTypes();
+
+            // Assert
+            assertThat(result).containsExactly(mapped);
+            verifyNoInteractions(customerRepository, userApi);
         }
     }
 
@@ -320,6 +349,80 @@ class CustomerServiceTest {
             assertThatThrownBy(() -> customerService.updateProfile(userId, "X", null, null))
                     .isInstanceOf(CustomerNotFoundException.class);
             verify(customerRepository, never()).save(any());
+        }
+    }
+
+    @Nested
+    @DisplayName("getCustomer - consulta por tipo y número de documento")
+    class GetCustomer {
+
+        @Test
+        @DisplayName("Devuelve el cliente encontrado por documento junto con los datos de su usuario")
+        void deberiaDevolverElClientePorDocumento() {
+            // Arrange
+            UUID userId = UUID.randomUUID();
+            Customer existing = new Customer();
+            existing.setUserId(userId);
+            UserView userView = new UserView(userId, "cliente@example.com", "CUSTOMER", "ACTIVE");
+            CustomerResponse expected = new CustomerResponse();
+            when(customerRepository.findByDocumentTypeIdAndDocumentNumber((short) 1, "1000000001"))
+                    .thenReturn(Optional.of(existing));
+            when(userApi.getUser(userId)).thenReturn(userView);
+            when(customerMapper.toResponse(existing, userView)).thenReturn(expected);
+
+            // Act
+            CustomerResponse result = customerService.getCustomer((short) 1, "1000000001");
+
+            // Assert
+            assertThat(result).isSameAs(expected);
+        }
+
+        @Test
+        @DisplayName("Lanza CustomerNotFoundException cuando no existe un cliente con ese documento")
+        void deberiaLanzarExcepcionCuandoElDocumentoNoExiste() {
+            // Arrange
+            when(customerRepository.findByDocumentTypeIdAndDocumentNumber((short) 3, "999"))
+                    .thenReturn(Optional.empty());
+
+            // Act & Assert
+            assertThatThrownBy(() -> customerService.getCustomer((short) 3, "999"))
+                    .isInstanceOf(CustomerNotFoundException.class);
+            verifyNoInteractions(userApi);
+        }
+    }
+
+    @Nested
+    @DisplayName("changeStatus - cambio de estado por tipo y número de documento")
+    class ChangeStatus {
+
+        @Test
+        @DisplayName("Busca al cliente por documento y cambia el estado de su usuario")
+        void deberiaCambiarElEstadoDelUsuarioDelClienteEncontradoPorDocumento() {
+            // Arrange
+            UUID userId = UUID.randomUUID();
+            Customer existing = new Customer();
+            existing.setUserId(userId);
+            when(customerRepository.findByDocumentTypeIdAndDocumentNumber((short) 1, "1000000001"))
+                    .thenReturn(Optional.of(existing));
+
+            // Act
+            customerService.changeStatus((short) 1, "1000000001", UserStatusEnum.BLOCKED);
+
+            // Assert
+            verify(userApi).changeStatus(userId, UserStatusEnum.BLOCKED);
+        }
+
+        @Test
+        @DisplayName("Rechaza el cambio cuando no existe un cliente con ese documento")
+        void deberiaLanzarExcepcionCuandoElDocumentoNoExiste() {
+            // Arrange
+            when(customerRepository.findByDocumentTypeIdAndDocumentNumber((short) 2, "999"))
+                    .thenReturn(Optional.empty());
+
+            // Act & Assert
+            assertThatThrownBy(() -> customerService.changeStatus((short) 2, "999", UserStatusEnum.ACTIVE))
+                    .isInstanceOf(CustomerNotFoundException.class);
+            verifyNoInteractions(userApi);
         }
     }
 }
