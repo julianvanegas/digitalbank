@@ -68,12 +68,12 @@ public class TransferService {
     }
 
     /**
-     * Primer paso (HU1): valida la transferencia y la deja PENDING, con un código de verificación enviado al correo
-     * del cliente (HU2). Una transferencia pendiente anterior del mismo cliente se cancela: el código nuevo reemplaza
+     * Primer paso: valida la transferencia y la deja PENDING, con un código de verificación enviado al correo
+     * del cliente. Una transferencia pendiente anterior del mismo cliente se cancela: el código nuevo reemplaza
      * al anterior, así que solo puede haber una esperando.
      * <p>
-     * Se valida, en este orden: que no sea la misma cuenta (CA03), que la de origen sea del cliente y esté activa,
-     * que la de destino exista y esté activa (CA04) y que el saldo alcance (CA02).
+     * Se valida, en este orden: que no sea la misma cuenta, que la de origen sea del cliente y esté activa,
+     * que la de destino exista y esté activa y que el saldo alcance.
      */
     @Transactional
     public TransactionResponse initiate(Actor actor, TransferRequest request) {
@@ -115,10 +115,10 @@ public class TransferService {
     }
 
     /**
-     * Segundo paso (HU2): verifica el código y, si es correcto, mueve el dinero y completa la transferencia.
+     * Segundo paso: verifica el código y, si es correcto, mueve el dinero y completa la transferencia.
      * <p>
-     * Un código incorrecto (CA02) la deja PENDING con los intentos que quedan; al tercer fallo (CA03) o si el código
-     * venció (CA04) se rechaza y hay que empezar de nuevo. Confirmar una transferencia ya completada devuelve el mismo
+     * Un código incorrecto la deja PENDING con los intentos que quedan; al tercer fallo o si el código
+     * venció se rechaza y hay que empezar de nuevo. Confirmar una transferencia ya completada devuelve el mismo
      * comprobante sin mover dinero otra vez. Una de otro cliente responde como inexistente.
      * <p>
      * noRollbackFor: los rechazos se registran y los fallos del código cuentan como intento aunque se lance la
@@ -200,7 +200,7 @@ public class TransferService {
                 .forEach(this::reject);
     }
 
-    // CA04: se informa la condición de la cuenta de destino, que el cliente necesita para corregir el número
+    // Se informa la condición de la cuenta de destino, que el cliente necesita para corregir el número
     private AccountView activeReceiver(String receiverNumber) {
         AccountView receiver;
         try {

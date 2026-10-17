@@ -158,7 +158,7 @@ class VerificationServiceTest {
         }
 
         @Test
-        @DisplayName("CA04 - Código expirado: se rechaza y el reto se elimina")
+        @DisplayName("Código expirado: se rechaza y el reto se elimina")
         void deberiaRechazarUnCodigoExpirado() {
             // Arrange
             UUID challengeId = UUID.randomUUID();
@@ -176,7 +176,7 @@ class VerificationServiceTest {
         }
 
         @Test
-        @DisplayName("CA05 - Código incorrecto sin alcanzar el límite: registra el intento y conserva el reto")
+        @DisplayName("Código incorrecto sin alcanzar el límite: registra el intento y conserva el reto")
         void deberiaRegistrarElIntentoSinInvalidarElRetoAunNoAlcanzaElLimite() {
             // Arrange: ya tiene 1 intento fallido, el límite son 3
             UUID challengeId = UUID.randomUUID();
@@ -196,7 +196,7 @@ class VerificationServiceTest {
         }
 
         @Test
-        @DisplayName("CA06 - Tercer intento incorrecto: invalida el reto en vez de conservarlo")
+        @DisplayName("Tercer intento incorrecto: invalida el reto en vez de conservarlo")
         void deberiaInvalidarElRetoEnElTercerIntentoIncorrecto() {
             // Arrange: ya tiene 2 intentos fallidos, este sería el tercero
             UUID challengeId = UUID.randomUUID();
@@ -215,7 +215,7 @@ class VerificationServiceTest {
         }
 
         @Test
-        @DisplayName("CA07 - Intentar con un reto ya invalidado/inexistente: se rechaza de inmediato")
+        @DisplayName("Intentar con un reto ya invalidado/inexistente: se rechaza de inmediato")
         void deberiaRechazarCuandoElRetoYaNoExiste() {
             // Arrange
             UUID challengeId = UUID.randomUUID();
@@ -251,7 +251,7 @@ class VerificationServiceTest {
         }
 
         @Test
-        @DisplayName("CA03 - Código de recuperación válido: se acepta y permite continuar")
+        @DisplayName("Código de recuperación válido: se acepta y permite continuar")
         void deberiaAceptarUnCodigoDeRecuperacionValido() {
             // Arrange
             UUID userId = UUID.randomUUID();
@@ -438,7 +438,7 @@ class VerificationServiceTest {
 
 
     @Nested
-    @DisplayName("check - verificación del código de TRANSACTION (HU2 CA01-CA04), sin lanzar excepción")
+    @DisplayName("check - verificación del código de TRANSACTION, sin lanzar excepción")
     class Check {
 
         private final ChallengePurpose transactionPurpose = buildPurpose((short) 4, "TRANSACTION", 3, 3);
@@ -450,7 +450,7 @@ class VerificationServiceTest {
         }
 
         @Test
-        @DisplayName("CA01 - Código correcto dentro de la vigencia: VALID y el código se consume")
+        @DisplayName("Código correcto dentro de la vigencia: VALID y el código se consume")
         void deberiaAceptarUnCodigoCorrectoYVigente() {
             // Arrange
             VerificationChallenge challenge = challenge(LocalDateTime.now().plusMinutes(2), 0);
@@ -466,7 +466,7 @@ class VerificationServiceTest {
         }
 
         @Test
-        @DisplayName("CA02 - Primer fallo: WRONG con 2 intentos restantes y el código sigue vigente")
+        @DisplayName("Primer fallo: WRONG con 2 intentos restantes y el código sigue vigente")
         void deberiaRechazarElPrimerFalloConservandoElCodigo() {
             // Arrange
             VerificationChallenge challenge = challenge(LocalDateTime.now().plusMinutes(2), 0);
@@ -485,7 +485,7 @@ class VerificationServiceTest {
         }
 
         @Test
-        @DisplayName("CA02 - Segundo fallo: WRONG con 1 intento restante")
+        @DisplayName("Segundo fallo: WRONG con 1 intento restante")
         void deberiaRechazarElSegundoFallo() {
             // Arrange
             VerificationChallenge challenge = challenge(LocalDateTime.now().plusMinutes(2), 1);
@@ -501,7 +501,7 @@ class VerificationServiceTest {
         }
 
         @Test
-        @DisplayName("CA03 - Tercer fallo: EXHAUSTED y el código queda invalidado")
+        @DisplayName("Tercer fallo: EXHAUSTED y el código queda invalidado")
         void deberiaInvalidarElCodigoEnElTercerFallo() {
             // Arrange
             VerificationChallenge challenge = challenge(LocalDateTime.now().plusMinutes(2), 2);
@@ -518,7 +518,7 @@ class VerificationServiceTest {
         }
 
         @Test
-        @DisplayName("CA04 - Código vencido: EXPIRED, se elimina y ni siquiera se compara el código")
+        @DisplayName("Código vencido: EXPIRED, se elimina y ni siquiera se compara el código")
         void deberiaRechazarUnCodigoVencido() {
             // Arrange
             VerificationChallenge challenge = challenge(LocalDateTime.now().minusSeconds(1), 0);

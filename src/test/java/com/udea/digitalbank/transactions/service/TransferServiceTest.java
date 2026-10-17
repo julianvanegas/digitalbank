@@ -61,8 +61,8 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 /**
- * Pruebas unitarias (AAA) de {@link TransferService}: las dos historias de usuario, un caso por criterio de
- * aceptación. Las dependencias se mockean; el mapper es real.
+ * Pruebas unitarias (AAA) de {@link TransferService}: el flujo de dos pasos de una transferencia, con un caso por
+ * cada regla de negocio. Las dependencias se mockean; el mapper es real.
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("TransferService")
@@ -120,11 +120,11 @@ class TransferServiceTest {
     }
 
     @Nested
-    @DisplayName("initiate - HU1")
+    @DisplayName("initiate - primer paso: validar y dejar PENDING")
     class Initiate {
 
         @Test
-        @DisplayName("CA01 - Cuentas activas y saldo suficiente: queda PENDING, envía el código y responde con el vencimiento")
+        @DisplayName("Cuentas activas y saldo suficiente: queda PENDING, envía el código y responde con el vencimiento")
         void deberiaDejarPendienteLaTransferenciaYEnviarElCodigo() {
             // Arrange
             accountsExist();
@@ -192,7 +192,7 @@ class TransferServiceTest {
         }
 
         @Test
-        @DisplayName("CA02 - El monto supera el saldo: rechaza por fondos insuficientes y no deja nada")
+        @DisplayName("El monto supera el saldo: rechaza por fondos insuficientes y no deja nada")
         void deberiaRechazarPorFondosInsuficientes() {
             // Arrange
             accountsExist();
@@ -206,7 +206,7 @@ class TransferServiceTest {
         }
 
         @Test
-        @DisplayName("CA02 - Un monto igual al saldo sí se acepta")
+        @DisplayName("Un monto igual al saldo sí se acepta")
         void deberiaAceptarUnMontoIgualAlSaldo() {
             // Arrange
             accountsExist();
@@ -220,7 +220,7 @@ class TransferServiceTest {
         }
 
         @Test
-        @DisplayName("CA03 - Cuenta destino igual a la de origen: indica que no se puede y no consulta nada")
+        @DisplayName("Cuenta destino igual a la de origen: indica que no se puede y no consulta nada")
         void deberiaRechazarUnaTransferenciaALaMismaCuenta() {
             // Act + Assert
             assertThatThrownBy(() -> transferService.initiate(actor, request(SENDER_NUMBER, SENDER_NUMBER, "10.00")))
@@ -231,7 +231,7 @@ class TransferServiceTest {
         }
 
         @Test
-        @DisplayName("CA04 - Cuenta destino inexistente: informa que no existe")
+        @DisplayName("Cuenta destino inexistente: informa que no existe")
         void deberiaRechazarUnaCuentaDestinoInexistente() {
             // Arrange
             when(accountApi.requireOwnedAccount(userId, SENDER_NUMBER)).thenReturn(sender);
@@ -247,7 +247,7 @@ class TransferServiceTest {
 
         @ParameterizedTest
         @CsvSource({"INACTIVE,inactiva", "BLOCKED,bloqueada", "CLOSED,cerrada"})
-        @DisplayName("CA04 - Cuenta destino inactiva, bloqueada o cerrada: informa su condición")
+        @DisplayName("Cuenta destino inactiva, bloqueada o cerrada: informa su condición")
         void deberiaInformarLaCondicionDeLaCuentaDestino(AccountStatusEnum status, String word) {
             // Arrange
             when(accountApi.requireOwnedAccount(userId, SENDER_NUMBER)).thenReturn(sender);
@@ -292,7 +292,7 @@ class TransferServiceTest {
     }
 
     @Nested
-    @DisplayName("confirm - HU2")
+    @DisplayName("confirm - segundo paso: verificar el código")
     class Confirm {
 
         private Transaction pending() {
@@ -308,7 +308,7 @@ class TransferServiceTest {
         }
 
         @Test
-        @DisplayName("CA01 - Código correcto: mueve el dinero, completa la transferencia, publica el comprobante")
+        @DisplayName("Código correcto: mueve el dinero, completa la transferencia, publica el comprobante")
         void deberiaMoverElDineroYCompletarConUnCodigoCorrecto() {
             // Arrange
             Transaction transaction = pending();
@@ -354,7 +354,7 @@ class TransferServiceTest {
 
         @ParameterizedTest
         @CsvSource({"2,Te quedan 2 intentos", "1,Te queda 1 intento"})
-        @DisplayName("CA02 - Código incorrecto en el primer o segundo intento: rechaza, informa los intentos y no procesa")
+        @DisplayName("Código incorrecto en el primer o segundo intento: rechaza, informa los intentos y no procesa")
         void deberiaRechazarUnCodigoIncorrectoSinProcesarLaTransferencia(int remaining, String message) {
             // Arrange
             Transaction transaction = pending();
@@ -370,7 +370,7 @@ class TransferServiceTest {
         }
 
         @Test
-        @DisplayName("CA03 - Tercer fallo: cancela la transferencia en curso y responde que hay que empezar de nuevo")
+        @DisplayName("Tercer fallo: cancela la transferencia en curso y responde que hay que empezar de nuevo")
         void deberiaCancelarLaTransferenciaAlAgotarLosIntentos() {
             // Arrange
             Transaction transaction = pending();
@@ -386,7 +386,7 @@ class TransferServiceTest {
         }
 
         @Test
-        @DisplayName("CA04 - Código vencido: indica que expiró, cancela la transferencia y pide reiniciar")
+        @DisplayName("Código vencido: indica que expiró, cancela la transferencia y pide reiniciar")
         void deberiaCancelarLaTransferenciaSiElCodigoExpiro() {
             // Arrange
             Transaction transaction = pending();

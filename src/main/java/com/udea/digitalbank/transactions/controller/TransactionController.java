@@ -27,8 +27,8 @@ public class TransactionController {
     }
 
     /**
-     * Primer paso de una transferencia (HU1): la deja PENDING y envía al correo del cliente el código que la
-     * autoriza (HU2). El ordenante sale del token. Responde con la referencia y el momento en que vence el código.
+     * Primer paso de una transferencia: la deja PENDING y envía al correo del cliente el código de segundo
+     * factor que la autoriza. El ordenante sale del token. Responde con la referencia y el momento en que vence el código.
      */
     @PostMapping("/transfers")
     public ResponseEntity<TransactionResponse> transfer(@CurrentActor Actor actor,
@@ -37,7 +37,7 @@ public class TransactionController {
     }
 
     /**
-     * Segundo paso (HU2): con el código correcto mueve el dinero y devuelve el comprobante. Un código incorrecto deja
+     * Segundo paso: con el código correcto mueve el dinero y devuelve el comprobante. Un código incorrecto deja
      * la transferencia pendiente (400); al tercer fallo (429) o si el código venció (409) se cancela.
      */
     @PostMapping("/{reference}/confirm")
