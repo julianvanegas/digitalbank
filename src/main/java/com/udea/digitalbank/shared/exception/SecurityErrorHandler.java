@@ -8,6 +8,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.stereotype.Component;
+import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -24,6 +25,12 @@ public class SecurityErrorHandler implements AuthenticationEntryPoint, AccessDen
     public static final String UNAUTHENTICATED_MESSAGE = "Autenticación requerida: falta el token o no es válido";
     public static final String FORBIDDEN_MESSAGE = "No tienes permiso para realizar esta operación";
 
+    private final ObjectMapper objectMapper;
+
+    public SecurityErrorHandler(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
+    }
+
     // Sin token, token inválido o expirado, o sesión revocada
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response,
@@ -38,16 +45,10 @@ public class SecurityErrorHandler implements AuthenticationEntryPoint, AccessDen
         write(response, 403, FORBIDDEN_MESSAGE);
     }
 
-    private static void write(HttpServletResponse response, int status, String message) throws IOException {
-        ErrorResponse body = new ErrorResponse(status, message, LocalDateTime.now());
+    private void write(HttpServletResponse response, int status, String message) throws IOException {
         response.setStatus(status);
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
-        response.getWriter().write(String.format("{\"status\":%d,\"message\":\"%s\",\"timestamp\":\"%s\"}",
-                body.status(), escape(body.message()), body.timestamp()));
-    }
-
-    private static String escape(String text) {
-        return text.replace("\\", "\\\\").replace("\"", "\\\"");
+        objectMapper.writeValue(response.getOutputStream(), new ErrorResponse(status, message, LocalDateTime.now()));
     }
 }

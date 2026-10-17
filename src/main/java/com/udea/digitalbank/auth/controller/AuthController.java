@@ -12,15 +12,14 @@ import com.udea.digitalbank.auth.dto.VerifyTwoFactorRequest;
 import com.udea.digitalbank.auth.service.AuthService;
 import com.udea.digitalbank.auth.service.EmailVerificationService;
 import com.udea.digitalbank.auth.service.PasswordResetService;
+import com.udea.digitalbank.shared.security.Actor;
+import com.udea.digitalbank.shared.security.CurrentActor;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.UUID;
 
 // No hay endpoint de registro: los usuarios se crean desde el módulo de la persona (UserApi.createUser)
 // y definen su contraseña al confirmar su correo (verify-email)
@@ -72,9 +71,8 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(Authentication authentication) {
-        // El JwtAuthenticationFilter guarda el id del usuario como principal
-        authService.logout((UUID) authentication.getPrincipal());
+    public ResponseEntity<Void> logout(@CurrentActor Actor actor) {
+        authService.logout(actor.userId());
         return ResponseEntity.noContent().build();
     }
 

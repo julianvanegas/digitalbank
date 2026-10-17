@@ -17,12 +17,14 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Reglas comunes a toda la API. Las rutas públicas y el mecanismo de autenticación los aporta
- * cada módulo mediante SecurityModule; todo lo demás exige autenticación.
+ * Reglas comunes a toda la API. Las rutas públicas, las rutas por rol y el mecanismo de autenticación los aporta
+ * cada módulo mediante SecurityModule; todo lo demás se deniega.
  */
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity // habilita @PreAuthorize("hasRole('ADMIN')") en los controllers
+// Los permisos por rol se declaran en SecurityModule.roleRoutes, no con @PreAuthorize. La seguridad por método queda
+// habilitada solo para que una anotación suelta no se ignore en silencio
+@EnableMethodSecurity
 public class SecurityConfig {
 
     @Value("${cors.allowed-origins}")
@@ -50,8 +52,20 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/health").permitAll()
                         // Ruta interna de errores de Spring: si exigiera autenticación, un error de un endpoint
                         // público llegaría al cliente anónimo como 403. No expone trazas, solo el cuerpo de error.
-                        .requestMatchers("/error").permitAll()
-                        .anyRequest().authenticated();
+                        .requestMatchers("/error").permitAll();
+                    // Rutas por rol de cada módulo: la única declaración de permisos de la API
+                    modules.stream().flatMap(m -> m.roleRoutes().stream()).forEach(route -> {
+                        var matched = route.method() == null
+                                ? auth.requestMatchers(route.pattern())
+                                : auth.requestMatchers(route.method(), route.pattern());
+                        if (route.roles().isEmpty()) {
+                            matched.authenticated();
+                        } else {
+                            matched.hasAnyRole(route.roles().toArray(String[]::new));
+                        }
+                    });
+                    // Lo que ninguna regla declara se deniega: un endpoint nuevo sin permisos queda cerrado, no abierto
+                    auth.anyRequest().denyAll();
                 });
 
         for (SecurityModule module : modules) {
