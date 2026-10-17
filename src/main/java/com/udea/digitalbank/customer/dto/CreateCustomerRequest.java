@@ -5,10 +5,10 @@ import lombok.Data;
 import com.udea.digitalbank.shared.utils.Phone;
 import java.time.LocalDate;
 
-// Sin contraseña ni rol: la contraseña la define el cliente al verificar su correo y el rol lo fija el endpoint
+/** Sin contraseña ni rol: la contraseña la define el cliente al verificar su correo y el rol lo fija el endpoint. */
 @Data
 public class CreateCustomerRequest {
-    // Perfil
+    /** Perfil. */
     @NotBlank @Size(max = 100)
     private String firstNames;
 
@@ -27,7 +27,7 @@ public class CreateCustomerRequest {
     @NotNull
     private LocalDate birthDate;   // "mayor de 18" se valida en el service, no aquí
 
-    // Usuario
+    /** Usuario. */
     @NotBlank @Email @Size(max = 254)
     private String email;
 }

@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 
-// El registro y los tipos de documento son públicos; el resto de /api/v1/customers/** se restringe por rol
+/** El registro y los tipos de documento son públicos; el resto de /api/v1/customers/** se restringe por rol. */
 @Component
 public class CustomerSecurity implements SecurityModule {
 

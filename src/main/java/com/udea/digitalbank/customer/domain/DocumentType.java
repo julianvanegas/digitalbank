@@ -8,7 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.Immutable;
 
-// Catálogo de solo lectura de los documentos con los que se identifica un cliente
+/** Catálogo de solo lectura de los documentos con los que se identifica un cliente. */
 @Entity
 @Immutable
 @Table(name = "document_types")
