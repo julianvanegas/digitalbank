@@ -43,7 +43,8 @@ public class PasswordResetService {
     @Transactional(noRollbackFor = InvalidVerificationCodeException.class)
     public void resetPassword(String email, String code, String newPassword) {
         UUID userId = verificationService.verifyByEmail(email, PurposeEnum.PASSWORD_RESET, code);
-        User user = userRepository.findById(userId).orElseThrow();
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new InvalidVerificationCodeException("Código de verificación inválido o expirado"));
         user.setPasswordHash(passwordEncoder.encode(newPassword));
         user.setPasswordChangedAt(LocalDateTime.now());
         user.setFailedAttempts((short) 0);
