@@ -35,7 +35,7 @@ import static org.mockito.Mockito.when;
 class AccountApiServiceTest {
 
     private static final UUID CUSTOMER_ID = UUID.randomUUID();
-    private static final String ACCOUNT_NUMBER = "10000000001";
+    private static final String ACCOUNT_NUMBER = "100000000001";
 
     @Mock
     private AccountRepository accountRepository;
@@ -56,11 +56,11 @@ class AccountApiServiceTest {
 
         Account account = new Account();
         ReflectionTestUtils.setField(account, "id", UUID.randomUUID());
-        account.setCustomerId(CUSTOMER_ID);
-        account.setAccountIndex((short) 1);
-        account.setAccountNumber(ACCOUNT_NUMBER);
-        account.setStatus(status);
-        account.setBalance(new BigDecimal("150.75"));
+        ReflectionTestUtils.setField(account, "customerId", CUSTOMER_ID);
+        ReflectionTestUtils.setField(account, "accountIndex", (short) 1);
+        ReflectionTestUtils.setField(account, "accountNumber", ACCOUNT_NUMBER);
+        ReflectionTestUtils.setField(account, "status", status);
+        ReflectionTestUtils.setField(account, "balance", new BigDecimal("150.75"));
         return account;
     }
 
@@ -96,7 +96,7 @@ class AccountApiServiceTest {
     }
 
     @Test
-    @DisplayName("getAccountByNumber - busca por el número de 11 dígitos")
+    @DisplayName("getAccountByNumber - busca por el número de 12 dígitos")
     void getAccountByNumber_deberiaDevolverLaVista() {
         // Arrange
         Account account = buildAccount(AccountStatusEnum.ACTIVE);
