@@ -2,7 +2,9 @@ package com.udea.digitalbank.accounts.domain;
 
 import com.udea.digitalbank.accounts.api.AccountStatusEnum;
 import com.udea.digitalbank.shared.exception.accounts.AccountNotBlockableException;
+import com.udea.digitalbank.shared.exception.accounts.AccountNotActiveException;
 import com.udea.digitalbank.shared.exception.accounts.AccountNotClosableException;
+import com.udea.digitalbank.shared.exception.accounts.InsufficientFundsException;
 import com.udea.digitalbank.shared.exception.accounts.AccountNotUnblockableException;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -20,7 +22,7 @@ import java.util.UUID;
  * Cuenta de un cliente. Los datos del titular viven en customer: aquí solo su id.
  * <p>
  * Es la dueña de sus reglas: el estado y el saldo no tienen setters, solo cambian con {@link #block},
- * {@link #unlock} y {@link #close}, que validan que el cambio sea posible. La cuenta nace con {@link #open}.
+ * {@link #unlock}, {@link #close}, {@link #debit} y {@link #credit}, que validan que el cambio sea posible. La cuenta nace con {@link #open}.
  */
 @Entity
 @Table(name = "accounts")
@@ -155,6 +157,53 @@ public class Account {
         requireTarget(closedStatus, AccountStatusEnum.CLOSED);
         this.status = closedStatus;
         this.closedAt = closedAt;
+    }
+
+    /**
+     * Retiro de saldo por una transferencia: solo una cuenta ACTIVE y con saldo suficiente. El saldo nunca queda
+     * negativo (la base también lo exige con un CHECK). Quien la llama debe haberla leído con bloqueo.
+     */
+    public void debit(BigDecimal amount) {
+        requireCanDebit(amount);
+        balance = balance.subtract(amount);
+    }
+
+    /** Abono de saldo por una transferencia: solo a una cuenta ACTIVE. */
+    public void credit(BigDecimal amount) {
+        requireCanCredit(amount);
+        balance = balance.add(amount);
+    }
+
+    /**
+     * Lo que debe cumplirse para retirar el monto, sin cambiar nada. Existe aparte para que una transferencia
+     * valide las dos cuentas antes de mover dinero en cualquiera: si la segunda falla, la primera no queda a medias.
+     */
+    public void requireCanDebit(BigDecimal amount) {
+        requirePositive(amount);
+        requireActiveForMovement();
+        if (balance.compareTo(amount) < 0) {
+            throw new InsufficientFundsException("Fondos insuficientes en la cuenta " + accountNumber);
+        }
+    }
+
+    /** Lo que debe cumplirse para abonar el monto, sin cambiar nada. */
+    public void requireCanCredit(BigDecimal amount) {
+        requirePositive(amount);
+        requireActiveForMovement();
+    }
+
+    // Una cuenta inactiva, bloqueada o cerrada no mueve dinero, ni para entregarlo ni para recibirlo
+    private void requireActiveForMovement() {
+        if (!is(AccountStatusEnum.ACTIVE)) {
+            throw new AccountNotActiveException("La cuenta " + accountNumber + " no está activa; su estado es "
+                    + status.getCode());
+        }
+    }
+
+    private static void requirePositive(BigDecimal amount) {
+        if (amount == null || amount.signum() <= 0) {
+            throw new IllegalArgumentException("El monto de un movimiento debe ser positivo");
+        }
     }
 
     // El estado que se pasa debe ser el del cambio que se pide: evita dejar una cuenta en un estado equivocado
