@@ -210,7 +210,17 @@ class ApiAuthorizationTest {
                 new Endpoint("GET", "/api/v1/transactions/TRF-20261017-7Xk2Pq9RmZ4tNvB8cHdWeA", "", Access.CUSTOMER_OR_ADMIN),
                 // ---- documentación y salud
                 new Endpoint("GET", "/actuator/health", "", Access.PUBLIC),
+                // Sondas de liveness y readiness: las consultan los orquestadores, que no tienen token
+                new Endpoint("GET", "/actuator/health/liveness", "", Access.PUBLIC),
+                new Endpoint("GET", "/actuator/health/readiness", "", Access.PUBLIC),
                 new Endpoint("GET", "/v3/api-docs", "", Access.PUBLIC),
+                new Endpoint("GET", "/v3/api-docs.yaml", "", Access.PUBLIC),
+                new Endpoint("GET", "/swagger-ui.html", "", Access.PUBLIC),
+                new Endpoint("GET", "/swagger-ui/index.html", "", Access.PUBLIC),
+                // El resto de Actuator sigue cerrado: solo la salud es pública
+                new Endpoint("GET", "/actuator", "", Access.NOBODY),
+                new Endpoint("GET", "/actuator/info", "", Access.NOBODY),
+                new Endpoint("GET", "/actuator/metrics", "", Access.NOBODY),
                 // ---- cualquier ruta que ninguna regla declara se deniega (anyRequest().denyAll()), exista o no
                 new Endpoint("GET", "/api/v1/ruta-que-no-existe", "", Access.NOBODY)
         );
