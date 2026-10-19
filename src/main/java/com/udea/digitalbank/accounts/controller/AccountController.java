@@ -5,7 +5,7 @@ import com.udea.digitalbank.accounts.dto.AccountBalanceResponse;
 import com.udea.digitalbank.accounts.dto.AccountResponse;
 import com.udea.digitalbank.accounts.dto.BlockAccountRequest;
 import com.udea.digitalbank.accounts.dto.CreateAccountRequest;
-import com.udea.digitalbank.accounts.dto.UnlockAccountRequest;
+import com.udea.digitalbank.accounts.dto.UnblockAccountRequest;
 import com.udea.digitalbank.accounts.service.AccountLifecycleService;
 import com.udea.digitalbank.accounts.service.AccountOpeningService;
 import com.udea.digitalbank.accounts.service.AccountQueryService;
@@ -165,13 +165,13 @@ public class AccountController {
     @ApiResponse(responseCode = "200", description = "Cuenta desbloqueada")
     @ApiResponse(responseCode = "404", description = "La cuenta no existe")
     @ApiResponse(responseCode = "409", description = "La cuenta no se puede desbloquear en su estado actual")
-    @PatchMapping("/{accountNumber}/unlock")
+    @PatchMapping("/{accountNumber}/unblock")
     public ResponseEntity<AccountResponse> unblockAccount(
             @CurrentActor Actor actor,
             @Parameter(description = "Número de la cuenta (12 dígitos)",
                     example = OpenApiExamples.ACCOUNT_NUMBER,
                     schema = @Schema(pattern = "\\d{12}")) @PathVariable String accountNumber,
-            @Valid @RequestBody UnlockAccountRequest request) {
+            @Valid @RequestBody UnblockAccountRequest request) {
         return ResponseEntity.ok(lifecycleService.unblockAccount(accountNumber, request.getReason(), actor.userId()));
     }
 

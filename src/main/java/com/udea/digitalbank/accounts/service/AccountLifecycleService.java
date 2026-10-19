@@ -92,7 +92,7 @@ public class AccountLifecycleService {
      * Igual que el bloqueo, lee la cuenta con la fila bloqueada para que dos desbloqueos simultáneos no se repitan.
      * <p>
      * Solo se desbloquea una cuenta BLOCKED: una activa, inactiva o cerrada se rechaza, para que esta
-     * operación no reactive por accidente una cuenta que no fue bloqueada. Queda una acción UNLOCKED
+     * operación no reactive por accidente una cuenta que no fue bloqueada. Queda una acción UNBLOCKED
      * en el registro, con el motivo, el administrador que lo ordena (del token) y la fecha, y se avisa al titular.
      */
     @Transactional
@@ -103,18 +103,18 @@ public class AccountLifecycleService {
         }
 
         Account account = accountLookup.byNumberForUpdate(accountNumber);
-        account.unlock(accountCatalog.status(AccountStatusEnum.ACTIVE));
+        account.unblock(accountCatalog.status(AccountStatusEnum.ACTIVE));
 
         String trimmedReason = reason.trim();
-        accountActionRepository.save(AccountAction.unlocked(account.getId(), trimmedReason, actingUserId));
+        accountActionRepository.save(AccountAction.unblocked(account.getId(), trimmedReason, actingUserId));
 
-        Account unlocked = accountRepository.save(account);
+        Account unblocked = accountRepository.save(account);
         // Igual que el bloqueo: el aviso al titular sale tras confirmarse la transacción
         eventPublisher.publishEvent(new AccountActionEvent(
-                unlocked.getCustomerId(), unlocked.getAccountNumber(), AccountActionType.UNLOCKED,
+                unblocked.getCustomerId(), unblocked.getAccountNumber(), AccountActionType.UNBLOCKED,
                 trimmedReason));
 
-        return accountMapper.toResponse(unlocked);
+        return accountMapper.toResponse(unblocked);
     }
 
     /**

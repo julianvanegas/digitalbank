@@ -5,5 +5,5 @@ package com.udea.digitalbank.accounts.domain;
  * estos valores.
  */
 public enum AccountActionType {
-    BLOCKED, UNLOCKED, CLOSED
+    BLOCKED, UNBLOCKED, CLOSED
 }

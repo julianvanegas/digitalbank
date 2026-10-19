@@ -48,8 +48,8 @@ public class AccountAction {
         return of(accountId, reason, AccountActionType.BLOCKED, createdBy);
     }
 
-    public static AccountAction unlocked(UUID accountId, String reason, UUID createdBy) {
-        return of(accountId, reason, AccountActionType.UNLOCKED, createdBy);
+    public static AccountAction unblocked(UUID accountId, String reason, UUID createdBy) {
+        return of(accountId, reason, AccountActionType.UNBLOCKED, createdBy);
     }
 
     public static AccountAction closed(UUID accountId, String reason, UUID createdBy) {

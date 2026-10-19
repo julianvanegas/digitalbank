@@ -5,7 +5,7 @@ import com.udea.digitalbank.accounts.dto.AccountBalanceResponse;
 import com.udea.digitalbank.accounts.dto.AccountResponse;
 import com.udea.digitalbank.accounts.dto.BlockAccountRequest;
 import com.udea.digitalbank.accounts.dto.CreateAccountRequest;
-import com.udea.digitalbank.accounts.dto.UnlockAccountRequest;
+import com.udea.digitalbank.accounts.dto.UnblockAccountRequest;
 import com.udea.digitalbank.accounts.service.AccountLifecycleService;
 import com.udea.digitalbank.accounts.service.AccountOpeningService;
 import com.udea.digitalbank.accounts.service.AccountQueryService;
@@ -184,7 +184,7 @@ class AccountControllerTest {
     @DisplayName("unblockAccount - desbloquea con el motivo y el administrador tomado del actor")
     void unblockAccount_deberiaDelegarNumeroMotivoYAdministrador() {
         // Arrange
-        UnlockAccountRequest request = new UnlockAccountRequest();
+        UnblockAccountRequest request = new UnblockAccountRequest();
         request.setReason("Titular verificado");
         AccountResponse expected = new AccountResponse();
         when(lifecycleService.unblockAccount(ACCOUNT_NUMBER, "Titular verificado", admin.userId())).thenReturn(expected);

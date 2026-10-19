@@ -25,7 +25,7 @@ public class AccountSecurity implements SecurityModule {
                 RoleRoute.get(BASE + "/*", Roles.CUSTOMER, Roles.ADMIN),
                 RoleRoute.get(BASE + "/*/balance", Roles.CUSTOMER, Roles.ADMIN),
                 RoleRoute.patch(BASE + "/*/block", Roles.ADMIN),
-                RoleRoute.patch(BASE + "/*/unlock", Roles.ADMIN),
+                RoleRoute.patch(BASE + "/*/unblock", Roles.ADMIN),
                 RoleRoute.patch(BASE + "/*/close", Roles.CUSTOMER, Roles.ADMIN));
     }
 }
