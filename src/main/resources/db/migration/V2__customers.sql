@@ -30,3 +30,8 @@ CREATE TABLE customers (
     -- Junto con el CHECK de role_id impide que un usuario ADMIN tenga fila en customers
     CONSTRAINT fk_customers_user FOREIGN KEY (user_id, role_id) REFERENCES users (id, role_id)
 );
+
+-- Listado paginado de clientes ordenado por apellidos (GET /api/v1/customers). El id desempata a los clientes con
+-- el mismo apellido para que ninguno se repita ni se pierda entre páginas. Es el equivalente del índice de
+-- employees (V3) y el que el modelo exige para la consulta Q7.
+CREATE INDEX idx_customers_last_names ON customers (last_names, id);

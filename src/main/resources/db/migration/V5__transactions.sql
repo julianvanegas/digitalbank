@@ -1,6 +1,12 @@
 -- Módulo transactions: movimientos de dinero entre cuentas. Depende de accounts (cuentas) y de auth (usuarios y
--- verificaciones), como fija la dirección de dependencias de las ADR 0002 y 0004. El propósito de verificación
--- TRANSACTION (segundo factor) lo agrega V11, junto con el enum que lo declara.
+-- verificaciones), como fija la dirección de dependencias de las ADR 0002 y 0004.
+
+-- ============ PROPÓSITO DE VERIFICACIÓN ============
+-- Segundo factor de las transacciones monetarias: el código vale 3 minutos y se cancela al tercer fallo. Va en el
+-- catálogo de auth (challenge_purposes, V1), cuyo enum PurposeEnum declara TRANSACTION: Catalogs no deja arrancar la
+-- aplicación si el enum y la tabla no coinciden, así que esta fila y el enum deben llegar juntos.
+INSERT INTO challenge_purposes (id, purpose, ttl_minutes, max_attempts) VALUES
+    (4, 'TRANSACTION', 3, 3);
 
 -- ============ CATÁLOGOS ============
 -- Ids fijos: el CHECK de transactions depende de los de transaction_types.

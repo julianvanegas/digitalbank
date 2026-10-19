@@ -22,16 +22,20 @@ CREATE TABLE challenge_purposes (
 -- Los ids son fijos: el CHECK de customers depende del id de role
 INSERT INTO roles (id, code) VALUES (1, 'CUSTOMER'), (2, 'ADMIN');
 
+-- PENDING_REVIEW: el cliente se registró y verificó su correo, y espera a que un administrador lo active
 INSERT INTO user_status (id, code) VALUES
     (1, 'ACTIVE'),
     (2, 'PENDING_VERIFICATION'),
     (3, 'INACTIVE'),
-    (4, 'BLOCKED');
+    (4, 'BLOCKED'),
+    (5, 'PENDING_REVIEW');
 
+-- Los códigos valen 5 minutos y se cancelan al tercer fallo. Cada fila debe coincidir con PurposeEnum: Catalogs no
+-- deja arrancar la aplicación si el enum y la tabla no coinciden (TRANSACTION lo agrega V5).
 INSERT INTO challenge_purposes (id, purpose, ttl_minutes, max_attempts) VALUES
     (1, 'LOGIN',               5, 3),
-    (2, 'EMAIL_CONFIRMATION', 30, 3),
-    (3, 'PASSWORD_RESET',     15, 3);
+    (2, 'EMAIL_CONFIRMATION',  5, 3),
+    (3, 'PASSWORD_RESET',      5, 3);
 
 -- ============ USUARIO ============
 CREATE TABLE users (

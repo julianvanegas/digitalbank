@@ -101,4 +101,4 @@ Es una excepción acotada a «solo el inmediato superior»: la flecha sigue yend
 | `transactions/service/TransferService.java` | El flujo en dos pasos, `noRollbackFor` y la revalidación al confirmar. |
 | `accounts/api/AccountApi.java` (`applyTransfer`) | El movimiento atómico con las cuentas bloqueadas en orden. |
 | `transactions/security/TransactionSecurity.java` | Quién puede iniciar, confirmar y consultar. |
-| `db/migration/V11__transaction_code_purpose.sql`, `V12__transactions.sql` | El propósito `TRANSACTION` (3 minutos, 3 intentos), y los catálogos y la tabla `transactions`. |
+| `db/migration/V5__transactions.sql` | El propósito `TRANSACTION` (3 minutos, 3 intentos) en `challenge_purposes`, y los catálogos y la tabla `transactions`. |
