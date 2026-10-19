@@ -51,7 +51,7 @@ class AccountTest {
     }
 
     @Test
-    @DisplayName("No expone setters de estado, saldo ni fecha de cierre: solo cambian con block, unlock y close")
+    @DisplayName("No expone setters de estado, saldo ni fecha de cierre: solo cambian con block, unblock y close")
     void noDeberiaExponerSettersDeEstadoSaldoNiCierre() {
         assertThat(Arrays.stream(Account.class.getMethods()).map(Method::getName))
                 .noneMatch(name -> name.startsWith("set"));
@@ -137,15 +137,15 @@ class AccountTest {
     }
 
     @Nested
-    @DisplayName("unlock")
-    class Unlock {
+    @DisplayName("unblock")
+    class Unblock {
 
         @Test
         @DisplayName("Devuelve a ACTIVE una cuenta bloqueada")
         void deberiaActivarUnaCuentaBloqueada() {
             Account account = account(AccountStatusEnum.BLOCKED, "10.00");
 
-            account.unlock(status(AccountStatusEnum.ACTIVE));
+            account.unblock(status(AccountStatusEnum.ACTIVE));
 
             assertThat(account.is(AccountStatusEnum.ACTIVE)).isTrue();
         }
@@ -156,7 +156,7 @@ class AccountTest {
         void deberiaRechazarUnaCuentaQueNoEstaBloqueada(AccountStatusEnum current) {
             Account account = account(current, "0");
 
-            assertThatThrownBy(() -> account.unlock(status(AccountStatusEnum.ACTIVE)))
+            assertThatThrownBy(() -> account.unblock(status(AccountStatusEnum.ACTIVE)))
                     .isInstanceOf(AccountNotUnblockableException.class)
                     .hasMessageContaining(current.name());
             assertThat(account.is(current)).isTrue();

@@ -78,7 +78,7 @@ class AccountActionListenerTest {
     void deberiaAvisarElDesbloqueoConElMotivo() {
         // Act
         listener.onAccountAction(new AccountActionEvent(
-                CUSTOMER_ID, ACCOUNT_NUMBER, AccountActionType.UNLOCKED, "Titular verificado"));
+                CUSTOMER_ID, ACCOUNT_NUMBER, AccountActionType.UNBLOCKED, "Titular verificado"));
 
         // Assert
         String[] email = sentEmail();
@@ -112,7 +112,7 @@ class AccountActionListenerTest {
 
         // Act & Assert
         assertThatCode(() -> listener.onAccountAction(new AccountActionEvent(
-                CUSTOMER_ID, ACCOUNT_NUMBER, AccountActionType.UNLOCKED, "Titular verificado")))
+                CUSTOMER_ID, ACCOUNT_NUMBER, AccountActionType.UNBLOCKED, "Titular verificado")))
                 .doesNotThrowAnyException();
     }
 

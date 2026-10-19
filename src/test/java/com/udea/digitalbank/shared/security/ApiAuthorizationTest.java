@@ -198,7 +198,7 @@ class ApiAuthorizationTest {
                         "", Access.ADMIN_ONLY),
                 new Endpoint("PATCH", "/api/v1/accounts/" + NUMBER + "/block", "{\"reason\":\"Fraude\"}",
                         Access.ADMIN_ONLY),
-                new Endpoint("PATCH", "/api/v1/accounts/" + NUMBER + "/unlock", "{\"reason\":\"Verificado\"}",
+                new Endpoint("PATCH", "/api/v1/accounts/" + NUMBER + "/unblock", "{\"reason\":\"Verificado\"}",
                         Access.ADMIN_ONLY),
                 new Endpoint("PATCH", "/api/v1/accounts/" + NUMBER + "/close", "", Access.CUSTOMER_OR_ADMIN),
                 // ---- transactions: transferir y confirmar son del cliente; el comprobante lo ve también el admin

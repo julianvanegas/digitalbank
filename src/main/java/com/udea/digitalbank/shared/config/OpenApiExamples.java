@@ -49,7 +49,7 @@ public final class OpenApiExamples {
     public static final String CODE = "123456";
     public static final String REFERENCE = "TRF-20261017-7Xk2Pq9RmZ4tNvB8cHdWeA";
     public static final String REASON = "Actividad sospechosa reportada por el titular";
-    public static final String UNLOCK_REASON = "Revisión completada sin actividad irregular";
+    public static final String UNBLOCK_REASON = "Revisión completada sin actividad irregular";
     public static final String REMAINING_RESENDS = "1";
     public static final String RETRY_AFTER_SECONDS = "60";
 

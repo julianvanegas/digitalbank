@@ -22,7 +22,7 @@ import java.util.UUID;
  * Cuenta de un cliente. Los datos del titular viven en customer: aquí solo su id.
  * <p>
  * Es la dueña de sus reglas: el estado y el saldo no tienen setters, solo cambian con {@link #block},
- * {@link #unlock}, {@link #close}, {@link #debit} y {@link #credit}, que validan que el cambio sea posible. La cuenta nace con {@link #open}.
+ * {@link #unblock}, {@link #close}, {@link #debit} y {@link #credit}, que validan que el cambio sea posible. La cuenta nace con {@link #open}.
  */
 @Entity
 @Table(name = "accounts")
@@ -132,7 +132,7 @@ public class Account {
     }
 
     /** Desbloqueo: solo una cuenta bloqueada, para no reactivar por accidente una que no lo estaba. */
-    public void unlock(AccountStatus activeStatus) {
+    public void unblock(AccountStatus activeStatus) {
         if (!is(AccountStatusEnum.BLOCKED)) {
             throw new AccountNotUnblockableException("Solo se puede desbloquear una cuenta bloqueada; la cuenta "
                     + accountNumber + " está en estado " + status.getCode());

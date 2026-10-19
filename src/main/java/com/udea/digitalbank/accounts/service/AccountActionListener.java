@@ -22,7 +22,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
 public class AccountActionListener {
 
     private static final String BLOCKED_SUBJECT = "Tu cuenta fue bloqueada";
-    private static final String UNLOCKED_SUBJECT = "Tu cuenta fue desbloqueada";
+    private static final String UNBLOCKED_SUBJECT = "Tu cuenta fue desbloqueada";
     private static final String CLOSED_SUBJECT = "Tu cuenta fue cerrada";
 
     private final CustomerApi customerApi;
@@ -47,7 +47,7 @@ public class AccountActionListener {
     private static String subject(AccountActionType action) {
         return switch (action) {
             case BLOCKED -> BLOCKED_SUBJECT;
-            case UNLOCKED -> UNLOCKED_SUBJECT;
+            case UNBLOCKED -> UNBLOCKED_SUBJECT;
             case CLOSED -> CLOSED_SUBJECT;
         };
     }
@@ -55,7 +55,7 @@ public class AccountActionListener {
     private static String body(CustomerView customer, AccountActionEvent event) {
         String outcome = switch (event.action()) {
             case BLOCKED -> "fue bloqueada temporalmente.";
-            case UNLOCKED -> "fue desbloqueada y ya puedes volver a usarla.";
+            case UNBLOCKED -> "fue desbloqueada y ya puedes volver a usarla.";
             case CLOSED -> "fue cerrada.";
         };
         return "Hola " + customer.firstNames() + ",\n\n"

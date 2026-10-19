@@ -305,7 +305,7 @@ class AccountLifecycleServiceTest {
     class UnblockAccount {
 
         @Test
-        @DisplayName("Devuelve a ACTIVE una cuenta bloqueada, conserva su saldo y registra la acción UNLOCKED con su motivo")
+        @DisplayName("Devuelve a ACTIVE una cuenta bloqueada, conserva su saldo y registra la acción UNBLOCKED con su motivo")
         void deberiaActivarLaCuentaYRegistrarElDesbloqueo() {
             // Arrange
             UUID adminId = UUID.randomUUID();
@@ -324,14 +324,14 @@ class AccountLifecycleServiceTest {
             ArgumentCaptor<AccountAction> captor = ArgumentCaptor.forClass(AccountAction.class);
             verify(accountActionRepository).save(captor.capture());
             AccountAction logged = captor.getValue();
-            assertThat(logged.getAction()).isEqualTo(AccountActionType.UNLOCKED);
+            assertThat(logged.getAction()).isEqualTo(AccountActionType.UNBLOCKED);
             assertThat(logged.getAccountId()).isEqualTo(account.getId());
             assertThat(logged.getCreatedBy()).isEqualTo(adminId);
             assertThat(logged.getReason()).isEqualTo("Titular verificado");
             ArgumentCaptor<AccountActionEvent> eventCaptor = ArgumentCaptor.forClass(AccountActionEvent.class);
             verify(eventPublisher).publishEvent(eventCaptor.capture());
             AccountActionEvent event = eventCaptor.getValue();
-            assertThat(event.action()).isEqualTo(AccountActionType.UNLOCKED);
+            assertThat(event.action()).isEqualTo(AccountActionType.UNBLOCKED);
             assertThat(event.customerId()).isEqualTo(account.getCustomerId());
             assertThat(event.accountNumber()).isEqualTo(ACCOUNT_NUMBER);
             assertThat(event.reason()).isEqualTo("Titular verificado");
