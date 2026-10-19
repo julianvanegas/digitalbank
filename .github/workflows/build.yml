@@ -1,0 +1,129 @@
+name: CI Pipeline
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - develop
+      - quality
+      - 'feature/**'
+      - 'task/**'
+      - 'bugfix/**'
+      - 'hotfix/**'
+  pull_request:
+    branches: [main, develop, quality]
+    types: [opened, synchronize, reopened, closed]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  tests:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Run tests and generate coverage
+        run: mvn -B verify
+      - name: Upload Maven build artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: compiled-java-artifacts
+          path: target
+
+  sonarcloud:
+    name: SonarCloud analysis
+    needs: tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Set up JDK 21
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Cache SonarCloud analyzer
+        uses: actions/cache@v6
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+      - name: Download Maven build artifacts
+        uses: actions/download-artifact@v8
+        with:
+          name: compiled-java-artifacts
+          path: target
+      - name: Analyze with SonarCloud
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: >
+          mvn -B org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
+          -Dsonar.host.url=https://sonarcloud.io
+          -Dsonar.projectKey=julianvanegas_digitalbank
+          -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+
+  container:
+    name: Publish image to GHCR
+    needs: sonarcloud
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.action == 'closed' &&
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.base.ref == 'main' &&
+      (github.event.pull_request.head.ref == 'develop' ||
+      github.event.pull_request.head.ref == 'quality')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    env:
+      IMAGE: ghcr.io/${{ github.repository }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Set up Podman
+        run: |
+          if ! command -v podman >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y podman
+          fi
+          podman --version
+      - name: Log in to GitHub Container Registry
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          printf '%s' "$GITHUB_TOKEN" |
+            podman login ghcr.io \
+              --username "${{ github.actor }}" \
+              --password-stdin
+      - name: Build container image
+        run: |
+          podman build \
+            --file ./Containerfile \
+            --tag "${IMAGE}:latest" \
+            --tag "${IMAGE}:${GITHUB_SHA}" \
+            .
+      - name: Push container images
+        run: |
+          podman push "${IMAGE}:latest"
+          podman push "${IMAGE}:${GITHUB_SHA}"
+
+  deploy:
+    name: Deploy published image
+    needs: container
+    if: ${{ needs.container.result == 'success' }}
+    uses: ./.github/workflows/deploy.yml
+    with:
+      image-name: ghcr.io/${{ github.repository }}
+      image-tag: ${{ github.sha }}
+    secrets: inherit
