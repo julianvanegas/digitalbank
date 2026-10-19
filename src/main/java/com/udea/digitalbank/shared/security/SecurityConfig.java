@@ -50,8 +50,14 @@ public class SecurityConfig {
                             auth.requestMatchers(route.method(), route.pattern()).permitAll();
                         }
                     });
-                    auth.requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                        .requestMatchers("/actuator/health").permitAll()
+                    // Documentación: las rutas por defecto de springdoc. Además de las carpetas hay dos rutas sueltas
+                    // que "/swagger-ui/**" y "/v3/api-docs/**" no cubren: el acceso directo /swagger-ui.html (que
+                    // redirige a la página) y el contrato en YAML
+                    auth.requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**", "/v3/api-docs.yaml")
+                        .permitAll()
+                        // Solo la salud de Actuator es pública, con sus sondas de liveness y readiness, que consultan
+                        // los orquestadores sin token. El resto de Actuator (info, metrics...) sigue cerrado
+                        .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                         // Ruta interna de errores de Spring: si exigiera autenticación, un error de un endpoint
                         // público llegaría al cliente anónimo como 403. No expone trazas, solo el cuerpo de error.
                         .requestMatchers("/error").permitAll();

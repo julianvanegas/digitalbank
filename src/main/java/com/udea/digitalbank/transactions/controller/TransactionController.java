@@ -11,6 +11,12 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.udea.digitalbank.shared.config.OpenAPIConfig;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Parameter;
+import com.udea.digitalbank.shared.config.OpenApiExamples;
 
 /**
  * Endpoints de transacciones. El controller solo traduce HTTP y no contiene reglas de negocio:
@@ -21,6 +27,7 @@ import org.springframework.web.bind.annotation.*;
  *       token y nunca desde datos de la petición.</li>
  * </ul>
  */
+@Tag(name = OpenAPIConfig.TAG_TRANSACTIONS)
 @RestController
 @RequestMapping("/api/v1/transactions")
 public class TransactionController {
@@ -41,6 +48,15 @@ public class TransactionController {
      * @param request cuentas de origen y destino, y monto
      * @return 201 con la referencia y el instante en que vence el código
      */
+    @Operation(summary = "Iniciar una transferencia")
+    @ApiResponse(responseCode = "201",
+            description = "Transferencia creada en estado PENDING; el código se envía al correo")
+    @ApiResponse(responseCode = "400",
+            description = "Solicitud inválida, misma cuenta de origen y destino, o cuenta de destino inexistente "
+                + "o inactiva")
+    @ApiResponse(responseCode = "403", description = "Sin permiso, o la cuenta de origen no está activa")
+    @ApiResponse(responseCode = "404", description = "La cuenta de origen no existe o no es del ordenante")
+    @ApiResponse(responseCode = "409", description = "Fondos insuficientes")
     @PostMapping("/transfers")
     public ResponseEntity<TransactionResponse> transfer(@CurrentActor Actor actor,
                                                         @Valid @RequestBody TransferRequest request) {
@@ -60,10 +76,21 @@ public class TransactionController {
      * @param request   código de 6 dígitos recibido por correo
      * @return 200 con el comprobante de la transferencia completada
      */
+    @Operation(summary = "Confirmar una transferencia")
+    @ApiResponse(responseCode = "200", description = "Transferencia completada")
+    @ApiResponse(responseCode = "400",
+            description = "Solicitud inválida, o código incorrecto (la transferencia sigue pendiente)")
+    @ApiResponse(responseCode = "403", description = "Sin permiso, o una de las cuentas ya no está activa")
+    @ApiResponse(responseCode = "404", description = "Transferencia no encontrada")
+    @ApiResponse(responseCode = "409",
+            description = "Código vencido, transferencia que ya no está pendiente, o fondos insuficientes")
+    @ApiResponse(responseCode = "429", description = "Intentos agotados: la transferencia queda cancelada")
     @PostMapping("/{reference}/confirm")
-    public ResponseEntity<TransactionResponse> confirm(@CurrentActor Actor actor,
-                                                       @PathVariable String reference,
-                                                       @Valid @RequestBody ConfirmTransferRequest request) {
+    public ResponseEntity<TransactionResponse> confirm(
+            @CurrentActor Actor actor,
+            @Parameter(description = "Referencia (comprobante) de la transferencia",
+                    example = OpenApiExamples.REFERENCE) @PathVariable String reference,
+            @Valid @RequestBody ConfirmTransferRequest request) {
         return ResponseEntity.ok(transferService.confirm(actor, reference, request.getCode()));
     }
 
@@ -75,8 +102,14 @@ public class TransactionController {
      * @param reference comprobante de la transacción
      * @return 200 con el comprobante
      */
+    @Operation(summary = "Consultar el comprobante de una transacción")
+    @ApiResponse(responseCode = "200", description = "Comprobante de la transacción")
+    @ApiResponse(responseCode = "404", description = "Transacción no encontrada")
     @GetMapping("/{reference}")
-    public ResponseEntity<TransactionResponse> transaction(@CurrentActor Actor actor, @PathVariable String reference) {
+    public ResponseEntity<TransactionResponse> transaction(
+            @CurrentActor Actor actor,
+            @Parameter(description = "Referencia (comprobante) de la transferencia",
+                    example = OpenApiExamples.REFERENCE) @PathVariable String reference) {
         return ResponseEntity.ok(queryService.getTransaction(actor, reference));
     }
 }
