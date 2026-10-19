@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - 'feature/*'
-      - 'userstory/*'
       - 'task/*'
       - 'bugfix/*'
       - 'hotfix/*'

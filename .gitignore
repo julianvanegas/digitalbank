@@ -10,7 +10,7 @@
 # Mobile Tools for Java (J2ME)
 .mtj.tmp/
 
-# Package Files #
+# Package Files
 *.jar
 *.war
 *.nar
@@ -29,7 +29,7 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
-### STS ###
+### STS
 .apt_generated
 .classpath
 .factorypath
@@ -40,11 +40,12 @@ target/
 
 ### IntelliJ IDEA ###
 .idea
+.idea/
 *.iws
 *.iml
 *.ipr
 
-### NetBeans ###
+### NetBeans
 /nbproject/private/
 /nbbuild/
 /dist/
@@ -54,13 +55,15 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
-### VS Code ###
+### VS COde
 .vscode/
-.idea/
+
+### GitHub
+!.github/workflows/auto-pr.yml
+!.github/workflows/pull-request_template.md
+!.github/workflows/build.yml
 
 # env
 *.env
-!example.env
 
 .DStore
-.github/
