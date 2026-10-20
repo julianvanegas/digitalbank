@@ -1,29 +1,35 @@
 package com.udea.digitalbank.customer.service;
 
-import com.udea.digitalbank.auth.api.AuthFacade;
+import com.udea.digitalbank.auth.api.UserApi;
 import com.udea.digitalbank.auth.api.RoleEnum;
+import com.udea.digitalbank.auth.api.UserStatusEnum;
 import com.udea.digitalbank.auth.api.UserView;
 import com.udea.digitalbank.customer.domain.Customer;
 import com.udea.digitalbank.customer.domain.DocumentType;
 import com.udea.digitalbank.customer.dto.CreateCustomerRequest;
 import com.udea.digitalbank.customer.dto.CustomerResponse;
+import com.udea.digitalbank.customer.dto.DocumentTypeResponse;
 import com.udea.digitalbank.customer.mapper.CustomerMapper;
 import com.udea.digitalbank.customer.repository.CustomerRepository;
 import com.udea.digitalbank.customer.repository.DocumentTypeRepository;
+import com.udea.digitalbank.shared.exception.InvalidRequestException;
 import com.udea.digitalbank.shared.exception.auth.DuplicateUserException;
 import com.udea.digitalbank.shared.exception.customer.CustomerNotFoundException;
 import com.udea.digitalbank.shared.exception.customer.DuplicateCustomerException;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Sort;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -34,9 +40,8 @@ import static org.mockito.Mockito.*;
 
 /**
  * Pruebas unitarias de {@link CustomerService}.
- * Todas las dependencias (repositorios, AuthFacade y mapper) se mockean: aquí no se prueba
- * persistencia real ni la política de contraseña (eso corresponde a pruebas de integración
- * y a {@code PasswordConstraintTest} respectivamente), solo la lógica de negocio del servicio.
+ * Todas las dependencias (repositorios, UserApi y mapper) se mockean: aquí no se prueba
+ * persistencia real (eso corresponde a pruebas de integración), solo la lógica de negocio del servicio.
  */
 @ExtendWith(MockitoExtension.class)
 class CustomerServiceTest {
@@ -46,12 +51,18 @@ class CustomerServiceTest {
     @Mock
     private DocumentTypeRepository documentTypeRepository;
     @Mock
-    private AuthFacade authFacade;
+    private UserApi userApi;
     @Mock
     private CustomerMapper customerMapper;
 
-    @InjectMocks
     private CustomerService customerService;
+
+    /** CustomerLookup se usa real sobre los mismos mocks: así se sigue verificando contra el repositorio y UserApi. */
+    @BeforeEach
+    void setUp() {
+        customerService = new CustomerService(customerRepository, documentTypeRepository, userApi, customerMapper,
+                new CustomerLookup(customerRepository, userApi));
+    }
 
     private CreateCustomerRequest buildValidRequest() {
         CreateCustomerRequest request = new CreateCustomerRequest();
@@ -62,7 +73,6 @@ class CustomerServiceTest {
         request.setPhone("+573001234567");
         request.setBirthDate(LocalDate.now().minusYears(20));
         request.setEmail("ana.gomez@example.com");
-        request.setPassword("Abcdef1$");
         return request;
     }
 
@@ -71,7 +81,7 @@ class CustomerServiceTest {
         // DocumentType no expone setters (@Getter + @NoArgsConstructor + campos final por catálogo),
         // por lo que se accede por reflexión solo para armar el fixture de la prueba.
         setField(documentType, "id", (short) 1);
-        setField(documentType, "name", "Cédula de ciudadanía");
+        setField(documentType, "code", "Cédula de ciudadanía");
         return documentType;
     }
 
@@ -86,23 +96,23 @@ class CustomerServiceTest {
     }
 
     @Nested
-    @DisplayName("create - HU01 Registrar cliente")
+    @DisplayName("create - registrar cliente")
     class Create {
 
         @Test
-        @DisplayName("CA01 - Registro exitoso con todos los datos válidos")
+        @DisplayName("Registro exitoso con todos los datos válidos")
         void deberiaCrearClienteCuandoTodosLosDatosSonValidos() {
             // Arrange
             CreateCustomerRequest request = buildValidRequest();
             DocumentType documentType = buildDocumentType();
-            UserView userView = new UserView(10L, request.getEmail(), "CUSTOMER", "PENDING_VERIFICATION");
+            UserView userView = new UserView(UUID.randomUUID(), request.getEmail(), "CUSTOMER", "PENDING_VERIFICATION");
             CustomerResponse expectedResponse = new CustomerResponse();
 
             when(documentTypeRepository.findById(request.getDocumentTypeId()))
                     .thenReturn(Optional.of(documentType));
-            when(customerRepository.existsByDocumentNumber(request.getDocumentNumber()))
+            when(customerRepository.existsByDocumentTypeIdAndDocumentNumber(documentType.getId(), request.getDocumentNumber()))
                     .thenReturn(false);
-            when(authFacade.createUser(request.getEmail(), request.getPassword(), RoleEnum.CUSTOMER))
+            when(userApi.createUser(request.getEmail(), RoleEnum.CUSTOMER))
                     .thenReturn(userView);
             when(customerRepository.save(any(Customer.class)))
                     .thenAnswer(invocation -> invocation.getArgument(0));
@@ -127,20 +137,20 @@ class CustomerServiceTest {
         }
 
         @Test
-        @DisplayName("CA02 - Se permite el registro cuando el usuario cumple 18 años exactamente hoy")
+        @DisplayName("Se permite el registro cuando el usuario cumple 18 años exactamente hoy")
         void deberiaPermitirRegistroCuandoElUsuarioCumple18AñosHoy() {
             // Arrange
             CreateCustomerRequest request = buildValidRequest();
             request.setBirthDate(LocalDate.now().minusYears(18)); // cumple 18 exactamente hoy
             DocumentType documentType = buildDocumentType();
-            UserView userView = new UserView(11L, request.getEmail(), "CUSTOMER", "PENDING_VERIFICATION");
+            UserView userView = new UserView(UUID.randomUUID(), request.getEmail(), "CUSTOMER", "PENDING_VERIFICATION");
             CustomerResponse expectedResponse = new CustomerResponse();
 
             when(documentTypeRepository.findById(request.getDocumentTypeId()))
                     .thenReturn(Optional.of(documentType));
-            when(customerRepository.existsByDocumentNumber(request.getDocumentNumber()))
+            when(customerRepository.existsByDocumentTypeIdAndDocumentNumber(documentType.getId(), request.getDocumentNumber()))
                     .thenReturn(false);
-            when(authFacade.createUser(request.getEmail(), request.getPassword(), RoleEnum.CUSTOMER))
+            when(userApi.createUser(request.getEmail(), RoleEnum.CUSTOMER))
                     .thenReturn(userView);
             when(customerRepository.save(any(Customer.class)))
                     .thenAnswer(invocation -> invocation.getArgument(0));
@@ -156,7 +166,7 @@ class CustomerServiceTest {
         }
 
         @Test
-        @DisplayName("CA03 - Rechaza el registro cuando el usuario es menor de 18 años")
+        @DisplayName("Rechaza el registro cuando el usuario es menor de 18 años")
         void deberiaRechazarRegistroCuandoElUsuarioEsMenorDeEdad() {
             // Arrange
             CreateCustomerRequest request = buildValidRequest();
@@ -166,9 +176,9 @@ class CustomerServiceTest {
             Throwable thrown = catchThrowable(() -> customerService.create(request));
 
             // Assert
-            assertThat(thrown).isInstanceOf(IllegalArgumentException.class)
+            assertThat(thrown).isInstanceOf(InvalidRequestException.class)
                     .hasMessageContaining("18");
-            verifyNoInteractions(documentTypeRepository, customerRepository, authFacade);
+            verifyNoInteractions(documentTypeRepository, customerRepository, userApi);
         }
 
         @Test
@@ -183,19 +193,19 @@ class CustomerServiceTest {
             Throwable thrown = catchThrowable(() -> customerService.create(request));
 
             // Assert
-            assertThat(thrown).isInstanceOf(IllegalArgumentException.class);
-            verifyNoInteractions(customerRepository, authFacade);
+            assertThat(thrown).isInstanceOf(InvalidRequestException.class);
+            verifyNoInteractions(customerRepository, userApi);
         }
 
         @Test
-        @DisplayName("CA05 - Rechaza el registro cuando el número de documento ya está registrado")
+        @DisplayName("Rechaza el registro cuando el número de documento ya está registrado")
         void deberiaRechazarRegistroCuandoElDocumentoYaExiste() {
             // Arrange
             CreateCustomerRequest request = buildValidRequest();
             DocumentType documentType = buildDocumentType();
             when(documentTypeRepository.findById(request.getDocumentTypeId()))
                     .thenReturn(Optional.of(documentType));
-            when(customerRepository.existsByDocumentNumber(request.getDocumentNumber()))
+            when(customerRepository.existsByDocumentTypeIdAndDocumentNumber(documentType.getId(), request.getDocumentNumber()))
                     .thenReturn(true);
 
             // Act
@@ -204,21 +214,21 @@ class CustomerServiceTest {
             // Assert
             assertThat(thrown).isInstanceOf(DuplicateCustomerException.class);
             // El documento se valida antes de crear el usuario en auth: no debe llegar a invocarse
-            verifyNoInteractions(authFacade);
+            verifyNoInteractions(userApi);
             verify(customerRepository, never()).save(any());
         }
 
         @Test
-        @DisplayName("CA07 - Rechaza el registro cuando el correo electrónico ya está registrado")
+        @DisplayName("Rechaza el registro cuando el correo electrónico ya está registrado")
         void deberiaRechazarRegistroCuandoElCorreoYaExiste() {
             // Arrange
             CreateCustomerRequest request = buildValidRequest();
             DocumentType documentType = buildDocumentType();
             when(documentTypeRepository.findById(request.getDocumentTypeId()))
                     .thenReturn(Optional.of(documentType));
-            when(customerRepository.existsByDocumentNumber(request.getDocumentNumber()))
+            when(customerRepository.existsByDocumentTypeIdAndDocumentNumber(documentType.getId(), request.getDocumentNumber()))
                     .thenReturn(false);
-            when(authFacade.createUser(request.getEmail(), request.getPassword(), RoleEnum.CUSTOMER))
+            when(userApi.createUser(request.getEmail(), RoleEnum.CUSTOMER))
                     .thenThrow(new DuplicateUserException("Ya existe un usuario registrado con ese email"));
 
             // Act
@@ -231,21 +241,45 @@ class CustomerServiceTest {
     }
 
     @Nested
-    @DisplayName("getProfile - HU06 Consultar perfil")
+    @DisplayName("getDocumentTypes - catálogo para el registro")
+    class GetDocumentTypes {
+
+        @Test
+        @DisplayName("Devuelve los tipos de documento ordenados por id, ya mapeados")
+        void deberiaDevolverElCatalogoOrdenadoPorId() {
+            // Arrange
+            DocumentType cedula = buildDocumentType();
+            DocumentTypeResponse mapped = new DocumentTypeResponse();
+            mapped.setId((short) 1);
+            mapped.setName("Cédula de ciudadanía");
+            when(documentTypeRepository.findAll(Sort.by("id"))).thenReturn(List.of(cedula));
+            when(customerMapper.toResponse(cedula)).thenReturn(mapped);
+
+            // Act
+            List<DocumentTypeResponse> result = customerService.getDocumentTypes();
+
+            // Assert
+            assertThat(result).containsExactly(mapped);
+            verifyNoInteractions(customerRepository, userApi);
+        }
+    }
+
+    @Nested
+    @DisplayName("getProfile - consultar perfil")
     class GetProfile {
 
         @Test
-        @DisplayName("CA01 - Retorna el perfil del cliente autenticado")
+        @DisplayName("Retorna el perfil del cliente autenticado")
         void deberiaRetornarElPerfilCuandoElClienteExiste() {
             // Arrange
-            Long userId = 5L;
+            UUID userId = UUID.randomUUID();
             Customer customer = new Customer();
             customer.setUserId(userId);
             UserView userView = new UserView(userId, "cliente@example.com", "CUSTOMER", "ACTIVE");
             CustomerResponse expectedResponse = new CustomerResponse();
 
             when(customerRepository.findByUserId(userId)).thenReturn(Optional.of(customer));
-            when(authFacade.getUser(userId)).thenReturn(userView);
+            when(userApi.getUser(userId)).thenReturn(userView);
             when(customerMapper.toResponse(customer, userView)).thenReturn(expectedResponse);
 
             // Act
@@ -259,25 +293,25 @@ class CustomerServiceTest {
         @DisplayName("Rechaza la consulta cuando no existe un perfil para el usuario autenticado")
         void deberiaLanzarExcepcionCuandoElPerfilNoExiste() {
             // Arrange
-            Long userId = 99L;
+            UUID userId = UUID.randomUUID();
             when(customerRepository.findByUserId(userId)).thenReturn(Optional.empty());
 
             // Act & Assert
             assertThatThrownBy(() -> customerService.getProfile(userId))
                     .isInstanceOf(CustomerNotFoundException.class);
-            verifyNoInteractions(authFacade);
+            verifyNoInteractions(userApi);
         }
     }
 
     @Nested
-    @DisplayName("updateProfile - HU07 Actualizar datos de perfil")
+    @DisplayName("updateProfile - actualizar datos de perfil")
     class UpdateProfile {
 
         @Test
-        @DisplayName("CA01 / CA04 - Actualiza solo el dato enviado y conserva los demás sin cambios")
+        @DisplayName("Actualiza solo el dato enviado y conserva los demás sin cambios")
         void deberiaActualizarSoloElCampoEnviadoYConservarLosDemas() {
             // Arrange
-            Long userId = 7L;
+            UUID userId = UUID.randomUUID();
             Customer existing = new Customer();
             existing.setUserId(userId);
             existing.setFirstNames("Nombre Original");
@@ -288,7 +322,7 @@ class CustomerServiceTest {
             when(customerRepository.findByUserId(userId)).thenReturn(Optional.of(existing));
             when(customerRepository.save(any(Customer.class)))
                     .thenAnswer(invocation -> invocation.getArgument(0));
-            when(authFacade.getUser(userId)).thenReturn(userView);
+            when(userApi.getUser(userId)).thenReturn(userView);
             when(customerMapper.toResponse(any(Customer.class), eq(userView)))
                     .thenReturn(new CustomerResponse());
 
@@ -308,13 +342,87 @@ class CustomerServiceTest {
         @DisplayName("Rechaza la actualización cuando no existe un perfil para el usuario autenticado")
         void deberiaLanzarExcepcionCuandoElPerfilNoExiste() {
             // Arrange
-            Long userId = 123L;
+            UUID userId = UUID.randomUUID();
             when(customerRepository.findByUserId(userId)).thenReturn(Optional.empty());
 
             // Act & Assert
             assertThatThrownBy(() -> customerService.updateProfile(userId, "X", null, null))
                     .isInstanceOf(CustomerNotFoundException.class);
             verify(customerRepository, never()).save(any());
+        }
+    }
+
+    @Nested
+    @DisplayName("getCustomer - consulta por tipo y número de documento")
+    class GetCustomer {
+
+        @Test
+        @DisplayName("Devuelve el cliente encontrado por documento junto con los datos de su usuario")
+        void deberiaDevolverElClientePorDocumento() {
+            // Arrange
+            UUID userId = UUID.randomUUID();
+            Customer existing = new Customer();
+            existing.setUserId(userId);
+            UserView userView = new UserView(userId, "cliente@example.com", "CUSTOMER", "ACTIVE");
+            CustomerResponse expected = new CustomerResponse();
+            when(customerRepository.findByDocumentTypeIdAndDocumentNumber((short) 1, "1000000001"))
+                    .thenReturn(Optional.of(existing));
+            when(userApi.getUser(userId)).thenReturn(userView);
+            when(customerMapper.toResponse(existing, userView)).thenReturn(expected);
+
+            // Act
+            CustomerResponse result = customerService.getCustomer((short) 1, "1000000001");
+
+            // Assert
+            assertThat(result).isSameAs(expected);
+        }
+
+        @Test
+        @DisplayName("Lanza CustomerNotFoundException cuando no existe un cliente con ese documento")
+        void deberiaLanzarExcepcionCuandoElDocumentoNoExiste() {
+            // Arrange
+            when(customerRepository.findByDocumentTypeIdAndDocumentNumber((short) 3, "999"))
+                    .thenReturn(Optional.empty());
+
+            // Act & Assert
+            assertThatThrownBy(() -> customerService.getCustomer((short) 3, "999"))
+                    .isInstanceOf(CustomerNotFoundException.class);
+            verifyNoInteractions(userApi);
+        }
+    }
+
+    @Nested
+    @DisplayName("changeStatus - cambio de estado por tipo y número de documento")
+    class ChangeStatus {
+
+        @Test
+        @DisplayName("Busca al cliente por documento y cambia el estado de su usuario")
+        void deberiaCambiarElEstadoDelUsuarioDelClienteEncontradoPorDocumento() {
+            // Arrange
+            UUID userId = UUID.randomUUID();
+            Customer existing = new Customer();
+            existing.setUserId(userId);
+            when(customerRepository.findByDocumentTypeIdAndDocumentNumber((short) 1, "1000000001"))
+                    .thenReturn(Optional.of(existing));
+
+            // Act
+            customerService.changeStatus((short) 1, "1000000001", UserStatusEnum.BLOCKED);
+
+            // Assert
+            verify(userApi).changeStatus(userId, UserStatusEnum.BLOCKED);
+        }
+
+        @Test
+        @DisplayName("Rechaza el cambio cuando no existe un cliente con ese documento")
+        void deberiaLanzarExcepcionCuandoElDocumentoNoExiste() {
+            // Arrange
+            when(customerRepository.findByDocumentTypeIdAndDocumentNumber((short) 2, "999"))
+                    .thenReturn(Optional.empty());
+
+            // Act & Assert
+            assertThatThrownBy(() -> customerService.changeStatus((short) 2, "999", UserStatusEnum.ACTIVE))
+                    .isInstanceOf(CustomerNotFoundException.class);
+            verifyNoInteractions(userApi);
         }
     }
 }

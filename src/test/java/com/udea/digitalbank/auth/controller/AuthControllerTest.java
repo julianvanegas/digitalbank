@@ -5,6 +5,8 @@ import com.udea.digitalbank.auth.dto.EmailRequest;
 import com.udea.digitalbank.auth.dto.LoginRequest;
 import com.udea.digitalbank.auth.dto.LoginResponse;
 import com.udea.digitalbank.auth.dto.PasswordResetRequest;
+import com.udea.digitalbank.auth.dto.ResendTwoFactorRequest;
+import com.udea.digitalbank.auth.dto.ResendTwoFactorResponse;
 import com.udea.digitalbank.auth.dto.VerifyEmailRequest;
 import com.udea.digitalbank.auth.dto.VerifyTwoFactorRequest;
 import com.udea.digitalbank.auth.service.AuthService;
@@ -18,7 +20,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
+import com.udea.digitalbank.shared.security.Actor;
 
 import java.util.UUID;
 
@@ -44,9 +46,6 @@ class AuthControllerTest {
     @Mock
     private PasswordResetService passwordResetService;
 
-    @Mock
-    private Authentication authentication;
-
     private AuthController controller;
 
     @BeforeEach
@@ -55,19 +54,21 @@ class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("verifyEmail - HU01 (confirmación de correo): delega y responde 204")
+    @DisplayName("verifyEmail - confirmación de correo: delega con la contraseña y su confirmación y responde 204")
     void verifyEmail_deberiaDelegarYResponder204() {
         // Arrange
         VerifyEmailRequest request = new VerifyEmailRequest();
         request.setEmail("ana@example.com");
         request.setCode("123456");
+        request.setPassword("Passw0rd!");
+        request.setConfirmPassword("Passw0rd!");
 
         // Act
         ResponseEntity<Void> response = controller.verifyEmail(request);
 
         // Assert
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
-        verify(emailVerificationService).verifyEmail("ana@example.com", "123456");
+        verify(emailVerificationService).verifyEmail("ana@example.com", "123456", "Passw0rd!", "Passw0rd!");
     }
 
     @Test
@@ -86,7 +87,7 @@ class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("login - HU02: responde 200 con el resultado de AuthService, sin emitir el JWT todavía")
+    @DisplayName("login - responde 200 con el resultado de AuthService, sin emitir el JWT todavía")
     void login_deberiaResponder200ConResultadoDelService() {
         // Arrange
         LoginRequest request = new LoginRequest();
@@ -105,7 +106,7 @@ class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("verifyTwoFactor - HU03: delega challengeId y code, responde 200 con el token")
+    @DisplayName("verifyTwoFactor - delega challengeId y code, responde 200 con el token")
     void verifyTwoFactor_deberiaDelegarYResponder200() {
         // Arrange
         UUID challengeId = UUID.randomUUID();
@@ -124,21 +125,21 @@ class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("logout - HU04: obtiene el userId del principal autenticado y responde 204")
+    @DisplayName("logout - obtiene el userId del principal autenticado y responde 204")
     void logout_deberiaUsarPrincipalYResponder204() {
         // Arrange
-        when(authentication.getPrincipal()).thenReturn(42L);
+        UUID userId = UUID.randomUUID();
 
         // Act
-        ResponseEntity<Void> response = controller.logout(authentication);
+        ResponseEntity<Void> response = controller.logout(new Actor(userId, false));
 
         // Assert
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
-        verify(authService).logout(42L);
+        verify(authService).logout(userId);
     }
 
     @Test
-    @DisplayName("recoverPassword - HU05: delega el email y responde 204 (mensaje siempre genérico)")
+    @DisplayName("recoverPassword - delega el email y responde 204 (mensaje siempre genérico)")
     void recoverPassword_deberiaDelegarYResponder204() {
         // Arrange
         EmailRequest request = new EmailRequest();
@@ -153,7 +154,7 @@ class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("resetPassword - HU05: delega email, código y nueva contraseña, responde 204")
+    @DisplayName("resetPassword - delega email, código y nueva contraseña, responde 204")
     void resetPassword_deberiaDelegarYResponder204() {
         // Arrange
         PasswordResetRequest request = new PasswordResetRequest();
@@ -167,5 +168,23 @@ class AuthControllerTest {
         // Assert
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
         verify(passwordResetService).resetPassword("ana@example.com", "123456", "NuevaPass1!");
+    }
+
+    @Test
+    @DisplayName("resendTwoFactor: delega el challengeId y responde 200 con la respuesta del service")
+    void resendTwoFactor_deberiaDelegarYResponder200() {
+        // Arrange
+        UUID challengeId = UUID.randomUUID();
+        ResendTwoFactorRequest request = new ResendTwoFactorRequest();
+        request.setChallengeId(challengeId);
+        ResendTwoFactorResponse expected = new ResendTwoFactorResponse(challengeId, 1, 60);
+        when(authService.resendTwoFactor(challengeId)).thenReturn(expected);
+
+        // Act
+        ResponseEntity<ResendTwoFactorResponse> response = controller.resendTwoFactor(request);
+
+        // Assert
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isSameAs(expected);
     }
 }

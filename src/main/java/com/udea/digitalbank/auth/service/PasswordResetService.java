@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 /** Recuperación de contraseña: pedir el código y cambiarla con él. */
 @Service
@@ -32,7 +33,7 @@ public class PasswordResetService {
         this.sessionService = sessionService;
     }
 
-    // Responde igual exista o no el usuario, para no revelar qué emails están registrados
+    /** Responde igual exista o no el usuario, para no revelar qué emails están registrados. */
     @Transactional
     public void requestPasswordReset(String email) {
         userRepository.findByEmail(email)
@@ -41,11 +42,12 @@ public class PasswordResetService {
 
     @Transactional(noRollbackFor = InvalidVerificationCodeException.class)
     public void resetPassword(String email, String code, String newPassword) {
-        Long userId = verificationService.verifyByEmail(email, PurposeEnum.PASSWORD_RESET, code);
-        User user = userRepository.findById(userId).orElseThrow();
+        UUID userId = verificationService.verifyByEmail(email, PurposeEnum.PASSWORD_RESET, code);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new InvalidVerificationCodeException("Código de verificación inválido o expirado"));
         user.setPasswordHash(passwordEncoder.encode(newPassword));
         user.setPasswordChangedAt(LocalDateTime.now());
-        user.setFailedAttempts(0);
+        user.setFailedAttempts((short) 0);
         userRepository.save(user);
         sessionService.revoke(userId);
     }

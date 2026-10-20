@@ -8,22 +8,21 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 /**
- * Pruebas unitarias de {@link PasswordResetService} (HU05 Recuperar contraseña).
- * Esta clase no tenía ninguna prueba: solo se conocía indirectamente a través del mock en otros
- * tests, así que ninguna de las 19 CA de HU05 estaba realmente verificada.
+ * Pruebas unitarias de {@link PasswordResetService} (recuperar contraseña).
+ * Verifica el flujo real: en los demás tests el servicio solo aparece como mock.
  */
 @ExtendWith(MockitoExtension.class)
 class PasswordResetServiceTest {
@@ -43,15 +42,15 @@ class PasswordResetServiceTest {
     private PasswordResetService passwordResetService;
 
     @Nested
-    @DisplayName("requestPasswordReset - CA01/CA02 (mensaje genérico, no revela si el correo existe)")
+    @DisplayName("requestPasswordReset - mensaje genérico, no revela si el correo existe")
     class RequestPasswordReset {
 
         @Test
-        @DisplayName("CA02 - Correo registrado: emite y envía el código de recuperación")
+        @DisplayName("Correo registrado: emite y envía el código de recuperación")
         void deberiaEmitirYEnviarElCodigoCuandoElCorreoEstaRegistrado() {
             // Arrange
             User user = new User();
-            user.setId(1L);
+            user.setId(UUID.randomUUID());
             user.setEmail("cliente@example.com");
             when(userRepository.findByEmail("cliente@example.com")).thenReturn(Optional.of(user));
 
@@ -63,7 +62,7 @@ class PasswordResetServiceTest {
         }
 
         @Test
-        @DisplayName("CA01 - Correo no registrado: no hace nada observable (mismo comportamiento externo)")
+        @DisplayName("Correo no registrado: no hace nada observable (mismo comportamiento externo)")
         void noDeberiaHacerNadaCuandoElCorreoNoEstaRegistrado() {
             // Arrange
             when(userRepository.findByEmail("noexiste@example.com")).thenReturn(Optional.empty());
@@ -77,17 +76,17 @@ class PasswordResetServiceTest {
     }
 
     @Nested
-    @DisplayName("resetPassword - CA12 (éxito) y propagación de errores del código")
+    @DisplayName("resetPassword - éxito y propagación de errores del código")
     class ResetPassword {
 
         @Test
-        @DisplayName("CA12/CA19 - Código válido y contraseña válida: actualiza la contraseña y revoca la sesión")
+        @DisplayName("Código válido y contraseña válida: actualiza la contraseña y revoca la sesión")
         void deberiaActualizarLaContraseñaYRevocarLaSesionCuandoElCodigoEsValido() {
             // Arrange
-            Long userId = 10L;
+            UUID userId = UUID.randomUUID();
             User user = new User();
             user.setId(userId);
-            user.setFailedAttempts(2); // intentos previos de login, deben resetearse también aquí
+            user.setFailedAttempts((short) 2); // intentos previos de login, deben resetearse también aquí
 
             when(verificationService.verifyByEmail("cliente@example.com", PurposeEnum.PASSWORD_RESET, "654321"))
                     .thenReturn(userId);
@@ -102,7 +101,7 @@ class PasswordResetServiceTest {
             assertThat(user.getPasswordChangedAt()).isNotNull();
             assertThat(user.getFailedAttempts()).isZero();
             verify(userRepository).save(user);
-            verify(sessionService).revoke(userId); // CA19: no continúa con una sesión antigua
+            verify(sessionService).revoke(userId); // no continúa con una sesión antigua
         }
 
         @Test

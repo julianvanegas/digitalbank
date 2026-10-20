@@ -1,5 +1,6 @@
 package com.udea.digitalbank.shared.exception;
 
+import com.udea.digitalbank.shared.exception.InvalidRequestException;
 import com.udea.digitalbank.shared.exception.auth.DuplicateUserException;
 import com.udea.digitalbank.shared.exception.auth.InvalidCredentialsException;
 import com.udea.digitalbank.shared.exception.auth.InvalidVerificationCodeException;
@@ -10,9 +11,13 @@ import com.udea.digitalbank.shared.exception.customer.DuplicateCustomerException
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
+import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.springframework.core.MethodParameter;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpInputMessage;
 import org.springframework.http.HttpStatus;
@@ -25,6 +30,8 @@ import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.context.request.WebRequest;
+
+import java.sql.SQLException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -111,6 +118,32 @@ class GlobalExceptionHandlerTest {
         }
 
         @Test
+        @DisplayName("TOO_MANY_REQUESTS -> 429 con Retry-After cuando hay tiempo de espera")
+        void deberiaTraducirTooManyRequestsA429ConRetryAfter() {
+            TooManyRequestsException ex = new TooManyRequestsException("Espera 20 segundos", 20);
+            ResponseEntity<ErrorResponse> response = handler.handleBusiness(ex);
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
+            assertThat(response.getHeaders().getFirst(HttpHeaders.RETRY_AFTER)).isEqualTo("20");
+            assertThat(response.getBody().message()).isEqualTo("Espera 20 segundos");
+        }
+
+        @Test
+        @DisplayName("TOO_MANY_REQUESTS -> 429 sin Retry-After cuando no hay nada que esperar")
+        void deberiaTraducirTooManyRequestsA429SinRetryAfter() {
+            TooManyRequestsException ex = new TooManyRequestsException("Inicia sesión de nuevo", 0);
+            ResponseEntity<ErrorResponse> response = handler.handleBusiness(ex);
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
+            assertThat(response.getHeaders().getFirst(HttpHeaders.RETRY_AFTER)).isNull();
+        }
+
+        @Test
+        @DisplayName("Las demás excepciones de negocio no llevan Retry-After")
+        void lasDemasExcepcionesNoLlevanRetryAfter() {
+            ResponseEntity<ErrorResponse> response = handler.handleBusiness(new UserNotFoundException("x"));
+            assertThat(response.getHeaders().getFirst(HttpHeaders.RETRY_AFTER)).isNull();
+        }
+
+        @Test
         @DisplayName("El cuerpo siempre incluye un timestamp")
         void elCuerpoSiempreIncluyeTimestamp() {
             ResponseEntity<ErrorResponse> response = handler.handleBusiness(new UserNotFoundException("x"));
@@ -123,10 +156,10 @@ class GlobalExceptionHandlerTest {
     class OtherPublicHandlersTests {
 
         @Test
-        @DisplayName("DataIntegrityViolationException -> 409 con mensaje genérico")
-        void deberiaManejarViolacionDeIntegridad() {
+        @DisplayName("Violación de unicidad -> 409 \"ya existe\"")
+        void deberiaManejarUnaViolacionDeUnicidad() {
             // Arrange
-            DataIntegrityViolationException ex = new DataIntegrityViolationException("constraint violada");
+            DataIntegrityViolationException ex = integrity(ConstraintViolationException.ConstraintKind.UNIQUE, "uk_x");
 
             // Act
             ResponseEntity<ErrorResponse> response = handler.handleIntegrity(ex);
@@ -136,18 +169,83 @@ class GlobalExceptionHandlerTest {
             assertThat(response.getBody().message()).isEqualTo("Ya existe un registro con esos datos");
         }
 
-        @Test
-        @DisplayName("IllegalArgumentException -> 400 con el mensaje original")
-        void deberiaManejarIllegalArgument() {
+        @ParameterizedTest
+        @EnumSource(value = ConstraintViolationException.ConstraintKind.class, names = "UNIQUE",
+                mode = EnumSource.Mode.EXCLUDE)
+        @DisplayName("Violación de CHECK, FK o NOT NULL -> 409 con una regla genérica, no \"ya existe\"")
+        void deberiaManejarOtrasViolacionesDeIntegridad(ConstraintViolationException.ConstraintKind kind) {
             // Arrange
-            IllegalArgumentException ex = new IllegalArgumentException("El cliente debe ser mayor de 18 años");
+            DataIntegrityViolationException ex = integrity(kind, "ck_x");
 
             // Act
-            ResponseEntity<ErrorResponse> response = handler.handleIllegalArgument(ex);
+            ResponseEntity<ErrorResponse> response = handler.handleIntegrity(ex);
+
+            // Assert
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+            assertThat(response.getBody().message())
+                    .isEqualTo("La operación no cumple una regla de integridad de los datos");
+        }
+
+        @Test
+        @DisplayName("Violación de integridad sin detalle de la base -> 409 con la regla genérica")
+        void deberiaManejarUnaViolacionSinCausaConocida() {
+            // Act
+            ResponseEntity<ErrorResponse> response =
+                    handler.handleIntegrity(new DataIntegrityViolationException("constraint violada"));
+
+            // Assert
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+            assertThat(response.getBody().message())
+                    .isEqualTo("La operación no cumple una regla de integridad de los datos");
+        }
+
+        private DataIntegrityViolationException integrity(ConstraintViolationException.ConstraintKind kind, String name) {
+            return new DataIntegrityViolationException("no importa",
+                    new ConstraintViolationException("fallo", new SQLException("detalle de la base"), kind, name));
+        }
+
+        @Test
+        @DisplayName("Conflicto de versión (@Version) -> 409: la operación se puede repetir")
+        void deberiaManejarUnConflictoDeVersion() {
+            // Arrange
+            OptimisticLockingFailureException ex = new OptimisticLockingFailureException("versión vieja");
+
+            // Act
+            ResponseEntity<ErrorResponse> response = handler.handleOptimisticLock(ex);
+
+            // Assert
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+            assertThat(response.getBody().message()).isEqualTo(
+                    "La información fue modificada por otra operación; vuelve a intentarlo");
+        }
+
+        @Test
+        @DisplayName("InvalidRequestException -> 400 con su mensaje, que es para el cliente")
+        void deberiaManejarUnaPeticionInvalidaDeNegocio() {
+            // Arrange
+            InvalidRequestException ex = new InvalidRequestException("El cliente debe ser mayor de 18 años");
+
+            // Act
+            ResponseEntity<ErrorResponse> response = handler.handleBusiness(ex);
 
             // Assert
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
             assertThat(response.getBody().message()).isEqualTo("El cliente debe ser mayor de 18 años");
+        }
+
+        @Test
+        @DisplayName("IllegalArgumentException (un error de programación) -> 500 sin filtrar su mensaje")
+        void noDeberiaFiltrarElMensajeDeUnIllegalArgument() {
+            // Arrange
+            IllegalArgumentException ex = new IllegalArgumentException("detalle interno: columna x");
+
+            // Act
+            ResponseEntity<ErrorResponse> response = handler.handleUnexpected(ex);
+
+            // Assert
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+            assertThat(response.getBody().message()).isEqualTo("Error interno del servidor")
+                    .doesNotContain("detalle interno");
         }
 
         @Test
@@ -198,7 +296,7 @@ class GlobalExceptionHandlerTest {
     @DisplayName("Overrides de ResponseEntityExceptionHandler (errores propios de MVC)")
     class MvcHandlersTests {
 
-        // Método señuelo, solo para poder construir un MethodParameter real
+        /** Método señuelo, solo para poder construir un MethodParameter real. */
         @SuppressWarnings("unused")
         private void dummyMethod(Object arg) {
         }

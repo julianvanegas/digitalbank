@@ -1,7 +1,9 @@
 package com.udea.digitalbank.shared.exception;
 
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -30,10 +32,16 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     private static final String MALFORMED_REQUEST = "Solicitud mal formada: revisa el cuerpo y los parámetros";
 
-    // Todas las excepciones de negocio: cada una declara su categoría y aquí se decide el código HTTP
+    /** Todas las excepciones de negocio: cada una declara su categoría y aquí se decide el código HTTP. */
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ErrorResponse> handleBusiness(BusinessException ex) {
-        return build(statusOf(ex.getKind()), ex.getMessage());
+        HttpStatus status = statusOf(ex.getKind());
+        ResponseEntity.BodyBuilder response = ResponseEntity.status(status);
+        // Con 429 el cliente necesita saber cuánto esperar para reintentar
+        if (ex instanceof TooManyRequestsException tooMany && tooMany.getRetryAfterSeconds() > 0) {
+            response.header(HttpHeaders.RETRY_AFTER, String.valueOf(tooMany.getRetryAfterSeconds()));
+        }
+        return response.body(new ErrorResponse(status.value(), ex.getMessage(), LocalDateTime.now()));
     }
 
     // Exhaustivo: una categoría nueva no compila hasta que se decide qué código le corresponde
@@ -44,21 +52,50 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             case UNAUTHENTICATED -> HttpStatus.UNAUTHORIZED;
             case FORBIDDEN -> HttpStatus.FORBIDDEN;
             case INVALID -> HttpStatus.BAD_REQUEST;
+            case TOO_MANY_REQUESTS -> HttpStatus.TOO_MANY_REQUESTS;
         };
     }
 
-    // Carrera entre dos altas con el mismo email o documento: la restricción única de la base gana
+    /**
+     * Una unicidad violada es la carrera de dos altas con el mismo email o documento: la restricción de la base gana
+     * y es un conflicto que el cliente entiende. Cualquier otra violación (CHECK, FK, NOT NULL) significa que una
+     * validación no se aplica: al cliente solo una regla genérica, y para quien desarrolla queda en el log qué
+     * restricción fue, sin el mensaje de la base, que trae los valores del dato.
+     */
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ErrorResponse> handleIntegrity(DataIntegrityViolationException ex) {
-        return build(HttpStatus.CONFLICT, "Ya existe un registro con esos datos");
+        ConstraintViolationException violation = constraintViolationOf(ex);
+        if (violation != null && violation.getKind() == ConstraintViolationException.ConstraintKind.UNIQUE) {
+            return build(HttpStatus.CONFLICT, "Ya existe un registro con esos datos");
+        }
+        log.warn("Violación de integridad no prevista: tipo={}, restricción={}",
+                violation == null ? "desconocido" : violation.getKind(),
+                violation == null ? "desconocida" : violation.getConstraintName());
+        return build(HttpStatus.CONFLICT, "La operación no cumple una regla de integridad de los datos");
     }
 
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException ex) {
-        return build(HttpStatus.BAD_REQUEST, ex.getMessage());
+    /**
+     * Dos escrituras sobre la misma fila: la segunda lee una versión vieja ({@code @Version}) y se rechaza para no
+     * pisar el cambio de la primera. No es un error del cliente ni del servidor: basta con repetir la operación.
+     */
+    @ExceptionHandler(OptimisticLockingFailureException.class)
+    public ResponseEntity<ErrorResponse> handleOptimisticLock(OptimisticLockingFailureException ex) {
+        return build(HttpStatus.CONFLICT, "La información fue modificada por otra operación; vuelve a intentarlo");
     }
 
-    // @PreAuthorize lanza esta excepción desde dentro del controller: sin este handler la atraparía el general (500)
+    private static ConstraintViolationException constraintViolationOf(Throwable error) {
+        for (Throwable current = error; current != null; current = current.getCause()) {
+            if (current instanceof ConstraintViolationException violation) {
+                return violation;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * La seguridad por método (si alguien usa {@code @PreAuthorize}) lanza esta excepción desde dentro del controller:
+     * sin este handler la atraparía el general (500).
+     */
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException ex) {
         return build(HttpStatus.FORBIDDEN, SecurityErrorHandler.FORBIDDEN_MESSAGE);
@@ -69,8 +106,12 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return build(HttpStatus.UNAUTHORIZED, SecurityErrorHandler.UNAUTHENTICATED_MESSAGE);
     }
 
-    // Cualquier error no previsto. Al cliente no se le cuenta nada del fallo: el detalle va solo al log.
-    // Sin este handler, un 500 en un endpoint público llegaba al anónimo enmascarado como 403.
+    /**
+     * Cualquier error no previsto, incluidas las IllegalArgumentException/IllegalStateException de programación (las
+     * validaciones de negocio usan InvalidRequestException y dan 400). Al cliente no se le cuenta nada del fallo: el
+     * detalle va solo al log.
+     * Sin este handler, un 500 en un endpoint público llegaba al anónimo enmascarado como 403.
+     */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleUnexpected(Exception ex) {
         log.error("Error no controlado", ex);
@@ -79,7 +120,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     // ---- errores propios de MVC: Spring decide el código, aquí se decide el cuerpo ----
 
-    // captura los @NotBlank, @Email, @Pattern, etc. de los DTOs
+    /**
+     * Captura las anotaciones de validación de los DTOs ({@code @NotBlank}, {@code @Email}, {@code @Pattern}, etc.).
+     */
     @Override
     protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex,
                                                                   HttpHeaders headers, HttpStatusCode status,
@@ -90,7 +133,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return body(HttpStatus.BAD_REQUEST, headers, message);
     }
 
-    // Cuerpo ausente o JSON mal formado
+    /** Cuerpo ausente o JSON mal formado. */
     @Override
     protected ResponseEntity<Object> handleHttpMessageNotReadable(HttpMessageNotReadableException ex,
                                                                   HttpHeaders headers, HttpStatusCode status,
@@ -98,14 +141,14 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return body(HttpStatus.BAD_REQUEST, headers, MALFORMED_REQUEST);
     }
 
-    // Parámetro de ruta o de consulta de tipo incorrecto (p. ej. /api/v1/customers/abc)
+    /** Parámetro de ruta o de consulta de tipo incorrecto (p. ej. /api/v1/customers/abc). */
     @Override
     protected ResponseEntity<Object> handleTypeMismatch(TypeMismatchException ex, HttpHeaders headers,
                                                         HttpStatusCode status, WebRequest request) {
         return body(HttpStatus.BAD_REQUEST, headers, MALFORMED_REQUEST);
     }
 
-    // Todo lo demás de MVC (404, 405, 406, 415, parámetro faltante...) con un mensaje genérico por código
+    /** Todo lo demás de MVC (404, 405, 406, 415, parámetro faltante...) con un mensaje genérico por código. */
     @Override
     protected ResponseEntity<Object> handleExceptionInternal(Exception ex, Object body, HttpHeaders headers,
                                                              HttpStatusCode statusCode, WebRequest request) {

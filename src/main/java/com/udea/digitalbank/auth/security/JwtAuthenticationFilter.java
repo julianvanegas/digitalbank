@@ -1,7 +1,6 @@
 package com.udea.digitalbank.auth.security;
 
 import com.udea.digitalbank.auth.service.SessionService;
-import com.udea.digitalbank.auth.service.UserStatusService;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -15,20 +14,18 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
     private final SessionService sessionService;
-    private final UserStatusService userStatusService;
 
-    public JwtAuthenticationFilter(JwtUtil jwtUtil,
-                                   SessionService sessionService,
-                                   UserStatusService userStatusService) {
+    public JwtAuthenticationFilter(JwtUtil jwtUtil, SessionService sessionService) {
         this.jwtUtil = jwtUtil;
         this.sessionService = sessionService;
-        this.userStatusService = userStatusService;
     }
 
     @Override
@@ -45,20 +42,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String token = header.substring(7);
 
-        if (!jwtUtil.isValid(token)) {
+        Optional<Claims> parsed = jwtUtil.tryParse(token);
+        if (parsed.isEmpty()) {
             filterChain.doFilter(request, response); // token inválido/expirado -> Spring responderá 401 más adelante
             return;
         }
 
-        Claims claims = jwtUtil.parseClaims(token);
-        Long userId = Long.valueOf(claims.getSubject());
+        Claims claims = parsed.get();
+        UUID userId = UUID.fromString(claims.getSubject());
         String role = claims.get("role", String.class);
         String jti = claims.getId();
 
-        // Sesión única: el token solo vale si es la sesión vigente del usuario y el usuario está ACTIVE
-        boolean userActive = sessionService.isValid(userId, jti) && userStatusService.isActive(userId);
-
-        if (!userActive) {
+        // Sesión única: el token solo vale si es la sesión vigente del usuario (sin exceder la inactividad) y el
+        // usuario está ACTIVE; una sola sentencia lo comprueba y renueva la actividad
+        if (!sessionService.validateAndTouch(userId, jti)) {
             filterChain.doFilter(request, response);
             return;
         }

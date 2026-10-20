@@ -3,6 +3,7 @@ package com.udea.digitalbank.auth.security;
 import com.udea.digitalbank.shared.security.SecurityModule;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -21,22 +22,29 @@ public class AuthSecurity implements SecurityModule {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
 
-    // BCrypt: nunca se guarda el password en texto plano
+    /** BCrypt: nunca se guarda el password en texto plano. */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    // /api/v1/auth/logout no está aquí a propósito: exige autenticación
+    /** /api/v1/auth/logout no es público a propósito: exige autenticación (ver roleRoutes). */
     @Override
     public List<PublicRoute> publicRoutes() {
         return List.of(
                 PublicRoute.post("/api/v1/auth/login"),
                 PublicRoute.post("/api/v1/auth/verify-2fa"),
+                PublicRoute.post("/api/v1/auth/resend-2fa"),
                 PublicRoute.post("/api/v1/auth/verify-email"),
                 PublicRoute.post("/api/v1/auth/resend-verification"),
                 PublicRoute.post("/api/v1/auth/recover-password"),
                 PublicRoute.post("/api/v1/auth/reset-password"));
+    }
+
+    /** Cerrar sesión lo puede hacer cualquier usuario autenticado, sea cual sea su rol. */
+    @Override
+    public List<RoleRoute> roleRoutes() {
+        return List.of(RoleRoute.anyAuthenticated(HttpMethod.POST, "/api/v1/auth/logout"));
     }
 
     @Override

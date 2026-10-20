@@ -15,6 +15,7 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 import java.util.Locale;
+import java.util.UUID;
 
 @Entity
 @Table(name = "users")
@@ -24,14 +25,14 @@ import java.util.Locale;
 public class User {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
-    // Siempre en minúsculas (ver setEmail); la base lo garantiza con ck_users_email_lowercase
+    /** Siempre en minúsculas (ver setEmail); la base lo garantiza con ck_users_email_lowercase. */
     @Column(nullable = false, unique = true, length = 254)
     private String email;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 60)
     private String passwordHash;        // hash BCrypt tal cual, nunca la contraseña
 
     @Column(nullable = false)
@@ -46,19 +47,21 @@ public class User {
     private UserStatus status;
 
     @Column(nullable = false)
-    private int failedAttempts = 0;
+    private short failedAttempts = 0;
 
     private LocalDateTime lastLoginAt;  // nulo hasta el primer login
 
-    // Solo cambia si el estado cambia de verdad. Sin él, reactivar a un cliente inactivo se
-    // deshacía esa misma noche, porque su last_login_at seguía siendo antiguo.
+    /**
+     * Solo cambia si el estado cambia de verdad. Sin él, reactivar a un cliente inactivo se
+     * deshacía esa misma noche, porque su last_login_at seguía siendo antiguo.
+     */
     @Column(nullable = false)
     private LocalDateTime statusChangedAt;
 
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
-    // Único punto de escritura del email: nadie puede guardarlo sin normalizar
+    /** Único punto de escritura del email: nadie puede guardarlo sin normalizar. */
     public void setEmail(String email) {
         this.email = email == null ? null : email.trim().toLowerCase(Locale.ROOT);
     }

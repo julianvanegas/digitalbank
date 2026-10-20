@@ -11,6 +11,7 @@ Este directorio reúne las decisiones de arquitectura significativas del backend
 | [ADR-0001](0001-adoptar-monolito-modular-por-dominios.md) | Adoptar un monolito modular organizado por dominios | `accepted` | 2026-09-05 |
 | [ADR-0002](0002-dividir-dominio-identidad-y-fijar-dependencias.md) | Dividir el dominio de identidad y fijar reglas de dependencia entre módulos | `accepted` | 2026-09-10 |
 | [ADR-0003](0003-usar-neon-como-plataforma-postgresql.md) | Usar Neon como plataforma gestionada de PostgreSQL | `accepted` | 2026-09-17 |
+| [ADR-0004](0004-transferir-en-dos-pasos-con-segundo-factor.md) | Transferir en dos pasos con segundo factor y permitir que `transactions` use `auth.api` | `accepted` | 2026-10-17 |
 
 ## Estados posibles
 

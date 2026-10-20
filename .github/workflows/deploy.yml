@@ -1,0 +1,30 @@
+name: CD Pipeline
+
+on:
+  workflow_call:
+    inputs:
+      image-name:
+        description: Container image published by the build workflow
+        required: true
+        type: string
+      image-tag:
+        description: Image tag published by the build workflow
+        required: true
+        type: string
+    secrets:
+      RENDER_DEPLOY_HOOK_URL:
+        required: true
+
+jobs:
+  deploy:
+    name: Deploy to Render
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Trigger Render deploy
+        env:
+          HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+          IMAGE: ${{ inputs.image-name }}:${{ inputs.image-tag }}
+        run: |
+          ENCODED=$(python3 -c "import urllib.parse,os;print(urllib.parse.quote(os.environ['IMAGE'], safe=''))")
+          curl --fail-with-body -sS "${HOOK}&imgURL=${ENCODED}"

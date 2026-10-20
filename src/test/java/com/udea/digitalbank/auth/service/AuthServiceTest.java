@@ -7,7 +7,9 @@ import com.udea.digitalbank.auth.domain.UserStatus;
 import com.udea.digitalbank.auth.dto.AuthResponse;
 import com.udea.digitalbank.auth.dto.LoginRequest;
 import com.udea.digitalbank.auth.dto.LoginResponse;
+import com.udea.digitalbank.auth.dto.ResendTwoFactorResponse;
 import com.udea.digitalbank.auth.repository.UserRepository;
+import com.udea.digitalbank.shared.exception.TooManyRequestsException;
 import com.udea.digitalbank.shared.exception.auth.InvalidCredentialsException;
 import com.udea.digitalbank.shared.exception.auth.InvalidVerificationCodeException;
 import com.udea.digitalbank.shared.exception.auth.UserNotEnabledException;
@@ -27,6 +29,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 /**
@@ -57,11 +60,11 @@ class AuthServiceTest {
 
     private static User buildUser(String email, String passwordHash, UserStatusEnum statusEnum) {
         User user = new User();
-        user.setId(1L);
+        user.setId(UUID.randomUUID());
         user.setEmail(email);
         user.setPasswordHash(passwordHash);
         user.setStatus(buildStatus(statusEnum));
-        user.setFailedAttempts(0);
+        user.setFailedAttempts((short) 0);
         return user;
     }
 
@@ -90,15 +93,15 @@ class AuthServiceTest {
     }
 
     @Nested
-    @DisplayName("login - HU02 Iniciar sesión")
+    @DisplayName("login - iniciar sesión")
     class Login {
 
         @Test
-        @DisplayName("CA01 - Credenciales válidas: resetea intentos fallidos y envía el reto 2FA")
+        @DisplayName("Credenciales válidas: resetea intentos fallidos y envía el reto 2FA")
         void deberiaAceptarCredencialesValidasYContinuarConEl2FA() {
             // Arrange
             User user = buildUser("cliente@example.com", "hash", UserStatusEnum.ACTIVE);
-            user.setFailedAttempts(2); // intentos previos que deben resetearse al acertar
+            user.setFailedAttempts((short) 2); // intentos previos que deben resetearse al acertar
             LoginRequest request = buildLoginRequest("cliente@example.com", "Abcdef1$");
             UUID challengeId = UUID.randomUUID();
 
@@ -120,7 +123,7 @@ class AuthServiceTest {
         }
 
         @Test
-        @DisplayName("CA02 - Contraseña incorrecta con usuario activo: registra el intento fallido")
+        @DisplayName("Contraseña incorrecta con usuario activo: registra el intento fallido")
         void deberiaRechazarYRegistrarIntentoCuandoLaContraseñaEsIncorrectaYElUsuarioEstaActivo() {
             // Arrange
             User user = buildUser("cliente@example.com", "hash", UserStatusEnum.ACTIVE);
@@ -157,7 +160,7 @@ class AuthServiceTest {
         }
 
         @Test
-        @DisplayName("CA03 - Correo no registrado: mismo mensaje genérico que credenciales incorrectas")
+        @DisplayName("Correo no registrado: mismo mensaje genérico y mismo gasto de BCrypt que un usuario real")
         void deberiaRechazarConMensajeGenericoCuandoElCorreoNoExiste() {
             // Arrange
             LoginRequest request = buildLoginRequest("noexiste@example.com", "cualquiera");
@@ -167,12 +170,15 @@ class AuthServiceTest {
             Throwable thrown = catchThrowableFrom(() -> authService.login(request));
 
             // Assert
-            assertThat(thrown).isInstanceOf(InvalidCredentialsException.class);
-            verifyNoInteractions(passwordEncoder, userStatusService, verificationDispatcher);
+            assertThat(thrown).isInstanceOf(InvalidCredentialsException.class)
+                    .hasMessage("Email o contraseña incorrectos");
+            // Compara contra un hash de relleno para igualar el tiempo de respuesta con el de un usuario real
+            verify(passwordEncoder).matches(eq("cualquiera"), any());
+            verifyNoInteractions(userStatusService, verificationDispatcher);
         }
 
         @Test
-        @DisplayName("CA06 - Usuario bloqueado con credenciales correctas: acceso rechazado")
+        @DisplayName("Usuario bloqueado con credenciales correctas: acceso rechazado")
         void deberiaRechazarInicioDeSesionCuandoElUsuarioEstaBloqueado() {
             // Arrange
             User user = buildUser("cliente@example.com", "hash", UserStatusEnum.BLOCKED);
@@ -190,7 +196,7 @@ class AuthServiceTest {
         }
 
         @Test
-        @DisplayName("CA08 - Usuario con correo aún no confirmado: acceso rechazado")
+        @DisplayName("Usuario con correo aún no confirmado: acceso rechazado")
         void deberiaRechazarInicioDeSesionCuandoElUsuarioNoEstaHabilitado() {
             // Arrange
             User user = buildUser("cliente@example.com", "hash", UserStatusEnum.PENDING_VERIFICATION);
@@ -205,6 +211,25 @@ class AuthServiceTest {
             // Assert
             assertThat(thrown).isInstanceOf(UserNotEnabledException.class);
             verifyNoInteractions(verificationDispatcher);
+        }
+
+        @Test
+        @DisplayName("Usuario con el correo confirmado pero pendiente de revisión: acceso rechazado con mensaje propio")
+        void deberiaRechazarInicioDeSesionCuandoElUsuarioEstaPendienteDeRevision() {
+            // Arrange
+            User user = buildUser("cliente@example.com", "hash", UserStatusEnum.PENDING_REVIEW);
+            LoginRequest request = buildLoginRequest("cliente@example.com", "Abcdef1$");
+
+            when(userRepository.findByEmail(request.getEmail())).thenReturn(Optional.of(user));
+            when(passwordEncoder.matches(request.getPassword(), user.getPasswordHash())).thenReturn(true);
+
+            // Act & Assert
+            assertThatThrownBy(() -> authService.login(request))
+                    .isInstanceOf(UserNotEnabledException.class)
+                    .hasMessageContaining("revisión");
+            verifyNoInteractions(verificationDispatcher);
+            // Solo los usuarios ACTIVE acumulan intentos fallidos: aquí la contraseña es correcta
+            verify(userStatusService, never()).registerFailedAttempt(any());
         }
 
         @Test
@@ -228,11 +253,11 @@ class AuthServiceTest {
     }
 
     @Nested
-    @DisplayName("verifyTwoFactor - HU03 Verificar identidad mediante 2FA")
+    @DisplayName("verifyTwoFactor - verificar identidad mediante 2FA")
     class VerifyTwoFactor {
 
         @Test
-        @DisplayName("CA02/CA08 - Código válido: crea la sesión y devuelve el token")
+        @DisplayName("Código válido: crea la sesión y devuelve el token")
         void deberiaCompletarLaVerificacionYDevolverElToken() {
             // Arrange
             UUID challengeId = UUID.randomUUID();
@@ -255,7 +280,7 @@ class AuthServiceTest {
         }
 
         @Test
-        @DisplayName("CA04 - Código incorrecto: la excepción de VerificationService se propaga")
+        @DisplayName("Código incorrecto: la excepción de VerificationService se propaga")
         void deberiaPropagarLaExcepcionCuandoElCodigoEsInvalido() {
             // Arrange
             UUID challengeId = UUID.randomUUID();
@@ -269,7 +294,7 @@ class AuthServiceTest {
         }
 
         @Test
-        @DisplayName("CA13 - El usuario se bloqueó entre el login y la verificación: acceso rechazado")
+        @DisplayName("El usuario se bloqueó entre el login y la verificación: acceso rechazado")
         void deberiaRechazarCuandoElUsuarioYaNoEstaActivoAlVerificar() {
             // Arrange
             UUID challengeId = UUID.randomUUID();
@@ -288,14 +313,86 @@ class AuthServiceTest {
     }
 
     @Nested
-    @DisplayName("logout - HU04 Gestionar sesión")
+    @DisplayName("resendTwoFactor - reenvío del código 2FA")
+    class ResendTwoFactor {
+
+        @Test
+        @DisplayName("Reenvía el código por correo y devuelve el mismo challengeId con lo que queda")
+        void deberiaReenviarElCodigoYDevolverElMismoRetoConLosRestantes() {
+            // Arrange
+            User user = buildUser("cliente@example.com", "hash", UserStatusEnum.ACTIVE);
+            UUID challengeId = UUID.randomUUID();
+            IssuedChallenge issued = new IssuedChallenge(challengeId, "654321", 5);
+            when(verificationService.resend(challengeId, PurposeEnum.LOGIN))
+                    .thenReturn(new ResentChallenge(user.getId(), issued, 1, 60));
+            when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
+
+            // Act
+            ResendTwoFactorResponse response = authService.resendTwoFactor(challengeId);
+
+            // Assert
+            assertThat(response.getChallengeId()).isEqualTo(challengeId);
+            assertThat(response.getRemainingResends()).isEqualTo(1);
+            assertThat(response.getRetryAfterSeconds()).isEqualTo(60);
+            verify(verificationDispatcher).send(user, PurposeEnum.LOGIN, issued);
+        }
+
+        @Test
+        @DisplayName("Usuario que dejó de estar ACTIVE: se rechaza y no se envía ningún correo")
+        void noDeberiaEnviarNadaSiElUsuarioYaNoEstaActivo() {
+            // Arrange
+            User user = buildUser("cliente@example.com", "hash", UserStatusEnum.BLOCKED);
+            UUID challengeId = UUID.randomUUID();
+            when(verificationService.resend(challengeId, PurposeEnum.LOGIN))
+                    .thenReturn(new ResentChallenge(user.getId(), new IssuedChallenge(challengeId, "654321", 5), 1, 60));
+            when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
+
+            // Act + Assert
+            assertThatThrownBy(() -> authService.resendTwoFactor(challengeId))
+                    .isInstanceOf(UserNotEnabledException.class);
+            verifyNoInteractions(verificationDispatcher);
+        }
+
+        @Test
+        @DisplayName("Si VerificationService rechaza el reenvío, no se envía nada")
+        void deberiaPropagarElRechazoDelReenvio() {
+            // Arrange
+            UUID challengeId = UUID.randomUUID();
+            when(verificationService.resend(challengeId, PurposeEnum.LOGIN))
+                    .thenThrow(new TooManyRequestsException("Espera 20 segundos", 20));
+
+            // Act + Assert
+            assertThatThrownBy(() -> authService.resendTwoFactor(challengeId))
+                    .isInstanceOf(TooManyRequestsException.class);
+            verifyNoInteractions(userRepository, verificationDispatcher);
+        }
+
+        @Test
+        @DisplayName("Si el usuario del reto ya no existe, error genérico")
+        void deberiaRechazarSiElUsuarioDelRetoNoExiste() {
+            // Arrange
+            UUID challengeId = UUID.randomUUID();
+            UUID userId = UUID.randomUUID();
+            when(verificationService.resend(challengeId, PurposeEnum.LOGIN))
+                    .thenReturn(new ResentChallenge(userId, new IssuedChallenge(challengeId, "654321", 5), 1, 60));
+            when(userRepository.findById(userId)).thenReturn(Optional.empty());
+
+            // Act + Assert
+            assertThatThrownBy(() -> authService.resendTwoFactor(challengeId))
+                    .isInstanceOf(InvalidVerificationCodeException.class);
+            verifyNoInteractions(verificationDispatcher);
+        }
+    }
+
+    @Nested
+    @DisplayName("logout - cerrar sesión")
     class Logout {
 
         @Test
-        @DisplayName("CA02 - Cerrar sesión revoca la sesión del usuario")
+        @DisplayName("Cerrar sesión revoca la sesión del usuario")
         void deberiaRevocarLaSesionDelUsuario() {
             // Arrange
-            Long userId = 42L;
+            UUID userId = UUID.randomUUID();
 
             // Act
             authService.logout(userId);

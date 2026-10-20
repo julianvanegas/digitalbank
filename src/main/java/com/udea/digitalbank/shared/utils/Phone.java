@@ -14,7 +14,7 @@ import java.lang.annotation.Target;
 /**
  * Teléfono en formato internacional (E.164): un "+" obligatorio, un primer dígito distinto de cero
  * (ningún código de país empieza por 0) y de 7 a 15 dígitos en total, sin espacios ni guiones.
- * Es texto y no número porque conserva el "+". Un valor nulo es válido: se combina con @NotBlank
+ * Es texto y no número porque conserva el "+". Un valor nulo es válido: se combina con {@code @NotBlank}
  * donde el teléfono sea obligatorio.
  */
 @Pattern(regexp = "^\\+[1-9][0-9]{6,14}$")

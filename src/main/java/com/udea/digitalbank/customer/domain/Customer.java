@@ -4,13 +4,17 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
-// Solo datos personales: credenciales, estado y sesión viven en auth (users)
+/** Solo datos personales: credenciales, estado y sesión viven en auth (users). */
 @Entity
-@Table(name = "customers")
+@Table(name = "customers",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"document_type_id", "document_number"}))
 @Getter
 @Setter
 @NoArgsConstructor
@@ -19,14 +23,14 @@ public class Customer {
     private static final short CUSTOMER_ROLE_ID = 1;
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
-    // Sin @ManyToOne hacia auth para mantener los módulos desacoplados
+    /** Sin {@code @ManyToOne} hacia auth para mantener los módulos desacoplados. */
     @Column(nullable = false, unique = true)
-    private Long userId;
+    private UUID userId;
 
-    // Junto con userId forma la FK compuesta que impide que un ADMIN tenga fila aquí
+    /** Junto con userId forma la FK compuesta que impide que un ADMIN tenga fila aquí. */
     @Column(nullable = false, updatable = false)
     private Short roleId = CUSTOMER_ROLE_ID;
 
@@ -40,7 +44,7 @@ public class Customer {
     @JoinColumn(name = "document_type_id", nullable = false)
     private DocumentType documentType;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false, length = 20)
     private String documentNumber;
 
     @Column(nullable = false, length = 16)
@@ -50,19 +54,10 @@ public class Customer {
     private LocalDate birthDate;
 
     @Column(nullable = false, updatable = false)
+    @CreationTimestamp
     private LocalDateTime createdAt;
 
     @Column(nullable = false)
+    @UpdateTimestamp
     private LocalDateTime updatedAt;
-
-    @PrePersist
-    void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = createdAt;
-    }
-
-    @PreUpdate
-    void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
 }

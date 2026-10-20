@@ -12,6 +12,7 @@ import org.mapstruct.factory.Mappers;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDate;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -22,6 +23,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DisplayName("CustomerMapper")
 class CustomerMapperTest {
 
+    private static final UUID USER_ID = UUID.randomUUID();
+    private static final UUID CUSTOMER_ID = UUID.randomUUID();
+
     private CustomerMapper mapper;
 
     @BeforeEach
@@ -29,17 +33,17 @@ class CustomerMapperTest {
         mapper = Mappers.getMapper(CustomerMapper.class);
     }
 
-    private DocumentType buildDocumentType(short id, String name) {
+    private DocumentType buildDocumentType(short id, String code) {
         DocumentType documentType = new DocumentType();
         ReflectionTestUtils.setField(documentType, "id", id);
-        ReflectionTestUtils.setField(documentType, "name", name);
+        ReflectionTestUtils.setField(documentType, "code", code);
         return documentType;
     }
 
     private Customer buildCustomer() {
         Customer customer = new Customer();
-        customer.setId(1L);
-        customer.setUserId(10L);
+        customer.setId(CUSTOMER_ID);
+        customer.setUserId(USER_ID);
         customer.setFirstNames("Ana");
         customer.setLastNames("Torres");
         customer.setDocumentType(buildDocumentType((short) 1, "Cédula de ciudadanía"));
@@ -54,13 +58,13 @@ class CustomerMapperTest {
     void deberiaCombinarDatosDeCustomerYUserView() {
         // Arrange
         Customer customer = buildCustomer();
-        UserView user = new UserView(10L, "ana@example.com", "CUSTOMER", "ACTIVE");
+        UserView user = new UserView(USER_ID, "ana@example.com", "CUSTOMER", "ACTIVE");
 
         // Act
         CustomerResponse response = mapper.toResponse(customer, user);
 
         // Assert: datos del perfil
-        assertThat(response.getId()).isEqualTo(1L);
+        assertThat(response.getId()).isEqualTo(CUSTOMER_ID);
         assertThat(response.getFirstNames()).isEqualTo("Ana");
         assertThat(response.getLastNames()).isEqualTo("Torres");
         assertThat(response.getDocumentNumber()).isEqualTo("123456789");
@@ -70,7 +74,7 @@ class CustomerMapperTest {
         assertThat(response.getDocumentType().getName()).isEqualTo("Cédula de ciudadanía");
 
         // Assert: datos del usuario, tomados de UserView y no de Customer
-        assertThat(response.getUserId()).isEqualTo(10L);
+        assertThat(response.getUserId()).isEqualTo(USER_ID);
         assertThat(response.getEmail()).isEqualTo("ana@example.com");
         assertThat(response.getRole()).isEqualTo("CUSTOMER");
         assertThat(response.getStatus()).isEqualTo("ACTIVE");
@@ -80,7 +84,7 @@ class CustomerMapperTest {
     @DisplayName("Con Customer null, deja los campos de perfil en su valor por defecto y solo mapea el usuario")
     void deberiaMapearSoloUsuarioCuandoCustomerEsNull() {
         // Arrange
-        UserView user = new UserView(10L, "ana@example.com", "CUSTOMER", "ACTIVE");
+        UserView user = new UserView(USER_ID, "ana@example.com", "CUSTOMER", "ACTIVE");
 
         // Act
         CustomerResponse response = mapper.toResponse(null, user);
@@ -89,7 +93,7 @@ class CustomerMapperTest {
         assertThat(response.getId()).isNull();
         assertThat(response.getFirstNames()).isNull();
         assertThat(response.getDocumentType()).isNull();
-        assertThat(response.getUserId()).isEqualTo(10L);
+        assertThat(response.getUserId()).isEqualTo(USER_ID);
         assertThat(response.getEmail()).isEqualTo("ana@example.com");
     }
 
