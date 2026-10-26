@@ -51,18 +51,18 @@ class AccountTest {
     }
 
     @Test
-    @DisplayName("No expone setters de estado, saldo ni fecha de cierre: solo cambian con block, unblock y close")
+    @DisplayName("Transversal - No expone setters de estado, saldo ni fecha de cierre: solo cambian con block, unblock y close")
     void noDeberiaExponerSettersDeEstadoSaldoNiCierre() {
         assertThat(Arrays.stream(Account.class.getMethods()).map(Method::getName))
                 .noneMatch(name -> name.startsWith("set"));
     }
 
     @Nested
-    @DisplayName("open")
+    @DisplayName("HU10 - open")
     class Open {
 
         @Test
-        @DisplayName("Nace activa, sin saldo, sin fecha de cierre y con los datos recibidos")
+        @DisplayName("HU10 CA02 / HU10 CA04 - Nace activa, sin saldo, sin fecha de cierre y con los datos recibidos")
         void deberiaNacerActivaYSinSaldo() {
             UUID customerId = UUID.randomUUID();
 
@@ -79,7 +79,7 @@ class AccountTest {
         }
 
         @Test
-        @DisplayName("Rechaza abrirla con un estado distinto de ACTIVE")
+        @DisplayName("HU10 CA04 - Rechaza abrirla con un estado distinto de ACTIVE")
         void deberiaRechazarUnEstadoInicialQueNoSeaActive() {
             AccountStatus blocked = status(AccountStatusEnum.BLOCKED);
 
@@ -89,11 +89,11 @@ class AccountTest {
     }
 
     @Nested
-    @DisplayName("block")
+    @DisplayName("HU15 - block")
     class Block {
 
         @Test
-        @DisplayName("Bloquea una cuenta activa y conserva su saldo")
+        @DisplayName("HU15 CA01 - Bloquea una cuenta activa y conserva su saldo")
         void deberiaBloquearUnaCuentaActiva() {
             Account account = account(AccountStatusEnum.ACTIVE, "150.75");
 
@@ -104,7 +104,7 @@ class AccountTest {
         }
 
         @Test
-        @DisplayName("Una cuenta ya bloqueada se rechaza")
+        @DisplayName("HU15 CA02 - Una cuenta ya bloqueada se rechaza")
         void deberiaRechazarUnaCuentaYaBloqueada() {
             Account account = account(AccountStatusEnum.BLOCKED, "0");
 
@@ -115,7 +115,7 @@ class AccountTest {
 
         @ParameterizedTest
         @EnumSource(value = AccountStatusEnum.class, names = {"INACTIVE", "CLOSED"})
-        @DisplayName("Una cuenta inactiva o cerrada no se puede bloquear y queda como estaba")
+        @DisplayName("HU15 CA01 - Una cuenta inactiva o cerrada no se puede bloquear y queda como estaba")
         void deberiaRechazarUnaCuentaQueNoEstaActiva(AccountStatusEnum current) {
             Account account = account(current, "0");
 
@@ -126,7 +126,7 @@ class AccountTest {
         }
 
         @Test
-        @DisplayName("Rechaza que le pasen un estado que no es BLOCKED")
+        @DisplayName("Transversal - Rechaza que le pasen un estado que no es BLOCKED")
         void deberiaRechazarUnEstadoDestinoEquivocado() {
             Account account = account(AccountStatusEnum.ACTIVE, "0");
 
@@ -137,11 +137,11 @@ class AccountTest {
     }
 
     @Nested
-    @DisplayName("unblock")
+    @DisplayName("HU16 - unblock")
     class Unblock {
 
         @Test
-        @DisplayName("Devuelve a ACTIVE una cuenta bloqueada")
+        @DisplayName("HU16 CA01 - Devuelve a ACTIVE una cuenta bloqueada")
         void deberiaActivarUnaCuentaBloqueada() {
             Account account = account(AccountStatusEnum.BLOCKED, "10.00");
 
@@ -152,7 +152,7 @@ class AccountTest {
 
         @ParameterizedTest
         @EnumSource(value = AccountStatusEnum.class, names = "BLOCKED", mode = EnumSource.Mode.EXCLUDE)
-        @DisplayName("Una cuenta que no está bloqueada no se puede desbloquear")
+        @DisplayName("HU16 CA03 - Una cuenta que no está bloqueada no se puede desbloquear")
         void deberiaRechazarUnaCuentaQueNoEstaBloqueada(AccountStatusEnum current) {
             Account account = account(current, "0");
 
@@ -164,12 +164,12 @@ class AccountTest {
     }
 
     @Nested
-    @DisplayName("close")
+    @DisplayName("Transversal - close")
     class Close {
 
         @ParameterizedTest
         @EnumSource(value = AccountStatusEnum.class, names = {"ACTIVE", "INACTIVE"})
-        @DisplayName("Cierra una cuenta activa o inactiva con saldo cero y deja la fecha de cierre")
+        @DisplayName("Transversal - Cierra una cuenta activa o inactiva con saldo cero y deja la fecha de cierre")
         void deberiaCerrarUnaCuentaSinSaldo(AccountStatusEnum current) {
             Account account = account(current, "0");
             LocalDateTime when = LocalDateTime.now();
@@ -181,7 +181,7 @@ class AccountTest {
         }
 
         @Test
-        @DisplayName("Con saldo, aunque sea un centavo, no se cierra")
+        @DisplayName("Transversal - Con saldo, aunque sea un centavo, no se cierra")
         void deberiaRechazarUnaCuentaConSaldo() {
             Account account = account(AccountStatusEnum.ACTIVE, "0.01");
 
@@ -193,7 +193,7 @@ class AccountTest {
         }
 
         @Test
-        @DisplayName("Bloqueada no se cierra: primero se debe desbloquearla")
+        @DisplayName("Transversal - Bloqueada no se cierra: primero se debe desbloquearla")
         void deberiaRechazarUnaCuentaBloqueada() {
             Account account = account(AccountStatusEnum.BLOCKED, "0");
 
@@ -203,7 +203,7 @@ class AccountTest {
         }
 
         @Test
-        @DisplayName("Una cuenta ya cerrada no se cierra otra vez ni cambia su fecha de cierre")
+        @DisplayName("Transversal - Una cuenta ya cerrada no se cierra otra vez ni cambia su fecha de cierre")
         void deberiaRechazarUnaCuentaYaCerrada() {
             Account account = account(AccountStatusEnum.ACTIVE, "0");
             LocalDateTime first = LocalDateTime.now().minusDays(1);
@@ -216,7 +216,7 @@ class AccountTest {
         }
 
         @Test
-        @DisplayName("Rechaza que le pasen un estado que no es CLOSED")
+        @DisplayName("Transversal - Rechaza que le pasen un estado que no es CLOSED")
         void deberiaRechazarUnEstadoDestinoEquivocado() {
             Account account = account(AccountStatusEnum.ACTIVE, "0");
 
@@ -227,11 +227,11 @@ class AccountTest {
     }
 
     @Nested
-    @DisplayName("debit y credit")
+    @DisplayName("HU20 - debit y credit")
     class Movements {
 
         @Test
-        @DisplayName("debit - descuenta el monto de una cuenta activa con saldo suficiente")
+        @DisplayName("HU20 CA01 - debit - descuenta el monto de una cuenta activa con saldo suficiente")
         void deberiaDescontarElMonto() {
             Account account = account(AccountStatusEnum.ACTIVE, "100.00");
 
@@ -241,7 +241,7 @@ class AccountTest {
         }
 
         @Test
-        @DisplayName("debit - puede dejar el saldo en cero, nunca por debajo")
+        @DisplayName("HU20 CA01 - debit - puede dejar el saldo en cero, nunca por debajo")
         void deberiaPermitirDejarElSaldoEnCero() {
             Account account = account(AccountStatusEnum.ACTIVE, "100.00");
 
@@ -251,7 +251,7 @@ class AccountTest {
         }
 
         @Test
-        @DisplayName("debit - con saldo insuficiente lanza InsufficientFundsException y no cambia el saldo")
+        @DisplayName("HU20 CA02 - debit - con saldo insuficiente lanza InsufficientFundsException y no cambia el saldo")
         void deberiaRechazarSiNoHaySaldo() {
             Account account = account(AccountStatusEnum.ACTIVE, "100.00");
 
@@ -262,7 +262,7 @@ class AccountTest {
         }
 
         @Test
-        @DisplayName("credit - suma el monto a una cuenta activa")
+        @DisplayName("HU20 CA01 - credit - suma el monto a una cuenta activa")
         void deberiaSumarElMonto() {
             Account account = account(AccountStatusEnum.ACTIVE, "100.00");
 
@@ -273,7 +273,7 @@ class AccountTest {
 
         @ParameterizedTest
         @EnumSource(value = AccountStatusEnum.class, names = {"INACTIVE", "BLOCKED", "CLOSED"})
-        @DisplayName("debit y credit - una cuenta que no está ACTIVE no mueve dinero y su saldo no cambia")
+        @DisplayName("HU20 CA04 / HU15 CA01 - debit y credit - una cuenta que no está ACTIVE no mueve dinero y su saldo no cambia")
         void noDeberiaMoverDineroSiNoEstaActiva(AccountStatusEnum current) {
             Account account = account(current, "100.00");
 
@@ -284,7 +284,7 @@ class AccountTest {
 
         @ParameterizedTest
         @ValueSource(strings = {"0", "-5.00"})
-        @DisplayName("debit y credit - un monto que no es positivo es un error de programación")
+        @DisplayName("Transversal - debit y credit - un monto que no es positivo es un error de programación")
         void deberiaExigirUnMontoPositivo(String amount) {
             Account account = account(AccountStatusEnum.ACTIVE, "100.00");
 

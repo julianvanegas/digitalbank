@@ -42,11 +42,11 @@ class VerificationDispatcherTest {
     }
 
     @Nested
-    @DisplayName("issueAndSend - emitir y enviar el código de verificación")
+    @DisplayName("HU03 / HU05 / HU21 / HU27 - issueAndSend - emitir y enviar el código de verificación")
     class IssueAndSend {
 
         @Test
-        @DisplayName("Emite el reto y envía un correo con el asunto correspondiente a LOGIN")
+        @DisplayName("HU03 CA01 - Emite el reto y envía un correo con el asunto correspondiente a LOGIN")
         void deberiaEnviarElCorreoDeLoginConElAsuntoCorrecto() {
             // Arrange
             User user = buildUser(UUID.randomUUID(), "cliente@example.com");
@@ -65,7 +65,7 @@ class VerificationDispatcherTest {
         }
 
         @Test
-        @DisplayName("TRANSACTION - usa su asunto e incluye el detalle de la operación antes del código")
+        @DisplayName("HU21 CA01 - TRANSACTION - usa su asunto e incluye el detalle de la operación antes del código")
         void deberiaIncluirElDetalleDeLaOperacionEnElCorreoDeTransaccion() {
             // Arrange
             User user = buildUser(UUID.randomUUID(), "cliente@example.com");
@@ -84,7 +84,7 @@ class VerificationDispatcherTest {
         }
 
         @Test
-        @DisplayName("Usa el asunto de recuperación de contraseña para PASSWORD_RESET")
+        @DisplayName("HU05 CA02 - Usa el asunto de recuperación de contraseña para PASSWORD_RESET")
         void deberiaUsarElAsuntoDeRecuperacionParaPasswordReset() {
             // Arrange
             User user = buildUser(UUID.randomUUID(), "otro@example.com");
@@ -99,7 +99,7 @@ class VerificationDispatcherTest {
         }
 
         @Test
-        @DisplayName("Usa el asunto de confirmación de correo para EMAIL_CONFIRMATION")
+        @DisplayName("HU27 CA05 - Usa el asunto de confirmación de correo para EMAIL_CONFIRMATION")
         void deberiaUsarElAsuntoDeConfirmacionParaEmailConfirmation() {
             // Arrange
             User user = buildUser(UUID.randomUUID(), "nuevo@example.com");
@@ -115,11 +115,11 @@ class VerificationDispatcherTest {
     }
 
     @Nested
-    @DisplayName("issueAndSendThrottled - evita saturar la bandeja en flujos públicos")
+    @DisplayName("HU05 / HU27 - issueAndSendThrottled - evita saturar la bandeja en flujos públicos")
     class IssueAndSendThrottled {
 
         @Test
-        @DisplayName("Si VerificationService emite un reto nuevo, se envía el correo")
+        @DisplayName("HU05 CA07 - Si VerificationService emite un reto nuevo, se envía el correo")
         void deberiaEnviarElCorreoCuandoSeEmiteUnRetoNuevo() {
             // Arrange
             User user = buildUser(UUID.randomUUID(), "cliente@example.com");
@@ -135,7 +135,7 @@ class VerificationDispatcherTest {
         }
 
         @Test
-        @DisplayName("Si el último código fue muy reciente, no se envía ningún correo")
+        @DisplayName("HU05 CA07 - Si el último código fue muy reciente, no se envía ningún correo")
         void noDeberiaEnviarNadaCuandoElUltimoCodigoFueMuyReciente() {
             // Arrange
             User user = buildUser(UUID.randomUUID(), "cliente@example.com");
@@ -151,11 +151,11 @@ class VerificationDispatcherTest {
     }
 
     @Nested
-    @DisplayName("send - enviar un código que ya emitió VerificationService (reenvío)")
+    @DisplayName("HU03 - send - enviar un código que ya emitió VerificationService (reenvío)")
     class Send {
 
         @Test
-        @DisplayName("Envía el correo de LOGIN con el código recibido, sin emitir ningún reto")
+        @DisplayName("HU03 CA07 - Envía el correo de LOGIN con el código recibido, sin emitir ningún reto")
         void deberiaEnviarElCodigoRecibidoSinEmitirNada() {
             // Arrange
             User user = buildUser(UUID.randomUUID(), "cliente@example.com");

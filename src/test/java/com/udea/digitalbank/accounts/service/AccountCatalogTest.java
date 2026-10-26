@@ -62,7 +62,7 @@ class AccountCatalogTest {
     }
 
     @Test
-    @DisplayName("Carga estados y tipos cuando la base coincide con los enums")
+    @DisplayName("Transversal - Carga estados y tipos cuando la base coincide con los enums")
     void deberiaCargarCuandoCoinciden() {
         // Arrange
         when(statusRepository.findAll()).thenReturn(allStatuses());
@@ -77,7 +77,7 @@ class AccountCatalogTest {
     }
 
     @Test
-    @DisplayName("No arranca si falta un tipo de cuenta en la base")
+    @DisplayName("Transversal - No arranca si falta un tipo de cuenta en la base")
     void deberiaFallarSiFaltaUnTipoEnLaBase() {
         // Arrange
         when(statusRepository.findAll()).thenReturn(allStatuses());
@@ -90,7 +90,7 @@ class AccountCatalogTest {
     }
 
     @Test
-    @DisplayName("No arranca si la base tiene un estado que el enum no conoce")
+    @DisplayName("Transversal - No arranca si la base tiene un estado que el enum no conoce")
     void deberiaFallarSiLaBaseTieneUnEstadoDeMas() {
         // Arrange
         List<AccountStatus> statuses = new java.util.ArrayList<>(allStatuses());

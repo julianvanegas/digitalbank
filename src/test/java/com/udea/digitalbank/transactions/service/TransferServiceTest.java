@@ -120,11 +120,11 @@ class TransferServiceTest {
     }
 
     @Nested
-    @DisplayName("initiate - primer paso: validar y dejar PENDING")
+    @DisplayName("HU20 - initiate - primer paso: validar y dejar PENDING")
     class Initiate {
 
         @Test
-        @DisplayName("Cuentas activas y saldo suficiente: queda PENDING, envía el código y responde con el vencimiento")
+        @DisplayName("HU20 CA01 / HU21 CA01 - Cuentas activas y saldo suficiente: queda PENDING, envía el código y responde con el vencimiento")
         void deberiaDejarPendienteLaTransferenciaYEnviarElCodigo() {
             // Arrange
             accountsExist();
@@ -159,7 +159,7 @@ class TransferServiceTest {
         }
 
         @Test
-        @DisplayName("El correo del código nombra el monto y la cuenta destino enmascarada, no el número completo")
+        @DisplayName("HU21 CA01 - El correo del código nombra el monto y la cuenta destino enmascarada, no el número completo")
         void deberiaDescribirLaOperacionEnElCorreoSinElNumeroCompleto() {
             // Arrange
             accountsExist();
@@ -175,7 +175,7 @@ class TransferServiceTest {
         }
 
         @Test
-        @DisplayName("Una transferencia pendiente anterior del cliente se rechaza: el código nuevo reemplaza al viejo")
+        @DisplayName("Transversal - Una transferencia pendiente anterior del cliente se rechaza: el código nuevo reemplaza al viejo")
         void deberiaCancelarLaTransferenciaPendienteAnterior() {
             // Arrange
             accountsExist();
@@ -192,7 +192,7 @@ class TransferServiceTest {
         }
 
         @Test
-        @DisplayName("El monto supera el saldo: rechaza por fondos insuficientes y no deja nada")
+        @DisplayName("HU20 CA02 - El monto supera el saldo: rechaza por fondos insuficientes y no deja nada")
         void deberiaRechazarPorFondosInsuficientes() {
             // Arrange
             accountsExist();
@@ -206,7 +206,7 @@ class TransferServiceTest {
         }
 
         @Test
-        @DisplayName("Un monto igual al saldo sí se acepta")
+        @DisplayName("HU20 CA02 - Un monto igual al saldo sí se acepta")
         void deberiaAceptarUnMontoIgualAlSaldo() {
             // Arrange
             accountsExist();
@@ -220,7 +220,7 @@ class TransferServiceTest {
         }
 
         @Test
-        @DisplayName("Cuenta destino igual a la de origen: indica que no se puede y no consulta nada")
+        @DisplayName("HU20 CA03 - Cuenta destino igual a la de origen: indica que no se puede y no consulta nada")
         void deberiaRechazarUnaTransferenciaALaMismaCuenta() {
             // Act + Assert
             assertThatThrownBy(() -> transferService.initiate(actor, request(SENDER_NUMBER, SENDER_NUMBER, "10.00")))
@@ -231,7 +231,7 @@ class TransferServiceTest {
         }
 
         @Test
-        @DisplayName("Cuenta destino inexistente: informa que no existe")
+        @DisplayName("HU20 CA04 - Cuenta destino inexistente: informa que no existe")
         void deberiaRechazarUnaCuentaDestinoInexistente() {
             // Arrange
             when(accountApi.requireOwnedAccount(userId, SENDER_NUMBER)).thenReturn(sender);
@@ -247,7 +247,7 @@ class TransferServiceTest {
 
         @ParameterizedTest
         @CsvSource({"INACTIVE,inactiva", "BLOCKED,bloqueada", "CLOSED,cerrada"})
-        @DisplayName("Cuenta destino inactiva, bloqueada o cerrada: informa su condición")
+        @DisplayName("HU20 CA04 - Cuenta destino inactiva, bloqueada o cerrada: informa su condición")
         void deberiaInformarLaCondicionDeLaCuentaDestino(AccountStatusEnum status, String word) {
             // Arrange
             when(accountApi.requireOwnedAccount(userId, SENDER_NUMBER)).thenReturn(sender);
@@ -263,7 +263,7 @@ class TransferServiceTest {
 
         @ParameterizedTest
         @CsvSource({"INACTIVE,inactiva", "BLOCKED,bloqueada", "CLOSED,cerrada"})
-        @DisplayName("Cuenta de origen que no está activa: se rechaza antes de mirar el destino")
+        @DisplayName("HU20 complementario / HU15 CA01 - Cuenta de origen que no está activa: se rechaza antes de mirar el destino")
         void deberiaRechazarUnaCuentaDeOrigenQueNoEstaActiva(AccountStatusEnum status, String word) {
             // Arrange
             when(accountApi.requireOwnedAccount(userId, SENDER_NUMBER))
@@ -277,7 +277,7 @@ class TransferServiceTest {
         }
 
         @Test
-        @DisplayName("Una cuenta de origen que no es del cliente responde como inexistente")
+        @DisplayName("HU20 complementario - Una cuenta de origen que no es del cliente responde como inexistente")
         void deberiaPropagarLaCuentaDeOrigenAjena() {
             // Arrange
             when(accountApi.requireOwnedAccount(userId, SENDER_NUMBER))
@@ -292,7 +292,7 @@ class TransferServiceTest {
     }
 
     @Nested
-    @DisplayName("confirm - segundo paso: verificar el código")
+    @DisplayName("HU21 - confirm - segundo paso: verificar el código")
     class Confirm {
 
         private Transaction pending() {
@@ -308,7 +308,7 @@ class TransferServiceTest {
         }
 
         @Test
-        @DisplayName("Código correcto: mueve el dinero, completa la transferencia, publica el comprobante")
+        @DisplayName("HU21 CA01 / HU20 CA01 - Código correcto: mueve el dinero, completa la transferencia, publica el comprobante")
         void deberiaMoverElDineroYCompletarConUnCodigoCorrecto() {
             // Arrange
             Transaction transaction = pending();
@@ -335,7 +335,7 @@ class TransferServiceTest {
         }
 
         @Test
-        @DisplayName("Confirmar una transferencia ya completada devuelve el mismo comprobante sin mover dinero otra vez")
+        @DisplayName("HU21 CA01 - Confirmar una transferencia ya completada devuelve el mismo comprobante sin mover dinero otra vez")
         void deberiaSerIdempotenteSiYaEstaCompletada() {
             // Arrange
             Transaction transaction = transfer(userId, sender.id(), receiver.id(), "120.50",
@@ -354,7 +354,7 @@ class TransferServiceTest {
 
         @ParameterizedTest
         @CsvSource({"2,Te quedan 2 intentos", "1,Te queda 1 intento"})
-        @DisplayName("Código incorrecto en el primer o segundo intento: rechaza, informa los intentos y no procesa")
+        @DisplayName("HU21 CA02 - Código incorrecto en el primer o segundo intento: rechaza, informa los intentos y no procesa")
         void deberiaRechazarUnCodigoIncorrectoSinProcesarLaTransferencia(int remaining, String message) {
             // Arrange
             Transaction transaction = pending();
@@ -370,7 +370,7 @@ class TransferServiceTest {
         }
 
         @Test
-        @DisplayName("Tercer fallo: cancela la transferencia en curso y responde que se debe empezar de nuevo")
+        @DisplayName("HU21 CA03 - Tercer fallo: cancela la transferencia en curso y responde que se debe empezar de nuevo")
         void deberiaCancelarLaTransferenciaAlAgotarLosIntentos() {
             // Arrange
             Transaction transaction = pending();
@@ -386,7 +386,7 @@ class TransferServiceTest {
         }
 
         @Test
-        @DisplayName("Código vencido: indica que expiró, cancela la transferencia y pide reiniciar")
+        @DisplayName("HU21 CA04 - Código vencido: indica que expiró, cancela la transferencia y pide reiniciar")
         void deberiaCancelarLaTransferenciaSiElCodigoExpiro() {
             // Arrange
             Transaction transaction = pending();
@@ -403,7 +403,7 @@ class TransferServiceTest {
         }
 
         @Test
-        @DisplayName("Si el saldo cambió entre los dos pasos, el código correcto no basta: se rechaza y no hay comprobante")
+        @DisplayName("HU20 CA02 - Si el saldo cambió entre los dos pasos, el código correcto no basta: se rechaza y no hay comprobante")
         void deberiaRechazarSiElSaldoYaNoAlcanzaAlConfirmar() {
             // Arrange
             Transaction transaction = pending();
@@ -420,7 +420,7 @@ class TransferServiceTest {
         }
 
         @Test
-        @DisplayName("Si una cuenta dejó de estar activa entre los dos pasos, se rechaza con esa causa")
+        @DisplayName("HU20 CA04 - Si una cuenta dejó de estar activa entre los dos pasos, se rechaza con esa causa")
         void deberiaRechazarSiUnaCuentaDejoDeEstarActiva() {
             // Arrange
             Transaction transaction = pending();
@@ -435,7 +435,7 @@ class TransferServiceTest {
         }
 
         @Test
-        @DisplayName("Una transferencia de otro cliente responde como inexistente y no gasta intentos de su código")
+        @DisplayName("Transversal - Una transferencia de otro cliente responde como inexistente y no gasta intentos de su código")
         void deberiaOcultarLaTransferenciaDeOtroCliente() {
             // Arrange
             Transaction foreign = transfer(UUID.randomUUID(), sender.id(), receiver.id(), "10.00",
@@ -449,7 +449,7 @@ class TransferServiceTest {
         }
 
         @Test
-        @DisplayName("Una referencia inexistente lanza TransactionNotFoundException")
+        @DisplayName("Transversal - Una referencia inexistente lanza TransactionNotFoundException")
         void deberiaFallarSiLaReferenciaNoExiste() {
             // Arrange
             when(transactionRepository.findByReferenceForUpdate(REFERENCE)).thenReturn(Optional.empty());
@@ -461,7 +461,7 @@ class TransferServiceTest {
 
         @ParameterizedTest
         @CsvSource({"REJECTED,cancelada", "REVERSED,revertida"})
-        @DisplayName("Una transferencia ya cancelada o revertida no se puede confirmar")
+        @DisplayName("HU21 CA03 - Una transferencia ya cancelada o revertida no se puede confirmar")
         void deberiaRechazarUnaTransferenciaQueYaNoEstaPendiente(TransactionStatusEnum current, String word) {
             // Arrange
             Transaction transaction = transfer(userId, sender.id(), receiver.id(), "10.00", current);
@@ -477,11 +477,11 @@ class TransferServiceTest {
     }
 
     @Nested
-    @DisplayName("rejectExpiredPending")
+    @DisplayName("HU21 - rejectExpiredPending")
     class RejectExpiredPending {
 
         @Test
-        @DisplayName("Rechaza las PENDING más viejas que la vigencia del código y devuelve cuántas fueron")
+        @DisplayName("HU21 CA04 - Rechaza las PENDING más viejas que la vigencia del código y devuelve cuántas fueron")
         void deberiaRechazarLasPendientesVencidas() {
             // Arrange
             when(transactionRepository.rejectPendingCreatedBefore(any(), any(), any())).thenReturn(4);

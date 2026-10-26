@@ -14,7 +14,7 @@ class AccountViewTest {
 
     @ParameterizedTest
     @EnumSource(AccountStatusEnum.class)
-    @DisplayName("isActive - solo una cuenta ACTIVE puede mover dinero")
+    @DisplayName("HU20 CA04 - isActive - solo una cuenta ACTIVE puede mover dinero")
     void isActive_soloEsVerdaderoParaActive(AccountStatusEnum status) {
         AccountView view = new AccountView(UUID.randomUUID(), "@AN1231", "123456789012", UUID.randomUUID(),
                 status.name(), BigDecimal.ZERO);

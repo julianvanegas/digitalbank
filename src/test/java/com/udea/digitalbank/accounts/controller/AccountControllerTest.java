@@ -57,7 +57,7 @@ class AccountControllerTest {
     }
 
     @Test
-    @DisplayName("open - responde 201 y pasa el actor, el customerId y el tipo al servicio")
+    @DisplayName("HU28 CA01 - open - responde 201 y pasa el actor, el customerId y el tipo al servicio")
     void open_deberiaDelegarActorCustomerIdYTipo() {
         // Arrange
         UUID customerId = UUID.randomUUID();
@@ -78,7 +78,7 @@ class AccountControllerTest {
     }
 
     @Test
-    @DisplayName("open - sin cuerpo (un cliente abre la suya) pasa customerId y tipo nulos")
+    @DisplayName("HU10 CA01 - open - sin cuerpo (un cliente abre la suya) pasa customerId y tipo nulos")
     void open_sinCuerpoDeberiaPasarNulos() {
         // Arrange
         AccountResponse expected = new AccountResponse();
@@ -94,7 +94,7 @@ class AccountControllerTest {
     }
 
     @Test
-    @DisplayName("myAccounts - lista las cuentas del usuario del actor")
+    @DisplayName("Transversal - myAccounts - lista las cuentas del usuario del actor")
     void myAccounts_deberiaDelegarElIdDelUsuario() {
         // Arrange
         List<AccountResponse> expected = List.of(new AccountResponse());
@@ -111,7 +111,7 @@ class AccountControllerTest {
     }
 
     @Test
-    @DisplayName("account - delega actor y número de cuenta, sin decidir nada por rol")
+    @DisplayName("HU13 CA01 - account - delega actor y número de cuenta, sin decidir nada por rol")
     void account_deberiaDelegarActorYNumero() {
         // Arrange
         AccountResponse forCustomer = new AccountResponse();
@@ -128,7 +128,7 @@ class AccountControllerTest {
     }
 
     @Test
-    @DisplayName("balance - delega actor y número de cuenta")
+    @DisplayName("HU12 CA01 - balance - delega actor y número de cuenta")
     void balance_deberiaDelegarActorYNumero() {
         // Arrange
         AccountBalanceResponse expected = new AccountBalanceResponse();
@@ -145,7 +145,7 @@ class AccountControllerTest {
     }
 
     @Test
-    @DisplayName("closeAccount - delega actor y número de cuenta")
+    @DisplayName("Transversal - closeAccount - delega actor y número de cuenta")
     void closeAccount_deberiaDelegarActorYNumero() {
         // Arrange
         AccountResponse expected = new AccountResponse();
@@ -162,7 +162,7 @@ class AccountControllerTest {
     }
 
     @Test
-    @DisplayName("blockAccount - bloquea con el motivo y el administrador tomado del actor")
+    @DisplayName("HU15 CA01 - blockAccount - bloquea con el motivo y el administrador tomado del actor")
     void blockAccount_deberiaDelegarNumeroMotivoYAdministrador() {
         // Arrange
         BlockAccountRequest request = new BlockAccountRequest();
@@ -181,7 +181,7 @@ class AccountControllerTest {
     }
 
     @Test
-    @DisplayName("unblockAccount - desbloquea con el motivo y el administrador tomado del actor")
+    @DisplayName("HU16 CA01 - unblockAccount - desbloquea con el motivo y el administrador tomado del actor")
     void unblockAccount_deberiaDelegarNumeroMotivoYAdministrador() {
         // Arrange
         UnblockAccountRequest request = new UnblockAccountRequest();
@@ -200,7 +200,7 @@ class AccountControllerTest {
     }
 
     @Test
-    @DisplayName("accountsByCustomer - delega tipo y número de documento y responde 200")
+    @DisplayName("Transversal - accountsByCustomer - delega tipo y número de documento y responde 200")
     void accountsByCustomer_deberiaDelegarDocumentoYResponder200() {
         // Arrange
         List<AccountResponse> expected = List.of(new AccountResponse());
@@ -217,7 +217,7 @@ class AccountControllerTest {
     }
 
     @Test
-    @DisplayName("balancesByCustomer - delega tipo y número de documento y responde 200")
+    @DisplayName("Transversal - balancesByCustomer - delega tipo y número de documento y responde 200")
     void balancesByCustomer_deberiaDelegarDocumentoYResponder200() {
         // Arrange
         List<AccountBalanceResponse> expected = List.of(new AccountBalanceResponse());

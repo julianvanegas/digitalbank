@@ -27,7 +27,7 @@ class TransactionRequestsValidationTest {
     }
 
     @Test
-    @DisplayName("Una transferencia con cuentas de 12 dígitos y un monto con dos decimales es válida")
+    @DisplayName("HU20 CA01 - Una transferencia con cuentas de 12 dígitos y un monto con dos decimales es válida")
     void deberiaAceptarUnaSolicitudValida() {
         assertThat(validator.validate(transfer("100000000001", "200000000002", new BigDecimal("0.01")))).isEmpty();
     }
@@ -35,7 +35,7 @@ class TransactionRequestsValidationTest {
     @ParameterizedTest
     @ValueSource(strings = {"0", "-1", "0.00", "0.001", "10.123"})
     @NullSource
-    @DisplayName("El monto debe ser positivo, con máximo dos decimales y obligatorio")
+    @DisplayName("HU20 complementario - El monto debe ser positivo, con máximo dos decimales y obligatorio")
     void deberiaRechazarMontosInvalidos(String amount) {
         BigDecimal value = amount == null ? null : new BigDecimal(amount);
 
@@ -45,14 +45,14 @@ class TransactionRequestsValidationTest {
     @ParameterizedTest
     @ValueSource(strings = {"", "  ", "12345", "1234567890123", "10000000000a"})
     @NullSource
-    @DisplayName("Los números de cuenta deben tener exactamente 12 dígitos")
+    @DisplayName("HU20 CA04 - Los números de cuenta deben tener exactamente 12 dígitos")
     void deberiaRechazarNumerosDeCuentaInvalidos(String number) {
         assertThat(validator.validate(transfer(number, "200000000002", BigDecimal.TEN))).isNotEmpty();
         assertThat(validator.validate(transfer("100000000001", number, BigDecimal.TEN))).isNotEmpty();
     }
 
     @Test
-    @DisplayName("El código de confirmación son 6 dígitos")
+    @DisplayName("HU21 CA02 - El código de confirmación son 6 dígitos")
     void deberiaValidarElFormatoDelCodigo() {
         ConfirmTransferRequest valid = new ConfirmTransferRequest();
         valid.setCode("012345");

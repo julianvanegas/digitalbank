@@ -42,7 +42,7 @@ import static org.mockito.Mockito.when;
  * documento duplicado).
  */
 @ExtendWith(MockitoExtension.class)
-@DisplayName("UserApiService - soporte del registro (unicidad de email, creación de usuario)")
+@DisplayName("HU01 / HU27 - UserApiService - soporte del registro (unicidad de email, creación de usuario)")
 class UserApiServiceTest {
 
     @Mock
@@ -82,11 +82,11 @@ class UserApiServiceTest {
     }
 
     @Nested
-    @DisplayName("createUser - unicidad de email y creación del usuario")
+    @DisplayName("HU01 / HU27 - createUser - unicidad de email y creación del usuario")
     class CreateUserTests {
 
         @Test
-        @DisplayName("Rechaza la creación si el email ya está registrado")
+        @DisplayName("HU01 CA07 / HU27 CA04 - Rechaza la creación si el email ya está registrado")
         void hu01_ca07_deberiaRechazarCreacionSiEmailYaExiste() {
             // Arrange
             when(userRepository.existsByEmail("ana@example.com")).thenReturn(true);
@@ -101,7 +101,7 @@ class UserApiServiceTest {
         }
 
         @Test
-        @DisplayName("Acepta la creación si el email no está registrado")
+        @DisplayName("HU01 CA06 - Acepta la creación si el email no está registrado")
         void hu01_ca06_deberiaAceptarCreacionSiEmailNoExiste() {
             // Arrange
             when(userRepository.existsByEmail("ana@example.com")).thenReturn(false);
@@ -127,7 +127,7 @@ class UserApiServiceTest {
         }
 
         @Test
-        @DisplayName("La contraseña inicial es aleatoria y se guarda codificada, nunca en texto plano")
+        @DisplayName("Transversal - La contraseña inicial es aleatoria y se guarda codificada, nunca en texto plano")
         void deberiaGuardarUnaContrasenaAleatoriaCodificada() {
             // Arrange
             when(userRepository.existsByEmail(anyString())).thenReturn(false);
@@ -153,7 +153,7 @@ class UserApiServiceTest {
         }
 
         @Test
-        @DisplayName("El usuario recién creado queda en estado PENDING_VERIFICATION, no ACTIVE")
+        @DisplayName("HU01 CA01 / HU27 CA01 - El usuario recién creado queda en estado PENDING_VERIFICATION, no ACTIVE")
         void deberiaCrearUsuarioEnEstadoPendingVerification() {
             // Arrange
             when(userRepository.existsByEmail(anyString())).thenReturn(false);
@@ -171,7 +171,7 @@ class UserApiServiceTest {
         }
 
         @Test
-        @DisplayName("Publica UserCreatedEvent al crear el usuario (dispara el envío del correo de confirmación)")
+        @DisplayName("HU27 CA05 - Publica UserCreatedEvent al crear el usuario (dispara el envío del correo de confirmación)")
         void deberiaPublicarEventoDeUsuarioCreado() {
             // Arrange
             when(userRepository.existsByEmail(anyString())).thenReturn(false);
@@ -196,11 +196,11 @@ class UserApiServiceTest {
     }
 
     @Nested
-    @DisplayName("getUser / getUsers")
+    @DisplayName("Transversal - getUser / getUsers")
     class GetUserTests {
 
         @Test
-        @DisplayName("Retorna la vista del usuario cuando existe")
+        @DisplayName("Transversal - Retorna la vista del usuario cuando existe")
         void deberiaRetornarUsuarioCuandoExiste() {
             // Arrange
             UUID userId = UUID.randomUUID();
@@ -222,7 +222,7 @@ class UserApiServiceTest {
         }
 
         @Test
-        @DisplayName("Lanza excepción cuando el usuario no existe")
+        @DisplayName("Transversal - Lanza excepción cuando el usuario no existe")
         void deberiaLanzarExcepcionCuandoUsuarioNoExiste() {
             // Arrange
             UUID userId = UUID.randomUUID();
@@ -233,7 +233,7 @@ class UserApiServiceTest {
         }
 
         @Test
-        @DisplayName("getUsers retorna la vista de cada usuario encontrado")
+        @DisplayName("Transversal - getUsers retorna la vista de cada usuario encontrado")
         void deberiaRetornarVistasDeVariosUsuarios() {
             // Arrange
             UUID userId1 = UUID.randomUUID();
@@ -263,11 +263,11 @@ class UserApiServiceTest {
     }
 
     @Nested
-    @DisplayName("changeStatus")
+    @DisplayName("HU08 - changeStatus")
     class ChangeStatusTests {
 
         @Test
-        @DisplayName("Delega el cambio de estado en UserStatusService.requestChange, que aplica la matriz de transiciones")
+        @DisplayName("HU08 CA01 - Delega el cambio de estado en UserStatusService.requestChange, que aplica la matriz de transiciones")
         void deberiaDelegarCambioDeEstado() {
             // Arrange
             UUID userId = UUID.randomUUID();

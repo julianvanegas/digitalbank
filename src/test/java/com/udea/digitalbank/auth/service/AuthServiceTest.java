@@ -93,11 +93,11 @@ class AuthServiceTest {
     }
 
     @Nested
-    @DisplayName("login - iniciar sesión")
+    @DisplayName("HU02 - login - iniciar sesión")
     class Login {
 
         @Test
-        @DisplayName("Credenciales válidas: resetea intentos fallidos y envía el reto 2FA")
+        @DisplayName("HU02 CA01 / HU03 CA01 - Credenciales válidas: resetea intentos fallidos y envía el reto 2FA")
         void deberiaAceptarCredencialesValidasYContinuarConEl2FA() {
             // Arrange
             User user = buildUser("cliente@example.com", "hash", UserStatusEnum.ACTIVE);
@@ -123,7 +123,7 @@ class AuthServiceTest {
         }
 
         @Test
-        @DisplayName("Contraseña incorrecta con usuario activo: registra el intento fallido")
+        @DisplayName("HU02 CA02 - Contraseña incorrecta con usuario activo: registra el intento fallido")
         void deberiaRechazarYRegistrarIntentoCuandoLaContraseñaEsIncorrectaYElUsuarioEstaActivo() {
             // Arrange
             User user = buildUser("cliente@example.com", "hash", UserStatusEnum.ACTIVE);
@@ -142,7 +142,7 @@ class AuthServiceTest {
         }
 
         @Test
-        @DisplayName("No registra intento fallido si el usuario ya no está ACTIVE (p. ej. ya bloqueado)")
+        @DisplayName("HU02 CA05 - No registra intento fallido si el usuario ya no está ACTIVE (p. ej. ya bloqueado)")
         void noDeberiaRegistrarIntentoCuandoElUsuarioNoEstaActivo() {
             // Arrange: un usuario ya bloqueado no debe seguir acumulando intentos
             User user = buildUser("cliente@example.com", "hash", UserStatusEnum.BLOCKED);
@@ -160,7 +160,7 @@ class AuthServiceTest {
         }
 
         @Test
-        @DisplayName("Correo no registrado: mismo mensaje genérico y mismo gasto de BCrypt que un usuario real")
+        @DisplayName("HU02 CA03 - Correo no registrado: mismo mensaje genérico y mismo gasto de BCrypt que un usuario real")
         void deberiaRechazarConMensajeGenericoCuandoElCorreoNoExiste() {
             // Arrange
             LoginRequest request = buildLoginRequest("noexiste@example.com", "cualquiera");
@@ -178,7 +178,7 @@ class AuthServiceTest {
         }
 
         @Test
-        @DisplayName("Usuario bloqueado con credenciales correctas: acceso rechazado")
+        @DisplayName("HU02 CA05 - Usuario bloqueado con credenciales correctas: acceso rechazado")
         void deberiaRechazarInicioDeSesionCuandoElUsuarioEstaBloqueado() {
             // Arrange
             User user = buildUser("cliente@example.com", "hash", UserStatusEnum.BLOCKED);
@@ -196,7 +196,7 @@ class AuthServiceTest {
         }
 
         @Test
-        @DisplayName("Usuario con correo aún no confirmado: acceso rechazado")
+        @DisplayName("HU02 CA07 - Usuario con correo aún no confirmado: acceso rechazado")
         void deberiaRechazarInicioDeSesionCuandoElUsuarioNoEstaHabilitado() {
             // Arrange
             User user = buildUser("cliente@example.com", "hash", UserStatusEnum.PENDING_VERIFICATION);
@@ -214,7 +214,7 @@ class AuthServiceTest {
         }
 
         @Test
-        @DisplayName("Usuario con el correo confirmado pero pendiente de revisión: acceso rechazado con mensaje propio")
+        @DisplayName("HU02 CA07 - Usuario con el correo confirmado pero pendiente de revisión: acceso rechazado con mensaje propio")
         void deberiaRechazarInicioDeSesionCuandoElUsuarioEstaPendienteDeRevision() {
             // Arrange
             User user = buildUser("cliente@example.com", "hash", UserStatusEnum.PENDING_REVIEW);
@@ -233,7 +233,7 @@ class AuthServiceTest {
         }
 
         @Test
-        @DisplayName("Estado INACTIVE tampoco permite iniciar sesión (rechazo por defecto)")
+        @DisplayName("HU02 CA07 - Estado INACTIVE tampoco permite iniciar sesión (rechazo por defecto)")
         void deberiaRechazarInicioDeSesionParaUsuarioInactivo() {
             // Arrange
             User user = buildUser("cliente@example.com", "hash", UserStatusEnum.INACTIVE);
@@ -253,11 +253,11 @@ class AuthServiceTest {
     }
 
     @Nested
-    @DisplayName("verifyTwoFactor - verificar identidad mediante 2FA")
+    @DisplayName("HU03 - verifyTwoFactor - verificar identidad mediante 2FA")
     class VerifyTwoFactor {
 
         @Test
-        @DisplayName("Código válido: crea la sesión y devuelve el token")
+        @DisplayName("HU03 CA02 - Código válido: crea la sesión y devuelve el token")
         void deberiaCompletarLaVerificacionYDevolverElToken() {
             // Arrange
             UUID challengeId = UUID.randomUUID();
@@ -280,7 +280,7 @@ class AuthServiceTest {
         }
 
         @Test
-        @DisplayName("Código incorrecto: la excepción de VerificationService se propaga")
+        @DisplayName("HU03 CA03 - Código incorrecto: la excepción de VerificationService se propaga")
         void deberiaPropagarLaExcepcionCuandoElCodigoEsInvalido() {
             // Arrange
             UUID challengeId = UUID.randomUUID();
@@ -294,7 +294,7 @@ class AuthServiceTest {
         }
 
         @Test
-        @DisplayName("El usuario se bloqueó entre el login y la verificación: acceso rechazado")
+        @DisplayName("HU02 CA05 - El usuario se bloqueó entre el login y la verificación: acceso rechazado")
         void deberiaRechazarCuandoElUsuarioYaNoEstaActivoAlVerificar() {
             // Arrange
             UUID challengeId = UUID.randomUUID();
@@ -313,11 +313,11 @@ class AuthServiceTest {
     }
 
     @Nested
-    @DisplayName("resendTwoFactor - reenvío del código 2FA")
+    @DisplayName("HU03 - resendTwoFactor - reenvío del código 2FA")
     class ResendTwoFactor {
 
         @Test
-        @DisplayName("Reenvía el código por correo y devuelve el mismo challengeId con lo que queda")
+        @DisplayName("HU03 CA07 - Reenvía el código por correo y devuelve el mismo challengeId con lo que queda")
         void deberiaReenviarElCodigoYDevolverElMismoRetoConLosRestantes() {
             // Arrange
             User user = buildUser("cliente@example.com", "hash", UserStatusEnum.ACTIVE);
@@ -338,7 +338,7 @@ class AuthServiceTest {
         }
 
         @Test
-        @DisplayName("Usuario que dejó de estar ACTIVE: se rechaza y no se envía ningún correo")
+        @DisplayName("HU03 CA07 - Usuario que dejó de estar ACTIVE: se rechaza y no se envía ningún correo")
         void noDeberiaEnviarNadaSiElUsuarioYaNoEstaActivo() {
             // Arrange
             User user = buildUser("cliente@example.com", "hash", UserStatusEnum.BLOCKED);
@@ -354,7 +354,7 @@ class AuthServiceTest {
         }
 
         @Test
-        @DisplayName("Si VerificationService rechaza el reenvío, no se envía nada")
+        @DisplayName("HU03 CA07 - Si VerificationService rechaza el reenvío, no se envía nada")
         void deberiaPropagarElRechazoDelReenvio() {
             // Arrange
             UUID challengeId = UUID.randomUUID();
@@ -368,7 +368,7 @@ class AuthServiceTest {
         }
 
         @Test
-        @DisplayName("Si el usuario del reto ya no existe, error genérico")
+        @DisplayName("HU03 CA07 - Si el usuario del reto ya no existe, error genérico")
         void deberiaRechazarSiElUsuarioDelRetoNoExiste() {
             // Arrange
             UUID challengeId = UUID.randomUUID();
@@ -385,11 +385,11 @@ class AuthServiceTest {
     }
 
     @Nested
-    @DisplayName("logout - cerrar sesión")
+    @DisplayName("HU04 - logout - cerrar sesión")
     class Logout {
 
         @Test
-        @DisplayName("Cerrar sesión revoca la sesión del usuario")
+        @DisplayName("HU04 CA01 - Cerrar sesión revoca la sesión del usuario")
         void deberiaRevocarLaSesionDelUsuario() {
             // Arrange
             UUID userId = UUID.randomUUID();
