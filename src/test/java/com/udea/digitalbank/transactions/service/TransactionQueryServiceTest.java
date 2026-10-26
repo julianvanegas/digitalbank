@@ -67,7 +67,7 @@ class TransactionQueryServiceTest {
     }
 
     @Test
-    @DisplayName("Quien ordenó la transacción obtiene su comprobante con los números de cuenta")
+    @DisplayName("HU20 CA01 - Quien ordenó la transacción obtiene su comprobante con los números de cuenta")
     void deberiaEntregarElComprobanteAlOrdenante() {
         numbersAreKnown();
 
@@ -82,7 +82,7 @@ class TransactionQueryServiceTest {
     }
 
     @Test
-    @DisplayName("Un administrador obtiene el comprobante de cualquier transacción")
+    @DisplayName("Transversal - Un administrador obtiene el comprobante de cualquier transacción")
     void deberiaEntregarElComprobanteAUnAdministrador() {
         numbersAreKnown();
 
@@ -92,7 +92,7 @@ class TransactionQueryServiceTest {
     }
 
     @Test
-    @DisplayName("La transacción de otro cliente responde igual que una inexistente")
+    @DisplayName("Transversal - La transacción de otro cliente responde igual que una inexistente")
     void deberiaOcultarLaTransaccionDeOtroCliente() {
         assertThatThrownBy(() -> queryService.getTransaction(new Actor(UUID.randomUUID(), false), REFERENCE))
                 .isInstanceOf(TransactionNotFoundException.class)
@@ -100,7 +100,7 @@ class TransactionQueryServiceTest {
     }
 
     @Test
-    @DisplayName("Una referencia inexistente lanza TransactionNotFoundException")
+    @DisplayName("Transversal - Una referencia inexistente lanza TransactionNotFoundException")
     void deberiaFallarSiNoExiste() {
         when(transactionRepository.findByReference("TRF-NOEXISTE")).thenReturn(Optional.empty());
 

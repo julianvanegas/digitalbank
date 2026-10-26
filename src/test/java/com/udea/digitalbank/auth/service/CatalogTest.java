@@ -85,11 +85,11 @@ class CatalogsTest {
     }
 
     @Nested
-    @DisplayName("Catálogos consistentes con los enums del código")
+    @DisplayName("Transversal - Catálogos consistentes con los enums del código")
     class CatalogosConsistentes {
 
         @Test
-        @DisplayName("Carga correctamente y resuelve cada catálogo por su enum")
+        @DisplayName("Transversal - Carga correctamente y resuelve cada catálogo por su enum")
         void deberiaCargarYResolverCadaCatalogoPorSuEnum() {
             // Arrange
             Catalogs catalogs = buildCatalogsWithAllCatalogsLoaded();
@@ -103,11 +103,11 @@ class CatalogsTest {
     }
 
     @Nested
-    @DisplayName("Inconsistencias entre los enums del código y la base de datos: la app no debe arrancar")
+    @DisplayName("Transversal - Inconsistencias entre los enums del código y la base de datos: la app no debe arrancar")
     class CatalogosInconsistentes {
 
         @Test
-        @DisplayName("Falta un estado en la base de datos que sí existe en el enum: falla al cargar")
+        @DisplayName("Transversal - Falta un estado en la base de datos que sí existe en el enum: falla al cargar")
         void deberiaFallarSiFaltaUnEstadoEnLaBaseDeDatos() {
             // Arrange: falta BLOCKED en la base, pero el enum UserStatusEnum sí lo declara
             when(roleRepository.findAll()).thenReturn(List.of(role((short) 1, "CUSTOMER"), role((short) 2, "ADMIN")));
@@ -125,7 +125,7 @@ class CatalogsTest {
         }
 
         @Test
-        @DisplayName("La base de datos tiene un valor que el enum no declara: también falla al cargar")
+        @DisplayName("Transversal - La base de datos tiene un valor que el enum no declara: también falla al cargar")
         void deberiaFallarSiLaBaseTieneUnValorQueElEnumNoDeclara() {
             // Arrange: la base trae un rol "SUPPORT" que RoleEnum no conoce
             when(roleRepository.findAll()).thenReturn(List.of(

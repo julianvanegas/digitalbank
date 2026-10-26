@@ -54,7 +54,7 @@ class CustomerMapperTest {
     }
 
     @Test
-    @DisplayName("Combina los datos del perfil (Customer) y del usuario (UserView) en una sola respuesta")
+    @DisplayName("HU06 CA01 - Combina los datos del perfil (Customer) y del usuario (UserView) en una sola respuesta")
     void deberiaCombinarDatosDeCustomerYUserView() {
         // Arrange
         Customer customer = buildCustomer();
@@ -81,7 +81,7 @@ class CustomerMapperTest {
     }
 
     @Test
-    @DisplayName("Con Customer null, deja los campos de perfil en su valor por defecto y solo mapea el usuario")
+    @DisplayName("Transversal - Con Customer null, deja los campos de perfil en su valor por defecto y solo mapea el usuario")
     void deberiaMapearSoloUsuarioCuandoCustomerEsNull() {
         // Arrange
         UserView user = new UserView(USER_ID, "ana@example.com", "CUSTOMER", "ACTIVE");
@@ -98,7 +98,7 @@ class CustomerMapperTest {
     }
 
     @Test
-    @DisplayName("Con UserView null, deja los campos de usuario en su valor por defecto y solo mapea el perfil")
+    @DisplayName("Transversal - Con UserView null, deja los campos de usuario en su valor por defecto y solo mapea el perfil")
     void deberiaMapearSoloCustomerCuandoUserEsNull() {
         // Arrange
         Customer customer = buildCustomer();
@@ -115,7 +115,7 @@ class CustomerMapperTest {
     }
 
     @Test
-    @DisplayName("Con ambos parámetros null, retorna null")
+    @DisplayName("Transversal - Con ambos parámetros null, retorna null")
     void deberiaRetornarNullCuandoAmbosParametrosSonNull() {
         // Act
         CustomerResponse response = mapper.toResponse((Customer) null, (UserView) null);
@@ -125,7 +125,7 @@ class CustomerMapperTest {
     }
 
     @Test
-    @DisplayName("Mapea un DocumentType a su DTO correspondiente")
+    @DisplayName("Transversal - Mapea un DocumentType a su DTO correspondiente")
     void deberiaMapearDocumentType() {
         // Arrange
         DocumentType documentType = buildDocumentType((short) 2, "Pasaporte");
@@ -139,7 +139,7 @@ class CustomerMapperTest {
     }
 
     @Test
-    @DisplayName("Mapear un DocumentType null retorna null")
+    @DisplayName("Transversal - Mapear un DocumentType null retorna null")
     void deberiaRetornarNullAlMapearDocumentTypeNull() {
         // Act
         DocumentTypeResponse response = mapper.toResponse((DocumentType) null);

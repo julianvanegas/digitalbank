@@ -36,7 +36,7 @@ class TransactionReferenceGeneratorTest {
     }
 
     @Test
-    @DisplayName("Tiene la forma TRF-AAAAMMDD-{22 caracteres}, solo letras y dígitos sin 0/O/I/l, y cabe en la columna")
+    @DisplayName("HU20 CA01 - Tiene la forma TRF-AAAAMMDD-{22 caracteres}, solo letras y dígitos sin 0/O/I/l, y cabe en la columna")
     void deberiaTenerLaFormaDelComprobante() {
         String reference = generator.forTransfer(UUID.randomUUID(), CREATED_AT);
 
@@ -47,7 +47,7 @@ class TransactionReferenceGeneratorTest {
     }
 
     @Test
-    @DisplayName("El alfabeto son 58 símbolos alfanuméricos distintos, sin los que se confunden")
+    @DisplayName("Transversal - El alfabeto son 58 símbolos alfanuméricos distintos, sin los que se confunden")
     void deberiaUsarUnAlfabetoSinAmbiguedades() {
         assertThat(ALPHABET).hasSize(58);
         assertThat(ALPHABET.chars().distinct().count()).isEqualTo(58);
@@ -55,7 +55,7 @@ class TransactionReferenceGeneratorTest {
     }
 
     @Test
-    @DisplayName("Se deriva del id: el mismo UUID y fecha dan siempre la misma referencia")
+    @DisplayName("Transversal - Se deriva del id: el mismo UUID y fecha dan siempre la misma referencia")
     void deberiaSerDeterministaPorId() {
         UUID id = UUID.randomUUID();
 
@@ -63,7 +63,7 @@ class TransactionReferenceGeneratorTest {
     }
 
     @Test
-    @DisplayName("Conserva el UUID completo: del código se recupera exactamente el mismo id (500 sorteados)")
+    @DisplayName("Transversal - Conserva el UUID completo: del código se recupera exactamente el mismo id (500 sorteados)")
     void deberiaPoderRecuperarElUuidCompleto() {
         for (int i = 0; i < 500; i++) {
             UUID id = UUID.randomUUID();
@@ -74,7 +74,7 @@ class TransactionReferenceGeneratorTest {
     }
 
     @Test
-    @DisplayName("Extremos: el UUID en cero, el más pequeño, y el de todos los bits en uno dan 22 caracteres válidos")
+    @DisplayName("Transversal - Extremos: el UUID en cero, el más pequeño, y el de todos los bits en uno dan 22 caracteres válidos")
     void deberiaCodificarLosExtremosConLargoFijo() {
         String zero = generator.forTransfer(new UUID(0L, 0L), CREATED_AT);
         String one = generator.forTransfer(new UUID(0L, 1L), CREATED_AT);
@@ -88,7 +88,7 @@ class TransactionReferenceGeneratorTest {
     }
 
     @Test
-    @DisplayName("UUID distintos dan referencias distintas (50.000 sorteados sin repetir)")
+    @DisplayName("HU20 CA01 - UUID distintos dan referencias distintas (50.000 sorteados sin repetir)")
     void noDeberiaRepetirReferencias() {
         Set<String> references = new HashSet<>();
         for (int i = 0; i < 50_000; i++) {
@@ -99,7 +99,7 @@ class TransactionReferenceGeneratorTest {
     }
 
     @Test
-    @DisplayName("La fecha es la de creación que se pasa, no la de hoy")
+    @DisplayName("Transversal - La fecha es la de creación que se pasa, no la de hoy")
     void deberiaUsarLaFechaDeCreacion() {
         String reference = generator.forTransfer(UUID.randomUUID(), LocalDateTime.of(2025, 1, 2, 23, 59));
 

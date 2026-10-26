@@ -36,7 +36,7 @@ class TransactionCatalogTest {
     }
 
     @Test
-    @DisplayName("Con los catálogos completos resuelve cada estado y tipo por su enum")
+    @DisplayName("Transversal - Con los catálogos completos resuelve cada estado y tipo por su enum")
     void deberiaResolverCadaValorPorSuEnum() {
         database(Arrays.stream(TransactionStatusEnum.values()), Arrays.stream(TransactionTypeEnum.values()));
         TransactionCatalog catalog = new TransactionCatalog(statusRepository, typeRepository);
@@ -48,7 +48,7 @@ class TransactionCatalogTest {
     }
 
     @Test
-    @DisplayName("Si falta un estado en la base, la app no arranca")
+    @DisplayName("Transversal - Si falta un estado en la base, la app no arranca")
     void deberiaFallarSiFaltaUnEstado() {
         database(Stream.of(TransactionStatusEnum.PENDING, TransactionStatusEnum.COMPLETED,
                         TransactionStatusEnum.REJECTED),
@@ -61,7 +61,7 @@ class TransactionCatalogTest {
     }
 
     @Test
-    @DisplayName("Si la base tiene un tipo que el enum no declara, la app no arranca")
+    @DisplayName("Transversal - Si la base tiene un tipo que el enum no declara, la app no arranca")
     void deberiaFallarSiLaBaseTieneUnTipoDeMas() {
         when(statusRepository.findAll()).thenReturn(
                 Arrays.stream(TransactionStatusEnum.values()).map(s -> status(s)).toList());

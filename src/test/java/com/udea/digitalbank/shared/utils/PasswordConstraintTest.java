@@ -47,7 +47,7 @@ class PasswordConstraintTest {
     }
 
     @Nested
-    @DisplayName("Contraseñas que cumplen la política")
+    @DisplayName("HU01 CA08 / HU05 CA08 - Contraseñas que cumplen la política")
     class ContraseñasValidas {
 
         @ParameterizedTest(name = "\"{0}\" es una contraseña válida")
@@ -71,7 +71,7 @@ class PasswordConstraintTest {
         }
 
         @Test
-        @DisplayName("Un valor nulo es válido (se combina con @NotBlank donde sea obligatoria)")
+        @DisplayName("Transversal - Un valor nulo es válido (se combina con @NotBlank donde sea obligatoria)")
         void deberiaAceptarValorNulo() {
             // Arrange
             PasswordHolder holder = new PasswordHolder(null);
@@ -85,7 +85,7 @@ class PasswordConstraintTest {
     }
 
     @Nested
-    @DisplayName("Longitud fuera del rango permitido")
+    @DisplayName("HU01 CA09 / HU05 CA09 - Longitud fuera del rango permitido")
     class LongitudInvalida {
 
         @ParameterizedTest(name = "\"{0}\" debe ser rechazada por longitud")
@@ -107,7 +107,7 @@ class PasswordConstraintTest {
     }
 
     @Nested
-    @DisplayName("Longitud correcta pero sin todos los requisitos de composición")
+    @DisplayName("HU01 CA10 / HU05 CA09 - Longitud correcta pero sin todos los requisitos de composición")
     class ComposicionInvalida {
 
         @ParameterizedTest(name = "\"{0}\" debe ser rechazada por composición")

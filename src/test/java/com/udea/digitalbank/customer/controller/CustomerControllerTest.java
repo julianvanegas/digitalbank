@@ -49,7 +49,7 @@ class CustomerControllerTest {
     }
 
     @Test
-    @DisplayName("create - responde 201 Created con el cliente creado")
+    @DisplayName("HU01 CA01 / HU27 CA01 - create - responde 201 Created con el cliente creado")
     void create_deberiaResponder201ConClienteCreado() {
         // Arrange
         CreateCustomerRequest request = new CreateCustomerRequest();
@@ -74,7 +74,7 @@ class CustomerControllerTest {
     }
 
     @Test
-    @DisplayName("myProfile - usa el userId del principal autenticado y responde 200")
+    @DisplayName("HU06 CA01 - myProfile - usa el userId del principal autenticado y responde 200")
     void myProfile_deberiaUsarPrincipalYResponder200() {
         // Arrange
         UUID userId = UUID.randomUUID();
@@ -91,7 +91,7 @@ class CustomerControllerTest {
     }
 
     @Test
-    @DisplayName("updateProfile - delega userId y los 3 campos editables, responde 200")
+    @DisplayName("HU07 CA01 - updateProfile - delega userId y los 3 campos editables, responde 200")
     void updateProfile_deberiaDelegarCamposYResponder200() {
         // Arrange
         UUID userId = UUID.randomUUID();
@@ -113,7 +113,7 @@ class CustomerControllerTest {
     }
 
     @Test
-    @DisplayName("documentTypes - responde 200 con el catálogo del servicio")
+    @DisplayName("Transversal - documentTypes - responde 200 con el catálogo del servicio")
     void documentTypes_deberiaResponder200ConElCatalogo() {
         // Arrange
         List<DocumentTypeResponse> expected = List.of(new DocumentTypeResponse());
@@ -128,7 +128,7 @@ class CustomerControllerTest {
     }
 
     @Test
-    @DisplayName("getAllCustomers - delega el Pageable y responde 200 con la página resultante")
+    @DisplayName("Transversal - getAllCustomers - delega el Pageable y responde 200 con la página resultante")
     void getAllCustomers_deberiaDelegarPageableYResponder200() {
         // Arrange
         Pageable pageable = Pageable.ofSize(20);
@@ -144,7 +144,7 @@ class CustomerControllerTest {
     }
 
     @Test
-    @DisplayName("getCustomer - delega tipo y número de documento y responde 200")
+    @DisplayName("HU08 CA05 - getCustomer - delega tipo y número de documento y responde 200")
     void getCustomer_deberiaDelegarDocumentoYResponder200() {
         // Arrange
         UUID customerId = UUID.randomUUID();
@@ -161,7 +161,7 @@ class CustomerControllerTest {
     }
 
     @Test
-    @DisplayName("changeStatus - delega tipo y número de documento y nuevo estado, responde 204")
+    @DisplayName("HU08 CA01 - changeStatus - delega tipo y número de documento y nuevo estado, responde 204")
     void changeStatus_deberiaDelegarDocumentoYEstadoYResponder204() {
         // Arrange
         ChangeCustomerStatusRequest request = new ChangeCustomerStatusRequest();

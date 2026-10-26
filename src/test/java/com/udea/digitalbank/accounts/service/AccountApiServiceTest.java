@@ -75,7 +75,7 @@ class AccountApiServiceTest {
     }
 
     @Test
-    @DisplayName("getAccount - entrega la vista de solo lectura de la cuenta")
+    @DisplayName("Transversal - getAccount - entrega la vista de solo lectura de la cuenta")
     void getAccount_deberiaDevolverLaVista() {
         // Arrange
         Account account = buildAccount(AccountStatusEnum.ACTIVE);
@@ -93,7 +93,7 @@ class AccountApiServiceTest {
     }
 
     @Test
-    @DisplayName("getAccount - lanza AccountNotFoundException si la cuenta no existe")
+    @DisplayName("Transversal - getAccount - lanza AccountNotFoundException si la cuenta no existe")
     void getAccount_deberiaFallarSiNoExiste() {
         // Arrange
         UUID missing = UUID.randomUUID();
@@ -106,7 +106,7 @@ class AccountApiServiceTest {
     }
 
     @Test
-    @DisplayName("getAccountByNumber - busca por el número de 12 dígitos")
+    @DisplayName("HU20 CA01 - getAccountByNumber - busca por el número de 12 dígitos")
     void getAccountByNumber_deberiaDevolverLaVista() {
         // Arrange
         Account account = buildAccount(AccountStatusEnum.ACTIVE);
@@ -120,7 +120,7 @@ class AccountApiServiceTest {
     }
 
     @Test
-    @DisplayName("getAccountByNumber - lanza AccountNotFoundException si el número no existe")
+    @DisplayName("HU20 CA04 - getAccountByNumber - lanza AccountNotFoundException si el número no existe")
     void getAccountByNumber_deberiaFallarSiNoExiste() {
         // Arrange
         when(accountRepository.findByAccountNumber(ACCOUNT_NUMBER)).thenReturn(Optional.empty());
@@ -131,7 +131,7 @@ class AccountApiServiceTest {
     }
 
     @Test
-    @DisplayName("getAccountsOfCustomer - devuelve las cuentas del cliente")
+    @DisplayName("Transversal - getAccountsOfCustomer - devuelve las cuentas del cliente")
     void getAccountsOfCustomer_deberiaDevolverLasCuentas() {
         // Arrange
         when(accountRepository.findByCustomerIdOrderByCreatedAt(CUSTOMER_ID))
@@ -146,7 +146,7 @@ class AccountApiServiceTest {
     }
 
     @Test
-    @DisplayName("getAccountsOfCustomer - devuelve lista vacía si el cliente no tiene cuentas")
+    @DisplayName("Transversal - getAccountsOfCustomer - devuelve lista vacía si el cliente no tiene cuentas")
     void getAccountsOfCustomer_deberiaDevolverListaVacia() {
         // Arrange
         when(accountRepository.findByCustomerIdOrderByCreatedAt(CUSTOMER_ID)).thenReturn(List.of());
@@ -156,7 +156,7 @@ class AccountApiServiceTest {
     }
 
     @Test
-    @DisplayName("requireActiveAccount - devuelve la cuenta cuando está activa")
+    @DisplayName("HU20 CA01 - requireActiveAccount - devuelve la cuenta cuando está activa")
     void requireActiveAccount_deberiaDevolverLaCuentaActiva() {
         // Arrange
         Account account = buildAccount(AccountStatusEnum.ACTIVE);
@@ -170,7 +170,7 @@ class AccountApiServiceTest {
     }
 
     @Test
-    @DisplayName("requireActiveAccount - lanza AccountNotActiveException si la cuenta está cerrada")
+    @DisplayName("HU20 CA04 - requireActiveAccount - lanza AccountNotActiveException si la cuenta está cerrada")
     void requireActiveAccount_deberiaFallarSiEstaCerrada() {
         // Arrange
         Account account = buildAccount(AccountStatusEnum.CLOSED);
@@ -183,7 +183,7 @@ class AccountApiServiceTest {
     }
 
     @Test
-    @DisplayName("requireActiveAccount - lanza AccountNotActiveException si la cuenta está inactiva")
+    @DisplayName("HU20 CA04 - requireActiveAccount - lanza AccountNotActiveException si la cuenta está inactiva")
     void requireActiveAccount_deberiaFallarSiEstaInactiva() {
         // Arrange
         Account account = buildAccount(AccountStatusEnum.INACTIVE);
@@ -200,7 +200,7 @@ class AccountApiServiceTest {
     }
 
     @Test
-    @DisplayName("requireOwnedAccount - devuelve la cuenta si es del cliente dueño del usuario")
+    @DisplayName("HU20 CA01 - requireOwnedAccount - devuelve la cuenta si es del cliente dueño del usuario")
     void requireOwnedAccount_deberiaDevolverLaCuentaPropia() {
         // Arrange
         UUID userId = UUID.randomUUID();
@@ -217,7 +217,7 @@ class AccountApiServiceTest {
     }
 
     @Test
-    @DisplayName("requireOwnedAccount - una cuenta de otro cliente responde igual que una inexistente")
+    @DisplayName("HU12 CA03 / HU13 CA03 - requireOwnedAccount - una cuenta de otro cliente responde igual que una inexistente")
     void requireOwnedAccount_deberiaOcultarLaCuentaAjena() {
         // Arrange
         UUID userId = UUID.randomUUID();
@@ -233,7 +233,7 @@ class AccountApiServiceTest {
     }
 
     @Nested
-    @DisplayName("applyTransfer")
+    @DisplayName("HU20 - applyTransfer")
     class ApplyTransfer {
 
         private final Account sender = buildAccount(AccountStatusEnum.ACTIVE);
@@ -245,7 +245,7 @@ class AccountApiServiceTest {
         }
 
         @Test
-        @DisplayName("Bloquea las dos cuentas, debita a la emisora y acredita a la receptora")
+        @DisplayName("HU20 CA01 - Bloquea las dos cuentas, debita a la emisora y acredita a la receptora")
         void deberiaMoverElDinero() {
             // Arrange
             lock(sender, receiver);
@@ -260,7 +260,7 @@ class AccountApiServiceTest {
         }
 
         @Test
-        @DisplayName("Con saldo insuficiente lanza InsufficientFundsException y no cambia ninguna cuenta")
+        @DisplayName("HU20 CA02 - Con saldo insuficiente lanza InsufficientFundsException y no cambia ninguna cuenta")
         void deberiaRechazarSinMoverNada() {
             // Arrange
             lock(sender, receiver);
@@ -275,7 +275,7 @@ class AccountApiServiceTest {
         }
 
         @Test
-        @DisplayName("Si la receptora no está activa, la emisora tampoco se debita")
+        @DisplayName("HU20 CA04 - Si la receptora no está activa, la emisora tampoco se debita")
         void noDeberiaDejarLaTransferenciaAMedias() {
             // Arrange
             Account inactive = buildAccount(AccountStatusEnum.INACTIVE);
@@ -290,7 +290,7 @@ class AccountApiServiceTest {
         }
 
         @Test
-        @DisplayName("Si una de las cuentas no existe lanza AccountNotFoundException")
+        @DisplayName("HU20 CA04 - Si una de las cuentas no existe lanza AccountNotFoundException")
         void deberiaFallarSiFaltaUnaCuenta() {
             // Arrange
             lock(sender);
@@ -301,7 +301,7 @@ class AccountApiServiceTest {
         }
 
         @Test
-        @DisplayName("Una transferencia de una cuenta a sí misma es un error de programación")
+        @DisplayName("HU20 CA03 - Una transferencia de una cuenta a sí misma es un error de programación")
         void deberiaExigirDosCuentasDistintas() {
             assertThatThrownBy(() -> accountApiService.applyTransfer(sender.getId(), sender.getId(), BigDecimal.TEN))
                     .isInstanceOf(IllegalArgumentException.class);

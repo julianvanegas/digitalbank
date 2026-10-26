@@ -52,11 +52,11 @@ class GlobalExceptionHandlerTest {
     }
 
     @Nested
-    @DisplayName("handleBusiness - traduce cada Kind de BusinessException a su código HTTP")
+    @DisplayName("Transversal - handleBusiness - traduce cada Kind de BusinessException a su código HTTP")
     class HandleBusinessTests {
 
         @Test
-        @DisplayName("NOT_FOUND -> 404")
+        @DisplayName("Transversal - NOT_FOUND -> 404")
         void deberiaTraducirNotFoundA404() {
             // Arrange
             CustomerNotFoundException ex = new CustomerNotFoundException("Cliente no encontrado");
@@ -70,7 +70,7 @@ class GlobalExceptionHandlerTest {
         }
 
         @Test
-        @DisplayName("CONFLICT -> 409 (documento duplicado)")
+        @DisplayName("Transversal - CONFLICT -> 409 (documento duplicado)")
         void deberiaTraducirConflictA409() {
             DuplicateCustomerException ex = new DuplicateCustomerException("Documento duplicado");
             ResponseEntity<ErrorResponse> response = handler.handleBusiness(ex);
@@ -78,7 +78,7 @@ class GlobalExceptionHandlerTest {
         }
 
         @Test
-        @DisplayName("CONFLICT -> 409 (email duplicado)")
+        @DisplayName("Transversal - CONFLICT -> 409 (email duplicado)")
         void deberiaTraducirConflictA409ParaEmail() {
             DuplicateUserException ex = new DuplicateUserException("Email duplicado");
             ResponseEntity<ErrorResponse> response = handler.handleBusiness(ex);
@@ -86,7 +86,7 @@ class GlobalExceptionHandlerTest {
         }
 
         @Test
-        @DisplayName("UNAUTHENTICATED -> 401 (credenciales inválidas)")
+        @DisplayName("Transversal - UNAUTHENTICATED -> 401 (credenciales inválidas)")
         void deberiaTraducirUnauthenticatedA401() {
             InvalidCredentialsException ex = new InvalidCredentialsException("Email o contraseña incorrectos");
             ResponseEntity<ErrorResponse> response = handler.handleBusiness(ex);
@@ -94,7 +94,7 @@ class GlobalExceptionHandlerTest {
         }
 
         @Test
-        @DisplayName("FORBIDDEN -> 403 (usuario no habilitado)")
+        @DisplayName("Transversal - FORBIDDEN -> 403 (usuario no habilitado)")
         void deberiaTraducirForbiddenA403() {
             UserNotEnabledException ex = new UserNotEnabledException("Usuario bloqueado");
             ResponseEntity<ErrorResponse> response = handler.handleBusiness(ex);
@@ -102,7 +102,7 @@ class GlobalExceptionHandlerTest {
         }
 
         @Test
-        @DisplayName("INVALID -> 400 (código de verificación inválido)")
+        @DisplayName("Transversal - INVALID -> 400 (código de verificación inválido)")
         void deberiaTraducirInvalidA400() {
             InvalidVerificationCodeException ex = new InvalidVerificationCodeException("Código inválido");
             ResponseEntity<ErrorResponse> response = handler.handleBusiness(ex);
@@ -110,7 +110,7 @@ class GlobalExceptionHandlerTest {
         }
 
         @Test
-        @DisplayName("NOT_FOUND -> 404 (usuario no encontrado)")
+        @DisplayName("Transversal - NOT_FOUND -> 404 (usuario no encontrado)")
         void deberiaTraducirNotFoundA404ParaUsuario() {
             UserNotFoundException ex = new UserNotFoundException("Usuario no encontrado");
             ResponseEntity<ErrorResponse> response = handler.handleBusiness(ex);
@@ -118,7 +118,7 @@ class GlobalExceptionHandlerTest {
         }
 
         @Test
-        @DisplayName("TOO_MANY_REQUESTS -> 429 con Retry-After cuando hay tiempo de espera")
+        @DisplayName("Transversal - TOO_MANY_REQUESTS -> 429 con Retry-After cuando hay tiempo de espera")
         void deberiaTraducirTooManyRequestsA429ConRetryAfter() {
             TooManyRequestsException ex = new TooManyRequestsException("Espera 20 segundos", 20);
             ResponseEntity<ErrorResponse> response = handler.handleBusiness(ex);
@@ -128,7 +128,7 @@ class GlobalExceptionHandlerTest {
         }
 
         @Test
-        @DisplayName("TOO_MANY_REQUESTS -> 429 sin Retry-After cuando no hay nada que esperar")
+        @DisplayName("Transversal - TOO_MANY_REQUESTS -> 429 sin Retry-After cuando no hay nada que esperar")
         void deberiaTraducirTooManyRequestsA429SinRetryAfter() {
             TooManyRequestsException ex = new TooManyRequestsException("Inicia sesión de nuevo", 0);
             ResponseEntity<ErrorResponse> response = handler.handleBusiness(ex);
@@ -137,14 +137,14 @@ class GlobalExceptionHandlerTest {
         }
 
         @Test
-        @DisplayName("Las demás excepciones de negocio no llevan Retry-After")
+        @DisplayName("Transversal - Las demás excepciones de negocio no llevan Retry-After")
         void lasDemasExcepcionesNoLlevanRetryAfter() {
             ResponseEntity<ErrorResponse> response = handler.handleBusiness(new UserNotFoundException("x"));
             assertThat(response.getHeaders().getFirst(HttpHeaders.RETRY_AFTER)).isNull();
         }
 
         @Test
-        @DisplayName("El cuerpo siempre incluye un timestamp")
+        @DisplayName("Transversal - El cuerpo siempre incluye un timestamp")
         void elCuerpoSiempreIncluyeTimestamp() {
             ResponseEntity<ErrorResponse> response = handler.handleBusiness(new UserNotFoundException("x"));
             assertThat(response.getBody().timestamp()).isNotNull();
@@ -152,7 +152,7 @@ class GlobalExceptionHandlerTest {
     }
 
     @Nested
-    @DisplayName("Otros handlers públicos")
+    @DisplayName("Transversal - Otros handlers públicos")
     class OtherPublicHandlersTests {
 
         @Test
@@ -187,7 +187,7 @@ class GlobalExceptionHandlerTest {
         }
 
         @Test
-        @DisplayName("Violación de integridad sin detalle de la base -> 409 con la regla genérica")
+        @DisplayName("Transversal - Violación de integridad sin detalle de la base -> 409 con la regla genérica")
         void deberiaManejarUnaViolacionSinCausaConocida() {
             // Act
             ResponseEntity<ErrorResponse> response =
@@ -205,7 +205,7 @@ class GlobalExceptionHandlerTest {
         }
 
         @Test
-        @DisplayName("Conflicto de versión (@Version) -> 409: la operación se puede repetir")
+        @DisplayName("Transversal - Conflicto de versión (@Version) -> 409: la operación se puede repetir")
         void deberiaManejarUnConflictoDeVersion() {
             // Arrange
             OptimisticLockingFailureException ex = new OptimisticLockingFailureException("versión vieja");
@@ -220,7 +220,7 @@ class GlobalExceptionHandlerTest {
         }
 
         @Test
-        @DisplayName("InvalidRequestException -> 400 con su mensaje, que es para el cliente")
+        @DisplayName("Transversal - InvalidRequestException -> 400 con su mensaje, que es para el cliente")
         void deberiaManejarUnaPeticionInvalidaDeNegocio() {
             // Arrange
             InvalidRequestException ex = new InvalidRequestException("El cliente debe ser mayor de 18 años");
@@ -234,7 +234,7 @@ class GlobalExceptionHandlerTest {
         }
 
         @Test
-        @DisplayName("IllegalArgumentException (un error de programación) -> 500 sin filtrar su mensaje")
+        @DisplayName("Transversal - IllegalArgumentException (un error de programación) -> 500 sin filtrar su mensaje")
         void noDeberiaFiltrarElMensajeDeUnIllegalArgument() {
             // Arrange
             IllegalArgumentException ex = new IllegalArgumentException("detalle interno: columna x");
@@ -249,7 +249,7 @@ class GlobalExceptionHandlerTest {
         }
 
         @Test
-        @DisplayName("AccessDeniedException -> 403 con el mensaje estándar de seguridad")
+        @DisplayName("Transversal - AccessDeniedException -> 403 con el mensaje estándar de seguridad")
         void deberiaManejarAccessDenied() {
             // Arrange
             AccessDeniedException ex = new AccessDeniedException("no importa el mensaje original");
@@ -263,7 +263,7 @@ class GlobalExceptionHandlerTest {
         }
 
         @Test
-        @DisplayName("AuthenticationException -> 401 con el mensaje estándar de seguridad")
+        @DisplayName("Transversal - AuthenticationException -> 401 con el mensaje estándar de seguridad")
         void deberiaManejarAuthenticationException() {
             // Arrange
             BadCredentialsException ex = new BadCredentialsException("no importa el mensaje original");
@@ -277,7 +277,7 @@ class GlobalExceptionHandlerTest {
         }
 
         @Test
-        @DisplayName("Excepción no prevista -> 500 sin exponer el detalle interno")
+        @DisplayName("Transversal - Excepción no prevista -> 500 sin exponer el detalle interno")
         void deberiaManejarExcepcionNoPrevista() {
             // Arrange
             RuntimeException ex = new RuntimeException("detalle interno sensible: NPE en línea 42");
@@ -293,7 +293,7 @@ class GlobalExceptionHandlerTest {
     }
 
     @Nested
-    @DisplayName("Overrides de ResponseEntityExceptionHandler (errores propios de MVC)")
+    @DisplayName("Transversal - Overrides de ResponseEntityExceptionHandler (errores propios de MVC)")
     class MvcHandlersTests {
 
         /** Método señuelo, solo para poder construir un MethodParameter real. */
@@ -307,7 +307,7 @@ class GlobalExceptionHandlerTest {
         }
 
         @Test
-        @DisplayName("Campos inválidos de un DTO -> 400 con 'campo: mensaje' por cada error")
+        @DisplayName("Transversal - Campos inválidos de un DTO -> 400 con 'campo: mensaje' por cada error")
         void deberiaManejarUnSoloErrorDeValidacion() throws NoSuchMethodException {
             // Arrange
             BeanPropertyBindingResult bindingResult = new BeanPropertyBindingResult(new Object(), "request");
@@ -326,7 +326,7 @@ class GlobalExceptionHandlerTest {
         }
 
         @Test
-        @DisplayName("Varios campos inválidos -> se unen con '; '")
+        @DisplayName("Transversal - Varios campos inválidos -> se unen con '; '")
         void deberiaUnirVariosErroresDeValidacion() throws NoSuchMethodException {
             // Arrange
             BeanPropertyBindingResult bindingResult = new BeanPropertyBindingResult(new Object(), "request");
@@ -347,7 +347,7 @@ class GlobalExceptionHandlerTest {
         }
 
         @Test
-        @DisplayName("JSON mal formado -> 400 con mensaje genérico de solicitud mal formada")
+        @DisplayName("Transversal - JSON mal formado -> 400 con mensaje genérico de solicitud mal formada")
         void deberiaManejarJsonMalFormado() {
             // Arrange
             HttpMessageNotReadableException ex =
@@ -364,7 +364,7 @@ class GlobalExceptionHandlerTest {
         }
 
         @Test
-        @DisplayName("Parámetro con tipo incorrecto (ej. /customers/abc) -> 400 con mensaje genérico")
+        @DisplayName("Transversal - Parámetro con tipo incorrecto (ej. /customers/abc) -> 400 con mensaje genérico")
         void deberiaManejarTypeMismatch() {
             // Arrange
             TypeMismatchException ex = new TypeMismatchException("abc", Long.class);
@@ -380,7 +380,7 @@ class GlobalExceptionHandlerTest {
         }
 
         @Test
-        @DisplayName("404 genérico de MVC -> mensaje 'Recurso no encontrado'")
+        @DisplayName("Transversal - 404 genérico de MVC -> mensaje 'Recurso no encontrado'")
         void deberiaMapear404GenericoDeMvc() {
             ResponseEntity<Object> response = handler.handleExceptionInternal(
                     new RuntimeException("no importa"), null, new HttpHeaders(), HttpStatus.NOT_FOUND, mock(WebRequest.class));
@@ -389,7 +389,7 @@ class GlobalExceptionHandlerTest {
         }
 
         @Test
-        @DisplayName("405 genérico de MVC -> mensaje de método no permitido")
+        @DisplayName("Transversal - 405 genérico de MVC -> mensaje de método no permitido")
         void deberiaMapear405GenericoDeMvc() {
             ResponseEntity<Object> response = handler.handleExceptionInternal(
                     new RuntimeException("no importa"), null, new HttpHeaders(), HttpStatus.METHOD_NOT_ALLOWED, mock(WebRequest.class));
@@ -398,7 +398,7 @@ class GlobalExceptionHandlerTest {
         }
 
         @Test
-        @DisplayName("406 genérico de MVC -> mensaje de formato no aceptable")
+        @DisplayName("Transversal - 406 genérico de MVC -> mensaje de formato no aceptable")
         void deberiaMapear406GenericoDeMvc() {
             ResponseEntity<Object> response = handler.handleExceptionInternal(
                     new RuntimeException("no importa"), null, new HttpHeaders(), HttpStatus.NOT_ACCEPTABLE, mock(WebRequest.class));
@@ -407,7 +407,7 @@ class GlobalExceptionHandlerTest {
         }
 
         @Test
-        @DisplayName("415 genérico de MVC -> mensaje de tipo de contenido no soportado")
+        @DisplayName("Transversal - 415 genérico de MVC -> mensaje de tipo de contenido no soportado")
         void deberiaMapear415GenericoDeMvc() {
             ResponseEntity<Object> response = handler.handleExceptionInternal(
                     new RuntimeException("no importa"), null, new HttpHeaders(),
@@ -417,7 +417,7 @@ class GlobalExceptionHandlerTest {
         }
 
         @Test
-        @DisplayName("Cualquier otro código de MVC -> mensaje por defecto")
+        @DisplayName("Transversal - Cualquier otro código de MVC -> mensaje por defecto")
         void deberiaMapearCodigoDesconocidoDeMvcAMensajePorDefecto() {
             ResponseEntity<Object> response = handler.handleExceptionInternal(
                     new RuntimeException("no importa"), null, new HttpHeaders(),

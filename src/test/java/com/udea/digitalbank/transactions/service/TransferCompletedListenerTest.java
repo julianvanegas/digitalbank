@@ -38,7 +38,7 @@ class TransferCompletedListenerTest {
     private EmailService emailService;
 
     @Test
-    @DisplayName("Envía el comprobante al correo del ordenante, con las cuentas enmascaradas")
+    @DisplayName("HU20 CA01 - Envía el comprobante al correo del ordenante, con las cuentas enmascaradas")
     void deberiaEnviarElComprobanteConLasCuentasEnmascaradas() {
         when(userApi.getUser(userId)).thenReturn(new UserView(userId, "ana@example.com", "CUSTOMER", "ACTIVE"));
 
@@ -51,7 +51,7 @@ class TransferCompletedListenerTest {
     }
 
     @Test
-    @DisplayName("Un fallo al consultar el usuario o enviar el correo no se propaga: la transferencia ya se hizo")
+    @DisplayName("Transversal - Un fallo al consultar el usuario o enviar el correo no se propaga: la transferencia ya se hizo")
     void noDeberiaPropagarUnFalloDelCorreo() {
         when(userApi.getUser(userId)).thenReturn(new UserView(userId, "ana@example.com", "CUSTOMER", "ACTIVE"));
         doThrow(new IllegalStateException("sin correo")).when(emailService).send(anyString(), anyString(), anyString());

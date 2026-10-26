@@ -54,7 +54,7 @@ class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("verifyEmail - confirmación de correo: delega con la contraseña y su confirmación y responde 204")
+    @DisplayName("HU01 CA08 / HU27 CA06 - verifyEmail - confirmación de correo: delega con la contraseña y su confirmación y responde 204")
     void verifyEmail_deberiaDelegarYResponder204() {
         // Arrange
         VerifyEmailRequest request = new VerifyEmailRequest();
@@ -72,7 +72,7 @@ class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("resendVerification - delega y responde 204")
+    @DisplayName("HU27 CA05 - resendVerification - delega y responde 204")
     void resendVerification_deberiaDelegarYResponder204() {
         // Arrange
         EmailRequest request = new EmailRequest();
@@ -87,7 +87,7 @@ class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("login - responde 200 con el resultado de AuthService, sin emitir el JWT todavía")
+    @DisplayName("HU02 CA01 - login - responde 200 con el resultado de AuthService, sin emitir el JWT todavía")
     void login_deberiaResponder200ConResultadoDelService() {
         // Arrange
         LoginRequest request = new LoginRequest();
@@ -106,7 +106,7 @@ class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("verifyTwoFactor - delega challengeId y code, responde 200 con el token")
+    @DisplayName("HU03 CA02 - verifyTwoFactor - delega challengeId y code, responde 200 con el token")
     void verifyTwoFactor_deberiaDelegarYResponder200() {
         // Arrange
         UUID challengeId = UUID.randomUUID();
@@ -125,7 +125,7 @@ class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("logout - obtiene el userId del principal autenticado y responde 204")
+    @DisplayName("HU04 CA01 - logout - obtiene el userId del principal autenticado y responde 204")
     void logout_deberiaUsarPrincipalYResponder204() {
         // Arrange
         UUID userId = UUID.randomUUID();
@@ -139,7 +139,7 @@ class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("recoverPassword - delega el email y responde 204 (mensaje siempre genérico)")
+    @DisplayName("HU05 CA01 - recoverPassword - delega el email y responde 204 (mensaje siempre genérico)")
     void recoverPassword_deberiaDelegarYResponder204() {
         // Arrange
         EmailRequest request = new EmailRequest();
@@ -154,7 +154,7 @@ class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("resetPassword - delega email, código y nueva contraseña, responde 204")
+    @DisplayName("HU05 CA08 - resetPassword - delega email, código y nueva contraseña, responde 204")
     void resetPassword_deberiaDelegarYResponder204() {
         // Arrange
         PasswordResetRequest request = new PasswordResetRequest();
@@ -171,7 +171,7 @@ class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("resendTwoFactor: delega el challengeId y responde 200 con la respuesta del service")
+    @DisplayName("HU03 CA07 - resendTwoFactor: delega el challengeId y responde 200 con la respuesta del service")
     void resendTwoFactor_deberiaDelegarYResponder200() {
         // Arrange
         UUID challengeId = UUID.randomUUID();

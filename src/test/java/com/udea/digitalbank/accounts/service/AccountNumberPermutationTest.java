@@ -20,7 +20,7 @@ class AccountNumberPermutationTest {
     private final AccountNumberPermutation permutation = new AccountNumberPermutation(SECRET);
 
     @Test
-    @DisplayName("Cada número tiene 12 dígitos y no empieza por cero, incluso en los extremos de la secuencia")
+    @DisplayName("HU10 CA05 / HU28 CA07 - Cada número tiene 12 dígitos y no empieza por cero, incluso en los extremos de la secuencia")
     void deberiaGenerarNumerosValidosEnTodoElRango() {
         long[] samples = {1, 2, 3, 999_999, 450_000_000_000L, AccountNumberPermutation.SIZE - 1,
                 AccountNumberPermutation.SIZE};
@@ -31,7 +31,7 @@ class AccountNumberPermutationTest {
     }
 
     @Test
-    @DisplayName("Valores consecutivos de la secuencia no dan números únicos repetidos (100.000 distintos)")
+    @DisplayName("HU10 CA06 / HU28 CA07 - Valores consecutivos de la secuencia no dan números únicos repetidos (100.000 distintos)")
     void noDeberiaRepetirNumerosEnValoresConsecutivos() {
         Set<String> numbers = new HashSet<>();
 
@@ -43,7 +43,7 @@ class AccountNumberPermutationTest {
     }
 
     @Test
-    @DisplayName("Es una permutación: el multiplicador es coprimo con el tamaño del rango y tiene inversa")
+    @DisplayName("HU10 CA06 - Es una permutación: el multiplicador es coprimo con el tamaño del rango y tiene inversa")
     void deberiaSerBiyectiva() {
         BigInteger multiplier = (BigInteger) ReflectionTestUtils.getField(permutation, "multiplier");
         BigInteger offset = (BigInteger) ReflectionTestUtils.getField(permutation, "offset");
@@ -59,7 +59,7 @@ class AccountNumberPermutationTest {
     }
 
     @Test
-    @DisplayName("No es secuencial: números contiguos de la secuencia no producen cuentas contiguas")
+    @DisplayName("Transversal - No es secuencial: números contiguos de la secuencia no producen cuentas contiguas")
     void noDeberiaDejarDeducirLaCuentaContigua() {
         for (long n = 1; n <= 50; n++) {
             long gap = Math.abs(Long.parseLong(permutation.apply(n + 1)) - Long.parseLong(permutation.apply(n)));
@@ -68,7 +68,7 @@ class AccountNumberPermutationTest {
     }
 
     @Test
-    @DisplayName("Mismo secreto, mismos números; otro secreto, otros números")
+    @DisplayName("Transversal - Mismo secreto, mismos números; otro secreto, otros números")
     void deberiaDependerDelSecreto() {
         AccountNumberPermutation same = new AccountNumberPermutation(SECRET);
         AccountNumberPermutation other = new AccountNumberPermutation("otro-secreto-de-prueba-con-mas-de-32-caracteres");
@@ -78,7 +78,7 @@ class AccountNumberPermutationTest {
     }
 
     @Test
-    @DisplayName("Un valor de la secuencia fuera de rango es un error de programación")
+    @DisplayName("Transversal - Un valor de la secuencia fuera de rango es un error de programación")
     void deberiaRechazarValoresFueraDeRango() {
         assertThatThrownBy(() -> permutation.apply(0)).isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> permutation.apply(-5)).isInstanceOf(IllegalArgumentException.class);
