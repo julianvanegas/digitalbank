@@ -19,7 +19,9 @@ jobs:
   deploy:
     name: Deploy to Render
     runs-on: ubuntu-latest
-    environment: production
+    environment: Production
+    permissions:
+      contents: none
     steps:
       - name: Trigger Render deploy
         env:
