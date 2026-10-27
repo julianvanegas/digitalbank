@@ -48,7 +48,7 @@ class TransactionControllerTest {
     }
 
     @Test
-    @DisplayName("transfer - responde 201 y pasa el actor del token y la solicitud al servicio")
+    @DisplayName("HU20 CA01 - transfer - responde 201 y pasa el actor del token y la solicitud al servicio")
     void transfer_deberiaDelegarElActorYLaSolicitud() {
         // Arrange
         TransferRequest request = new TransferRequest();
@@ -69,7 +69,7 @@ class TransactionControllerTest {
     }
 
     @Test
-    @DisplayName("confirm - responde 200 y pasa el actor, la referencia y el código al servicio")
+    @DisplayName("HU21 CA01 - confirm - responde 200 y pasa el actor, la referencia y el código al servicio")
     void confirm_deberiaDelegarActorReferenciaYCodigo() {
         // Arrange
         ConfirmTransferRequest request = new ConfirmTransferRequest();
@@ -87,7 +87,7 @@ class TransactionControllerTest {
     }
 
     @Test
-    @DisplayName("transaction - responde 200 con el comprobante y pasa el actor, sea cliente o administrador")
+    @DisplayName("HU20 CA01 - transaction - responde 200 con el comprobante y pasa el actor, sea cliente o administrador")
     void transaction_deberiaDelegarElActorYLaReferencia() {
         // Arrange
         TransactionResponse expected = new TransactionResponse();

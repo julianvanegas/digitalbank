@@ -96,11 +96,11 @@ class CustomerServiceTest {
     }
 
     @Nested
-    @DisplayName("create - registrar cliente")
+    @DisplayName("HU01 / HU27 - create - registrar cliente")
     class Create {
 
         @Test
-        @DisplayName("Registro exitoso con todos los datos válidos")
+        @DisplayName("HU01 CA01 / HU01 CA04 / HU01 CA06 / HU27 CA01 - Registro exitoso con todos los datos válidos")
         void deberiaCrearClienteCuandoTodosLosDatosSonValidos() {
             // Arrange
             CreateCustomerRequest request = buildValidRequest();
@@ -137,7 +137,7 @@ class CustomerServiceTest {
         }
 
         @Test
-        @DisplayName("Se permite el registro cuando el usuario cumple 18 años exactamente hoy")
+        @DisplayName("HU01 CA02 - Se permite el registro cuando el usuario cumple 18 años exactamente hoy")
         void deberiaPermitirRegistroCuandoElUsuarioCumple18AñosHoy() {
             // Arrange
             CreateCustomerRequest request = buildValidRequest();
@@ -166,7 +166,7 @@ class CustomerServiceTest {
         }
 
         @Test
-        @DisplayName("Rechaza el registro cuando el usuario es menor de 18 años")
+        @DisplayName("HU01 CA03 - Rechaza el registro cuando el usuario es menor de 18 años")
         void deberiaRechazarRegistroCuandoElUsuarioEsMenorDeEdad() {
             // Arrange
             CreateCustomerRequest request = buildValidRequest();
@@ -182,7 +182,7 @@ class CustomerServiceTest {
         }
 
         @Test
-        @DisplayName("Rechaza el registro cuando el tipo de documento no existe en el catálogo")
+        @DisplayName("HU01 CA12 - Rechaza el registro cuando el tipo de documento no existe en el catálogo")
         void deberiaRechazarRegistroCuandoElTipoDeDocumentoNoExiste() {
             // Arrange
             CreateCustomerRequest request = buildValidRequest();
@@ -198,7 +198,7 @@ class CustomerServiceTest {
         }
 
         @Test
-        @DisplayName("Rechaza el registro cuando el número de documento ya está registrado")
+        @DisplayName("HU01 CA05 / HU27 CA03 - Rechaza el registro cuando el número de documento ya está registrado")
         void deberiaRechazarRegistroCuandoElDocumentoYaExiste() {
             // Arrange
             CreateCustomerRequest request = buildValidRequest();
@@ -219,7 +219,7 @@ class CustomerServiceTest {
         }
 
         @Test
-        @DisplayName("Rechaza el registro cuando el correo electrónico ya está registrado")
+        @DisplayName("HU01 CA07 / HU27 CA04 - Rechaza el registro cuando el correo electrónico ya está registrado")
         void deberiaRechazarRegistroCuandoElCorreoYaExiste() {
             // Arrange
             CreateCustomerRequest request = buildValidRequest();
@@ -241,11 +241,11 @@ class CustomerServiceTest {
     }
 
     @Nested
-    @DisplayName("getDocumentTypes - catálogo para el registro")
+    @DisplayName("Transversal - getDocumentTypes - catálogo para el registro")
     class GetDocumentTypes {
 
         @Test
-        @DisplayName("Devuelve los tipos de documento ordenados por id, ya mapeados")
+        @DisplayName("Transversal - Devuelve los tipos de documento ordenados por id, ya mapeados")
         void deberiaDevolverElCatalogoOrdenadoPorId() {
             // Arrange
             DocumentType cedula = buildDocumentType();
@@ -265,11 +265,11 @@ class CustomerServiceTest {
     }
 
     @Nested
-    @DisplayName("getProfile - consultar perfil")
+    @DisplayName("HU06 - getProfile - consultar perfil")
     class GetProfile {
 
         @Test
-        @DisplayName("Retorna el perfil del cliente autenticado")
+        @DisplayName("HU06 CA01 / HU06 CA03 - Retorna el perfil del cliente autenticado")
         void deberiaRetornarElPerfilCuandoElClienteExiste() {
             // Arrange
             UUID userId = UUID.randomUUID();
@@ -290,7 +290,7 @@ class CustomerServiceTest {
         }
 
         @Test
-        @DisplayName("Rechaza la consulta cuando no existe un perfil para el usuario autenticado")
+        @DisplayName("HU06 CA02 - Rechaza la consulta cuando no existe un perfil para el usuario autenticado")
         void deberiaLanzarExcepcionCuandoElPerfilNoExiste() {
             // Arrange
             UUID userId = UUID.randomUUID();
@@ -304,11 +304,11 @@ class CustomerServiceTest {
     }
 
     @Nested
-    @DisplayName("updateProfile - actualizar datos de perfil")
+    @DisplayName("HU07 - updateProfile - actualizar datos de perfil")
     class UpdateProfile {
 
         @Test
-        @DisplayName("Actualiza solo el dato enviado y conserva los demás sin cambios")
+        @DisplayName("HU07 CA01 / HU07 CA04 - Actualiza solo el dato enviado y conserva los demás sin cambios")
         void deberiaActualizarSoloElCampoEnviadoYConservarLosDemas() {
             // Arrange
             UUID userId = UUID.randomUUID();
@@ -339,7 +339,7 @@ class CustomerServiceTest {
         }
 
         @Test
-        @DisplayName("Rechaza la actualización cuando no existe un perfil para el usuario autenticado")
+        @DisplayName("HU07 CA03 - Rechaza la actualización cuando no existe un perfil para el usuario autenticado")
         void deberiaLanzarExcepcionCuandoElPerfilNoExiste() {
             // Arrange
             UUID userId = UUID.randomUUID();
@@ -353,11 +353,11 @@ class CustomerServiceTest {
     }
 
     @Nested
-    @DisplayName("getCustomer - consulta por tipo y número de documento")
+    @DisplayName("HU08 - getCustomer - consulta por tipo y número de documento")
     class GetCustomer {
 
         @Test
-        @DisplayName("Devuelve el cliente encontrado por documento junto con los datos de su usuario")
+        @DisplayName("HU08 CA05 - Devuelve el cliente encontrado por documento junto con los datos de su usuario")
         void deberiaDevolverElClientePorDocumento() {
             // Arrange
             UUID userId = UUID.randomUUID();
@@ -378,7 +378,7 @@ class CustomerServiceTest {
         }
 
         @Test
-        @DisplayName("Lanza CustomerNotFoundException cuando no existe un cliente con ese documento")
+        @DisplayName("HU08 CA03 - Lanza CustomerNotFoundException cuando no existe un cliente con ese documento")
         void deberiaLanzarExcepcionCuandoElDocumentoNoExiste() {
             // Arrange
             when(customerRepository.findByDocumentTypeIdAndDocumentNumber((short) 3, "999"))
@@ -392,11 +392,11 @@ class CustomerServiceTest {
     }
 
     @Nested
-    @DisplayName("changeStatus - cambio de estado por tipo y número de documento")
+    @DisplayName("HU08 - changeStatus - cambio de estado por tipo y número de documento")
     class ChangeStatus {
 
         @Test
-        @DisplayName("Busca al cliente por documento y cambia el estado de su usuario")
+        @DisplayName("HU08 CA01 - Busca al cliente por documento y cambia el estado de su usuario")
         void deberiaCambiarElEstadoDelUsuarioDelClienteEncontradoPorDocumento() {
             // Arrange
             UUID userId = UUID.randomUUID();
@@ -413,7 +413,7 @@ class CustomerServiceTest {
         }
 
         @Test
-        @DisplayName("Rechaza el cambio cuando no existe un cliente con ese documento")
+        @DisplayName("HU08 CA03 - Rechaza el cambio cuando no existe un cliente con ese documento")
         void deberiaLanzarExcepcionCuandoElDocumentoNoExiste() {
             // Arrange
             when(customerRepository.findByDocumentTypeIdAndDocumentNumber((short) 2, "999"))

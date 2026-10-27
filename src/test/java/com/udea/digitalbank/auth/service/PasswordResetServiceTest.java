@@ -42,11 +42,11 @@ class PasswordResetServiceTest {
     private PasswordResetService passwordResetService;
 
     @Nested
-    @DisplayName("requestPasswordReset - mensaje genérico, no revela si el correo existe")
+    @DisplayName("HU05 - requestPasswordReset - mensaje genérico, no revela si el correo existe")
     class RequestPasswordReset {
 
         @Test
-        @DisplayName("Correo registrado: emite y envía el código de recuperación")
+        @DisplayName("HU05 CA02 - Correo registrado: emite y envía el código de recuperación")
         void deberiaEmitirYEnviarElCodigoCuandoElCorreoEstaRegistrado() {
             // Arrange
             User user = new User();
@@ -62,7 +62,7 @@ class PasswordResetServiceTest {
         }
 
         @Test
-        @DisplayName("Correo no registrado: no hace nada observable (mismo comportamiento externo)")
+        @DisplayName("HU05 CA01 - Correo no registrado: no hace nada observable (mismo comportamiento externo)")
         void noDeberiaHacerNadaCuandoElCorreoNoEstaRegistrado() {
             // Arrange
             when(userRepository.findByEmail("noexiste@example.com")).thenReturn(Optional.empty());
@@ -76,11 +76,11 @@ class PasswordResetServiceTest {
     }
 
     @Nested
-    @DisplayName("resetPassword - éxito y propagación de errores del código")
+    @DisplayName("HU05 - resetPassword - éxito y propagación de errores del código")
     class ResetPassword {
 
         @Test
-        @DisplayName("Código válido y contraseña válida: actualiza la contraseña y revoca la sesión")
+        @DisplayName("HU05 CA08 - Código válido y contraseña válida: actualiza la contraseña y revoca la sesión")
         void deberiaActualizarLaContraseñaYRevocarLaSesionCuandoElCodigoEsValido() {
             // Arrange
             UUID userId = UUID.randomUUID();
@@ -105,7 +105,7 @@ class PasswordResetServiceTest {
         }
 
         @Test
-        @DisplayName("Código inválido o expirado: se propaga la excepción y no se toca la contraseña")
+        @DisplayName("HU05 CA04 - Código inválido o expirado: se propaga la excepción y no se toca la contraseña")
         void deberiaPropagarLaExcepcionYNoModificarNadaCuandoElCodigoEsInvalido() {
             // Arrange
             when(verificationService.verifyByEmail("cliente@example.com", PurposeEnum.PASSWORD_RESET, "000000"))

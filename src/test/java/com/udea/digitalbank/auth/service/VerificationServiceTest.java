@@ -97,11 +97,11 @@ class VerificationServiceTest {
     }
 
     @Nested
-    @DisplayName("issue - generar y preparar el envío del código")
+    @DisplayName("HU03 - issue - generar y preparar el envío del código")
     class Issue {
 
         @Test
-        @DisplayName("Genera un reto nuevo con la vigencia del propósito y elimina el anterior")
+        @DisplayName("HU03 CA01 / HU05 CA07 - Genera un reto nuevo con la vigencia del propósito y elimina el anterior")
         void deberiaGenerarUnRetoConLaVigenciaDelProposito() {
             // Arrange
             UUID userId = UUID.randomUUID();
@@ -132,14 +132,14 @@ class VerificationServiceTest {
     }
 
     @Nested
-    @DisplayName("verifyById - verificación del código por el id del reto")
+    @DisplayName("HU03 - verifyById - verificación del código por el id del reto")
     class VerifyById {
 
         private final ChallengePurpose loginPurpose = buildPurpose((short) 1, "LOGIN", 5, 3);
         private final UUID userId = UUID.randomUUID();
 
         @Test
-        @DisplayName("Código correcto y vigente: se acepta y se invalida para reutilizarlo (uso único)")
+        @DisplayName("HU03 CA02 / HU03 CA06 - Código correcto y vigente: se acepta y se invalida para reutilizarlo (uso único)")
         void deberiaAceptarUnCodigoCorrectoYVigente() {
             // Arrange
             UUID challengeId = UUID.randomUUID();
@@ -158,7 +158,7 @@ class VerificationServiceTest {
         }
 
         @Test
-        @DisplayName("Código expirado: se rechaza y el reto se elimina")
+        @DisplayName("HU03 CA04 - Código expirado: se rechaza y el reto se elimina")
         void deberiaRechazarUnCodigoExpirado() {
             // Arrange
             UUID challengeId = UUID.randomUUID();
@@ -176,7 +176,7 @@ class VerificationServiceTest {
         }
 
         @Test
-        @DisplayName("Código incorrecto sin alcanzar el límite: registra el intento y conserva el reto")
+        @DisplayName("HU03 CA03 - Código incorrecto sin alcanzar el límite: registra el intento y conserva el reto")
         void deberiaRegistrarElIntentoSinInvalidarElRetoAunNoAlcanzaElLimite() {
             // Arrange: ya tiene 1 intento fallido, el límite son 3
             UUID challengeId = UUID.randomUUID();
@@ -196,7 +196,7 @@ class VerificationServiceTest {
         }
 
         @Test
-        @DisplayName("Tercer intento incorrecto: invalida el reto en vez de conservarlo")
+        @DisplayName("HU03 CA05 - Tercer intento incorrecto: invalida el reto en vez de conservarlo")
         void deberiaInvalidarElRetoEnElTercerIntentoIncorrecto() {
             // Arrange: ya tiene 2 intentos fallidos, este sería el tercero
             UUID challengeId = UUID.randomUUID();
@@ -215,7 +215,7 @@ class VerificationServiceTest {
         }
 
         @Test
-        @DisplayName("Intentar con un reto ya invalidado/inexistente: se rechaza de inmediato")
+        @DisplayName("HU03 CA05 - Intentar con un reto ya invalidado/inexistente: se rechaza de inmediato")
         void deberiaRechazarCuandoElRetoYaNoExiste() {
             // Arrange
             UUID challengeId = UUID.randomUUID();
@@ -233,13 +233,13 @@ class VerificationServiceTest {
     }
 
     @Nested
-    @DisplayName("verifyByEmail - recuperar contraseña")
+    @DisplayName("HU05 - verifyByEmail - recuperar contraseña")
     class VerifyByEmail {
 
         private final ChallengePurpose resetPurpose = buildPurpose((short) 3, "PASSWORD_RESET", 5, 3);
 
         @Test
-        @DisplayName("CA (mensaje genérico) - Correo no registrado: mismo rechazo que un código inválido")
+        @DisplayName("HU05 CA01 - CA (mensaje genérico) - Correo no registrado: mismo rechazo que un código inválido")
         void deberiaRechazarConElMismoMensajeGenericoCuandoElCorreoNoExiste() {
             // Arrange
             when(userRepository.findByEmail("noexiste@example.com")).thenReturn(Optional.empty());
@@ -251,7 +251,7 @@ class VerificationServiceTest {
         }
 
         @Test
-        @DisplayName("Código de recuperación válido: se acepta y permite continuar")
+        @DisplayName("HU05 CA03 - Código de recuperación válido: se acepta y permite continuar")
         void deberiaAceptarUnCodigoDeRecuperacionValido() {
             // Arrange
             UUID userId = UUID.randomUUID();
@@ -276,7 +276,7 @@ class VerificationServiceTest {
     }
 
     @Nested
-    @DisplayName("resend - reenvío del código 2FA: cada reenvío gasta un intento del propósito")
+    @DisplayName("HU03 - resend - reenvío del código 2FA: cada reenvío gasta un intento del propósito")
     class Resend {
 
         private final ChallengePurpose loginPurpose = buildPurpose((short) 1, "LOGIN", 5, 3);
@@ -290,7 +290,7 @@ class VerificationServiceTest {
         }
 
         @Test
-        @DisplayName("Reemite en el sitio: mismo id, código nuevo, vigencia renovada y un intento gastado")
+        @DisplayName("HU03 CA07 - Reemite en el sitio: mismo id, código nuevo, vigencia renovada y un intento gastado")
         void deberiaReemitirElRetoEnElSitio() {
             // Arrange
             VerificationChallenge challenge = challengeIssuedAgo(60, 0);
@@ -316,7 +316,7 @@ class VerificationServiceTest {
         }
 
         @Test
-        @DisplayName("El hash guardado corresponde al código que se devuelve para enviar")
+        @DisplayName("HU03 CA07 - El hash guardado corresponde al código que se devuelve para enviar")
         void deberiaGuardarElHashDelCodigoEnviado() {
             // Arrange
             VerificationChallenge challenge = challengeIssuedAgo(60, 0);
@@ -331,7 +331,7 @@ class VerificationServiceTest {
         }
 
         @Test
-        @DisplayName("Informa cuántos reenvíos quedan y cuánto esperar para el siguiente")
+        @DisplayName("HU03 CA07 - Informa cuántos reenvíos quedan y cuánto esperar para el siguiente")
         void deberiaInformarReenviosRestantesYEspera() {
             // Arrange: max_attempts = 3, sin gastos previos -> tras reenviar quedan 1 reenvío
             VerificationChallenge challenge = challengeIssuedAgo(60, 0);
@@ -347,7 +347,7 @@ class VerificationServiceTest {
         }
 
         @Test
-        @DisplayName("Conserva los fallos acumulados: reenviar no devuelve los intentos")
+        @DisplayName("HU03 CA07 - Conserva los fallos acumulados: reenviar no devuelve los intentos")
         void noDeberiaReiniciarLosIntentosFallidos() {
             // Arrange: ya hubo 1 fallo; el reenvío suma otro y deja 0 reenvíos
             VerificationChallenge challenge = challengeIssuedAgo(60, 1);
@@ -363,7 +363,7 @@ class VerificationServiceTest {
         }
 
         @Test
-        @DisplayName("Reto desconocido o de otro propósito: error genérico")
+        @DisplayName("HU03 CA07 - Reto desconocido o de otro propósito: error genérico")
         void deberiaRechazarUnRetoDesconocido() {
             // Arrange
             when(challengeRepository.lockByIdAndPurpose(challengeId, "LOGIN")).thenReturn(Optional.empty());
@@ -375,7 +375,7 @@ class VerificationServiceTest {
         }
 
         @Test
-        @DisplayName("Reto vencido: error genérico y no se reemite")
+        @DisplayName("HU03 CA07 - Reto vencido: error genérico y no se reemite")
         void deberiaRechazarUnRetoVencido() {
             // Arrange
             VerificationChallenge challenge = buildChallenge(challengeId, userId, loginPurpose,
@@ -390,7 +390,7 @@ class VerificationServiceTest {
         }
 
         @Test
-        @DisplayName("Antes del intervalo mínimo: 429 con los segundos que faltan y sin reemitir")
+        @DisplayName("HU03 CA07 - Antes del intervalo mínimo: 429 con los segundos que faltan y sin reemitir")
         void deberiaRechazarUnReenvioAntesDelIntervalo() {
             // Arrange: emitido hace 10 s, el intervalo es de 30 s -> faltan unos 20 s
             VerificationChallenge challenge = challengeIssuedAgo(10, 0);
@@ -407,7 +407,7 @@ class VerificationServiceTest {
         }
 
         @Test
-        @DisplayName("Sin reenvíos disponibles: 429 sin tiempo de espera y sin reemitir")
+        @DisplayName("HU03 CA07 - Sin reenvíos disponibles: 429 sin tiempo de espera y sin reemitir")
         void deberiaRechazarCuandoYaNoQuedanReenvios() {
             // Arrange: con 2 gastados, un reenvío más dejaría el código nuevo sin intentos
             VerificationChallenge challenge = challengeIssuedAgo(60, 2);
@@ -423,7 +423,7 @@ class VerificationServiceTest {
         }
 
         @Test
-        @DisplayName("El tope manda sobre el intervalo: sin reenvíos no se pide esperar")
+        @DisplayName("HU03 CA07 - El tope manda sobre el intervalo: sin reenvíos no se pide esperar")
         void elTopeTienePrioridadSobreElIntervalo() {
             // Arrange: sin reenvíos y además recién emitido
             VerificationChallenge challenge = challengeIssuedAgo(0, 2);
@@ -438,7 +438,7 @@ class VerificationServiceTest {
 
 
     @Nested
-    @DisplayName("check - verificación del código de TRANSACTION, sin lanzar excepción")
+    @DisplayName("HU21 - check - verificación del código de TRANSACTION, sin lanzar excepción")
     class Check {
 
         private final ChallengePurpose transactionPurpose = buildPurpose((short) 4, "TRANSACTION", 3, 3);
@@ -450,7 +450,7 @@ class VerificationServiceTest {
         }
 
         @Test
-        @DisplayName("Código correcto dentro de la vigencia: VALID y el código se consume")
+        @DisplayName("HU21 CA01 - Código correcto dentro de la vigencia: VALID y el código se consume")
         void deberiaAceptarUnCodigoCorrectoYVigente() {
             // Arrange
             VerificationChallenge challenge = challenge(LocalDateTime.now().plusMinutes(2), 0);
@@ -466,7 +466,7 @@ class VerificationServiceTest {
         }
 
         @Test
-        @DisplayName("Primer fallo: WRONG con 2 intentos restantes y el código sigue vigente")
+        @DisplayName("HU21 CA02 - Primer fallo: WRONG con 2 intentos restantes y el código sigue vigente")
         void deberiaRechazarElPrimerFalloConservandoElCodigo() {
             // Arrange
             VerificationChallenge challenge = challenge(LocalDateTime.now().plusMinutes(2), 0);
@@ -485,7 +485,7 @@ class VerificationServiceTest {
         }
 
         @Test
-        @DisplayName("Segundo fallo: WRONG con 1 intento restante")
+        @DisplayName("HU21 CA02 - Segundo fallo: WRONG con 1 intento restante")
         void deberiaRechazarElSegundoFallo() {
             // Arrange
             VerificationChallenge challenge = challenge(LocalDateTime.now().plusMinutes(2), 1);
@@ -501,7 +501,7 @@ class VerificationServiceTest {
         }
 
         @Test
-        @DisplayName("Tercer fallo: EXHAUSTED y el código queda invalidado")
+        @DisplayName("HU21 CA03 - Tercer fallo: EXHAUSTED y el código queda invalidado")
         void deberiaInvalidarElCodigoEnElTercerFallo() {
             // Arrange
             VerificationChallenge challenge = challenge(LocalDateTime.now().plusMinutes(2), 2);
@@ -518,7 +518,7 @@ class VerificationServiceTest {
         }
 
         @Test
-        @DisplayName("Código vencido: EXPIRED, se elimina y ni siquiera se compara el código")
+        @DisplayName("HU21 CA04 - Código vencido: EXPIRED, se elimina y ni siquiera se compara el código")
         void deberiaRechazarUnCodigoVencido() {
             // Arrange
             VerificationChallenge challenge = challenge(LocalDateTime.now().minusSeconds(1), 0);
@@ -534,7 +534,7 @@ class VerificationServiceTest {
         }
 
         @Test
-        @DisplayName("Sin código vigente (ya se limpió o se reemplazó): EXPIRED")
+        @DisplayName("HU21 CA04 - Sin código vigente (ya se limpió o se reemplazó): EXPIRED")
         void deberiaTratarComoVencidoUnCodigoQueYaNoExiste() {
             // Arrange
             when(challengeRepository.lockByUserAndPurpose(userId, "TRANSACTION")).thenReturn(Optional.empty());
@@ -548,7 +548,7 @@ class VerificationServiceTest {
         }
 
         @Test
-        @DisplayName("Un código nulo cuenta como intento fallido")
+        @DisplayName("HU21 CA02 - Un código nulo cuenta como intento fallido")
         void deberiaContarUnCodigoNuloComoFallo() {
             // Arrange
             VerificationChallenge challenge = challenge(LocalDateTime.now().plusMinutes(2), 0);

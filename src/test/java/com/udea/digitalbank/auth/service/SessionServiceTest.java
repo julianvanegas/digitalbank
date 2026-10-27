@@ -62,11 +62,11 @@ class SessionServiceTest {
     }
 
     @Nested
-    @DisplayName("start - creación de sesión al completar la autenticación")
+    @DisplayName("HU02 / HU04 - start - creación de sesión al completar la autenticación")
     class Start {
 
         @Test
-        @DisplayName("Abre la sesión (sobrescribiendo cualquier anterior) y devuelve el token firmado")
+        @DisplayName("HU02 CA06 / HU04 CA05 - Abre la sesión (sobrescribiendo cualquier anterior) y devuelve el token firmado")
         void deberiaAbrirLaSesionYDevolverElToken() {
             // Arrange
             UUID userId = UUID.randomUUID();
@@ -106,11 +106,11 @@ class SessionServiceTest {
     }
 
     @Nested
-    @DisplayName("revoke - cerrar sesión manualmente (logout)")
+    @DisplayName("HU04 - revoke - cerrar sesión manualmente (logout)")
     class Revoke {
 
         @Test
-        @DisplayName("Elimina la sesión activa del usuario")
+        @DisplayName("HU04 CA01 - Elimina la sesión activa del usuario")
         void deberiaEliminarLaSesionDelUsuario() {
             // Arrange
             UUID userId = UUID.randomUUID();
@@ -124,11 +124,11 @@ class SessionServiceTest {
     }
 
     @Nested
-    @DisplayName("revokeAll - cierre masivo de sesiones")
+    @DisplayName("HU09 - revokeAll - cierre masivo de sesiones")
     class RevokeAll {
 
         @Test
-        @DisplayName("Borra las sesiones de todos los usuarios indicados con una sola sentencia")
+        @DisplayName("HU09 CA03 - Borra las sesiones de todos los usuarios indicados con una sola sentencia")
         void deberiaBorrarLasSesionesDeVariosUsuarios() {
             // Arrange
             List<UUID> userIds = List.of(UUID.randomUUID(), UUID.randomUUID());
@@ -142,11 +142,11 @@ class SessionServiceTest {
     }
 
     @Nested
-    @DisplayName("validateAndTouch - validez del token e inactividad")
+    @DisplayName("HU04 - validateAndTouch - validez del token e inactividad")
     class ValidateAndTouch {
 
         @Test
-        @DisplayName("Sesión vigente de un usuario ACTIVE: es válida y la petición renueva la actividad")
+        @DisplayName("HU04 CA02 - Sesión vigente de un usuario ACTIVE: es válida y la petición renueva la actividad")
         void deberiaConsiderarValidaUnaSesionVigenteYRenovarLaActividad() {
             // Arrange
             UUID userId = UUID.randomUUID();
@@ -170,7 +170,7 @@ class SessionServiceTest {
         }
 
         @Test
-        @DisplayName("Sesión cerrada, expirada, con jti distinto o de un usuario que ya no está ACTIVE: es inválida")
+        @DisplayName("HU04 CA04 - Sesión cerrada, expirada, con jti distinto o de un usuario que ya no está ACTIVE: es inválida")
         void deberiaConsiderarInvalidaUnaSesionQueNoCoincideExpiroOEstaInactiva() {
             // Arrange
             UUID userId = UUID.randomUUID();
@@ -184,7 +184,7 @@ class SessionServiceTest {
         }
 
         @Test
-        @DisplayName("Un jti nulo o mal formado se rechaza sin necesidad de consultar la base de datos")
+        @DisplayName("HU04 CA04 - Un jti nulo o mal formado se rechaza sin necesidad de consultar la base de datos")
         void deberiaRechazarUnJtiNuloOMalFormadoSinConsultarElRepositorio() {
             // Act & Assert
             assertThat(sessionService.validateAndTouch(UUID.randomUUID(), null)).isFalse();

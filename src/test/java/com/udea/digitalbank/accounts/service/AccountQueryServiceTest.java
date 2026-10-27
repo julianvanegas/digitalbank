@@ -55,7 +55,7 @@ class AccountQueryServiceTest {
     }
 
     @Nested
-    @DisplayName("acceso según el rol del actor: detalle y saldo")
+    @DisplayName("HU12 / HU13 - acceso según el rol del actor: detalle y saldo")
     class AccessByRole {
 
         private final UUID customerUserId = UUID.randomUUID();
@@ -76,7 +76,7 @@ class AccountQueryServiceTest {
         }
 
         @Test
-        @DisplayName("Un cliente ve el detalle y el saldo de su cuenta")
+        @DisplayName("HU12 CA01 / HU13 CA01 - Un cliente ve el detalle y el saldo de su cuenta")
         void deberiaDejarAlClienteVerSuCuenta() {
             stubCustomer();
             Account own = account(customerId);
@@ -89,7 +89,7 @@ class AccountQueryServiceTest {
         }
 
         @Test
-        @DisplayName("Una cuenta ajena responde como inexistente, en el detalle y en el saldo")
+        @DisplayName("HU12 CA03 / HU13 CA03 - Una cuenta ajena responde como inexistente, en el detalle y en el saldo")
         void deberiaTratarComoInexistenteLaCuentaDeOtroCliente() {
             stubCustomer();
             when(accountRepository.findByAccountNumber(ACCOUNT_NUMBER)).thenReturn(Optional.of(account(UUID.randomUUID())));
@@ -101,7 +101,7 @@ class AccountQueryServiceTest {
         }
 
         @Test
-        @DisplayName("Un administrador ve cualquier cuenta sin pasar por customerApi")
+        @DisplayName("Transversal - Un administrador ve cualquier cuenta sin pasar por customerApi")
         void deberiaDejarAlAdministradorVerCualquierCuenta() {
             when(accountRepository.findByAccountNumber(ACCOUNT_NUMBER)).thenReturn(Optional.of(account(UUID.randomUUID())));
 
@@ -112,7 +112,7 @@ class AccountQueryServiceTest {
     }
 
     @Nested
-    @DisplayName("consultas de las cuentas de un cliente")
+    @DisplayName("Transversal - consultas de las cuentas de un cliente")
     class ByCustomer {
 
         private final UUID customerId = UUID.randomUUID();
@@ -124,7 +124,7 @@ class AccountQueryServiceTest {
         }
 
         @Test
-        @DisplayName("Las cuentas del cliente del titular, en orden de apertura y en cualquier estado")
+        @DisplayName("Transversal - Las cuentas del cliente del titular, en orden de apertura y en cualquier estado")
         void deberiaListarLasCuentasPorDocumento() {
             stubDocument();
             Account active = buildAccount(AccountStatusEnum.ACTIVE);
@@ -138,7 +138,7 @@ class AccountQueryServiceTest {
         }
 
         @Test
-        @DisplayName("Un cliente sin cuentas devuelve una lista vacía, no un error")
+        @DisplayName("Transversal - Un cliente sin cuentas devuelve una lista vacía, no un error")
         void deberiaDevolverVacioSinCuentas() {
             stubDocument();
             when(accountRepository.findByCustomerIdOrderByCreatedAt(customerId)).thenReturn(List.of());
@@ -147,7 +147,7 @@ class AccountQueryServiceTest {
         }
 
         @Test
-        @DisplayName("Un documento sin cliente propaga CustomerNotFoundException")
+        @DisplayName("Transversal - Un documento sin cliente propaga CustomerNotFoundException")
         void deberiaPropagarCustomerNotFound() {
             when(customerApi.getCustomerByDocument((short) 1, "000")).thenThrow(new CustomerNotFoundException("no"));
 
@@ -157,7 +157,7 @@ class AccountQueryServiceTest {
         }
 
         @Test
-        @DisplayName("Las cuentas del propio cliente autenticado, por su id de usuario")
+        @DisplayName("Transversal - Las cuentas del propio cliente autenticado, por su id de usuario")
         void deberiaListarMisCuentas() {
             UUID userId = UUID.randomUUID();
             CustomerView customer = new CustomerView(customerId, userId, "Ana", "Gómez",

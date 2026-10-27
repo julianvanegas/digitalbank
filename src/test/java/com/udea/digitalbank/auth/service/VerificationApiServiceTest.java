@@ -43,7 +43,7 @@ class VerificationApiServiceTest {
     private VerificationApiService verificationApiService;
 
     @Test
-    @DisplayName("sendTransactionCode - emite y envía un código TRANSACTION al usuario, con el detalle")
+    @DisplayName("HU21 CA01 - sendTransactionCode - emite y envía un código TRANSACTION al usuario, con el detalle")
     void sendTransactionCode_deberiaEmitirYEnviarElCodigo() {
         // Arrange
         User user = new User();
@@ -58,7 +58,7 @@ class VerificationApiServiceTest {
     }
 
     @Test
-    @DisplayName("sendTransactionCode - lanza UserNotFoundException si el usuario no existe")
+    @DisplayName("Transversal - sendTransactionCode - lanza UserNotFoundException si el usuario no existe")
     void sendTransactionCode_deberiaFallarSiElUsuarioNoExiste() {
         // Arrange
         when(userRepository.findById(userId)).thenReturn(Optional.empty());
@@ -70,7 +70,7 @@ class VerificationApiServiceTest {
     }
 
     @Test
-    @DisplayName("verifyTransactionCode - devuelve el resultado de la verificación del propósito TRANSACTION")
+    @DisplayName("HU21 CA01 - verifyTransactionCode - devuelve el resultado de la verificación del propósito TRANSACTION")
     void verifyTransactionCode_deberiaDelegarEnLaVerificacion() {
         // Arrange
         CodeCheckResult expected = CodeCheckResult.wrong(2);
@@ -84,7 +84,7 @@ class VerificationApiServiceTest {
     }
 
     @Test
-    @DisplayName("transactionCodeTtlMinutes - es la vigencia del propósito TRANSACTION en el catálogo")
+    @DisplayName("HU21 CA04 - transactionCodeTtlMinutes - es la vigencia del propósito TRANSACTION en el catálogo")
     void transactionCodeTtlMinutes_deberiaLeerLaVigenciaDelCatalogo() {
         // Arrange
         ChallengePurpose purpose = new ChallengePurpose();

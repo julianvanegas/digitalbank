@@ -40,7 +40,7 @@ class JwtUtilTest {
     }
 
     @Nested
-    @DisplayName("init - el secreto se valida al arrancar")
+    @DisplayName("Transversal - init - el secreto se valida al arrancar")
     class SecretValidation {
 
         private JwtUtil withSecret(String secret) {
@@ -51,7 +51,7 @@ class JwtUtilTest {
         }
 
         @Test
-        @DisplayName("Un secreto de menos de 32 bytes impide que la app arranque, con un mensaje claro")
+        @DisplayName("Transversal - Un secreto de menos de 32 bytes impide que la app arranque, con un mensaje claro")
         void deberiaRechazarUnSecretoCorto() {
             assertThatThrownBy(() -> withSecret("a".repeat(31)).init())
                     .isInstanceOf(IllegalStateException.class)
@@ -61,14 +61,14 @@ class JwtUtilTest {
         }
 
         @Test
-        @DisplayName("Un secreto ausente o vacío también se rechaza")
+        @DisplayName("Transversal - Un secreto ausente o vacío también se rechaza")
         void deberiaRechazarUnSecretoAusenteOVacio() {
             assertThatThrownBy(() -> withSecret(null).init()).isInstanceOf(IllegalStateException.class);
             assertThatThrownBy(() -> withSecret("").init()).isInstanceOf(IllegalStateException.class);
         }
 
         @Test
-        @DisplayName("Exactamente 32 bytes es suficiente y el token se puede firmar y leer")
+        @DisplayName("Transversal - Exactamente 32 bytes es suficiente y el token se puede firmar y leer")
         void deberiaAceptarExactamente32Bytes() {
             JwtUtil util = withSecret("a".repeat(32));
             util.init();
@@ -82,7 +82,7 @@ class JwtUtilTest {
         }
 
         @Test
-        @DisplayName("Se miden bytes UTF-8, no caracteres: 20 letras ñ son 40 bytes y bastan")
+        @DisplayName("Transversal - Se miden bytes UTF-8, no caracteres: 20 letras ñ son 40 bytes y bastan")
         void deberiaMedirBytesYNoCaracteres() {
             String secret = "ñ".repeat(20);
             assertThat(secret.length()).isEqualTo(20);
@@ -96,11 +96,11 @@ class JwtUtilTest {
     }
 
     @Nested
-    @DisplayName("generateToken / parseClaims - round-trip del token")
+    @DisplayName("HU02 / HU04 - generateToken / parseClaims - round-trip del token")
     class GenerateAndParse {
 
         @Test
-        @DisplayName("Un token recién generado se puede parsear y contiene el subject, el rol y el jti correctos")
+        @DisplayName("HU04 CA05 - Un token recién generado se puede parsear y contiene el subject, el rol y el jti correctos")
         void deberiaGenerarUnTokenQueSePuedeParsearCorrectamente() {
             // Arrange
             Date issuedAt = new Date();
@@ -118,24 +118,24 @@ class JwtUtilTest {
         }
 
         @Test
-        @DisplayName("getExpirationMs() devuelve el valor configurado")
+        @DisplayName("Transversal - getExpirationMs() devuelve el valor configurado")
         void deberiaExponerLaExpiracionConfigurada() {
             assertThat(jwtUtil.getExpirationMs()).isEqualTo(900_000L);
         }
 
         @Test
-        @DisplayName("generateJti() produce identificadores distintos en cada llamada")
+        @DisplayName("HU02 CA06 - generateJti() produce identificadores distintos en cada llamada")
         void deberiaGenerarJtisDistintosEnCadaLlamada() {
             assertThat(jwtUtil.generateJti()).isNotEqualTo(jwtUtil.generateJti());
         }
     }
 
     @Nested
-    @DisplayName("tryParse - token expirado o alterado no debe validar")
+    @DisplayName("HU02 / HU04 - tryParse - token expirado o alterado no debe validar")
     class IsValid {
 
         @Test
-        @DisplayName("Un token recién emitido y vigente es válido")
+        @DisplayName("HU04 CA05 - Un token recién emitido y vigente es válido")
         void deberiaSerValidoUnTokenVigente() {
             // Arrange
             Date issuedAt = new Date();
@@ -147,7 +147,7 @@ class JwtUtilTest {
         }
 
         @Test
-        @DisplayName("Un token con fecha de expiración en el pasado no es válido")
+        @DisplayName("HU02 CA08 / HU04 CA03 - Un token con fecha de expiración en el pasado no es válido")
         void noDeberiaSerValidoUnTokenExpirado() {
             // Arrange: se genera ya vencido (con 1 minuto de vencido)
             Date issuedAt = new Date(System.currentTimeMillis() - 120_000L);
@@ -159,7 +159,7 @@ class JwtUtilTest {
         }
 
         @Test
-        @DisplayName("Un token firmado con otra clave (alterado/falsificado) no es válido")
+        @DisplayName("HU04 CA04 - Un token firmado con otra clave (alterado/falsificado) no es válido")
         void noDeberiaSerValidoUnTokenFirmadoConOtraClave() {
             // Arrange: mismo contenido, pero firmado por una instancia con una clave distinta
             JwtUtil otraInstancia = new JwtUtil();
@@ -175,7 +175,7 @@ class JwtUtilTest {
         }
 
         @Test
-        @DisplayName("Un texto que no es un JWT no es válido")
+        @DisplayName("HU04 CA04 - Un texto que no es un JWT no es válido")
         void noDeberiaSerValidoUnTextoQueNoEsUnToken() {
             assertThat(jwtUtil.tryParse("esto-no-es-un-token")).isEmpty();
         }

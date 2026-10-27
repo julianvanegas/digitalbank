@@ -65,7 +65,7 @@ class CustomerApiServiceTest {
     }
 
     @Test
-    @DisplayName("getCustomer combina el perfil con el email y estado de auth")
+    @DisplayName("Transversal - getCustomer combina el perfil con el email y estado de auth")
     void getCustomer_returnsView() {
         when(customerRepository.findById(customerId)).thenReturn(Optional.of(buildCustomer()));
         when(userApi.getUser(userId)).thenReturn(buildUser("ACTIVE"));
@@ -80,7 +80,7 @@ class CustomerApiServiceTest {
     }
 
     @Test
-    @DisplayName("getCustomer lanza CustomerNotFoundException si no existe")
+    @DisplayName("HU28 CA02 - getCustomer lanza CustomerNotFoundException si no existe")
     void getCustomer_notFound() {
         when(customerRepository.findById(customerId)).thenReturn(Optional.empty());
 
@@ -89,7 +89,7 @@ class CustomerApiServiceTest {
     }
 
     @Test
-    @DisplayName("getCustomerByUserId resuelve el cliente por el id del usuario")
+    @DisplayName("Transversal - getCustomerByUserId resuelve el cliente por el id del usuario")
     void getCustomerByUserId_returnsView() {
         when(customerRepository.findByUserId(userId)).thenReturn(Optional.of(buildCustomer()));
         when(userApi.getUser(userId)).thenReturn(buildUser("ACTIVE"));
@@ -98,7 +98,7 @@ class CustomerApiServiceTest {
     }
 
     @Test
-    @DisplayName("getCustomerByDocument resuelve el cliente por tipo y número de documento")
+    @DisplayName("Transversal - getCustomerByDocument resuelve el cliente por tipo y número de documento")
     void getCustomerByDocument_returnsView() {
         when(customerRepository.findByDocumentTypeIdAndDocumentNumber((short) 1, "1000000001"))
                 .thenReturn(Optional.of(buildCustomer()));
@@ -113,7 +113,7 @@ class CustomerApiServiceTest {
     }
 
     @Test
-    @DisplayName("getCustomerByDocument lanza CustomerNotFoundException si el documento no existe")
+    @DisplayName("Transversal - getCustomerByDocument lanza CustomerNotFoundException si el documento no existe")
     void getCustomerByDocument_notFound() {
         when(customerRepository.findByDocumentTypeIdAndDocumentNumber((short) 1, "1000000001"))
                 .thenReturn(Optional.empty());
@@ -128,7 +128,7 @@ class CustomerApiServiceTest {
      * (document_type_id, document_number) de V2, y aquí no hay base de datos que lo compruebe.
      */
     @Test
-    @DisplayName("getCustomerByDocument no encuentra el mismo número con otro tipo de documento")
+    @DisplayName("Transversal - getCustomerByDocument no encuentra el mismo número con otro tipo de documento")
     void getCustomerByDocument_sameNumberOtherType_notFound() {
         when(customerRepository.findByDocumentTypeIdAndDocumentNumber((short) 1, "1000000001"))
                 .thenReturn(Optional.of(buildCustomer()));
@@ -142,7 +142,7 @@ class CustomerApiServiceTest {
     }
 
     @Test
-    @DisplayName("getCustomers resuelve los usuarios en una sola llamada")
+    @DisplayName("Transversal - getCustomers resuelve los usuarios en una sola llamada")
     void getCustomers_batch() {
         when(customerRepository.findAllById(List.of(customerId))).thenReturn(List.of(buildCustomer()));
         when(userApi.getUsers(List.of(userId))).thenReturn(List.of(buildUser("ACTIVE")));
@@ -154,7 +154,7 @@ class CustomerApiServiceTest {
     }
 
     @Test
-    @DisplayName("requireActiveCustomer devuelve la vista si el cliente está ACTIVE")
+    @DisplayName("HU28 CA01 - requireActiveCustomer devuelve la vista si el cliente está ACTIVE")
     void requireActiveCustomer_active() {
         when(customerRepository.findById(customerId)).thenReturn(Optional.of(buildCustomer()));
         when(userApi.getUser(userId)).thenReturn(buildUser("ACTIVE"));
@@ -163,7 +163,7 @@ class CustomerApiServiceTest {
     }
 
     @Test
-    @DisplayName("requireActiveCustomer rechaza a un cliente que no está ACTIVE")
+    @DisplayName("HU28 CA03 - requireActiveCustomer rechaza a un cliente que no está ACTIVE")
     void requireActiveCustomer_notActive() {
         when(customerRepository.findById(customerId)).thenReturn(Optional.of(buildCustomer()));
         when(userApi.getUser(userId)).thenReturn(buildUser("BLOCKED"));

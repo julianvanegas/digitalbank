@@ -22,7 +22,7 @@ class EmployeeRequestsValidationTest {
     }
 
     @Test
-    @DisplayName("Perfil: todo es opcional, pero un nombre presente no puede estar en blanco ni pasar de 100")
+    @DisplayName("Transversal - Perfil: todo es opcional, pero un nombre presente no puede estar en blanco ni pasar de 100")
     void validaLosNombres() {
         UpdateEmployeeProfileRequest request = new UpdateEmployeeProfileRequest();
         assertThat(invalidFields(request)).isEmpty();
@@ -37,7 +37,7 @@ class EmployeeRequestsValidationTest {
     }
 
     @Test
-    @DisplayName("Estado: exige el estado")
+    @DisplayName("Transversal - Estado: exige el estado")
     void validaElCambioDeEstado() {
         ChangeEmployeeStatusRequest request = new ChangeEmployeeStatusRequest();
         assertThat(invalidFields(request)).containsExactly("status");

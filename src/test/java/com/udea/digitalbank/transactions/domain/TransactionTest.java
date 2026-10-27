@@ -28,18 +28,18 @@ class TransactionTest {
     }
 
     @Test
-    @DisplayName("No expone setters: el estado solo cambia con complete y reject")
+    @DisplayName("Transversal - No expone setters: el estado solo cambia con complete y reject")
     void noDeberiaExponerSetters() {
         assertThat(Arrays.stream(Transaction.class.getMethods()).map(m -> m.getName()))
                 .noneMatch(name -> name.startsWith("set"));
     }
 
     @Nested
-    @DisplayName("transfer")
+    @DisplayName("HU20 - transfer")
     class Transfer {
 
         @Test
-        @DisplayName("Nace PENDING, con los datos recibidos")
+        @DisplayName("HU20 CA01 - Nace PENDING, con los datos recibidos")
         void deberiaNacerPendiente() {
             UUID id = UUID.randomUUID();
             UUID user = UUID.randomUUID();
@@ -62,7 +62,7 @@ class TransactionTest {
         }
 
         @Test
-        @DisplayName("Rechaza un estado inicial que no sea PENDING")
+        @DisplayName("Transversal - Rechaza un estado inicial que no sea PENDING")
         void deberiaExigirElEstadoPending() {
             assertThatThrownBy(() -> Transaction.transfer(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(),
                     BigDecimal.TEN, REFERENCE, type(TransactionTypeEnum.TRANSFER),
@@ -71,7 +71,7 @@ class TransactionTest {
         }
 
         @Test
-        @DisplayName("Rechaza un tipo que no sea TRANSFER")
+        @DisplayName("Transversal - Rechaza un tipo que no sea TRANSFER")
         void deberiaExigirElTipoTransfer() {
             assertThatThrownBy(() -> Transaction.transfer(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(),
                     BigDecimal.TEN, REFERENCE, type(TransactionTypeEnum.DEPOSIT),
@@ -81,11 +81,11 @@ class TransactionTest {
     }
 
     @Nested
-    @DisplayName("complete y reject")
+    @DisplayName("HU21 - complete y reject")
     class Transitions {
 
         @Test
-        @DisplayName("complete - una PENDING pasa a COMPLETED")
+        @DisplayName("HU21 CA01 - complete - una PENDING pasa a COMPLETED")
         void deberiaCompletarUnaPendiente() {
             Transaction transaction = pending();
 
@@ -95,7 +95,7 @@ class TransactionTest {
         }
 
         @Test
-        @DisplayName("reject - una PENDING pasa a REJECTED")
+        @DisplayName("HU21 CA03 / HU21 CA04 - reject - una PENDING pasa a REJECTED")
         void deberiaRechazarUnaPendiente() {
             Transaction transaction = pending();
 
@@ -106,7 +106,7 @@ class TransactionTest {
 
         @ParameterizedTest
         @EnumSource(value = TransactionStatusEnum.class, names = {"COMPLETED", "REJECTED", "REVERSED"})
-        @DisplayName("complete y reject - solo parten de PENDING: cualquier otro estado se rechaza")
+        @DisplayName("HU21 CA03 - complete y reject - solo parten de PENDING: cualquier otro estado se rechaza")
         void noDeberiaCambiarUnaTransaccionQueNoEstaPendiente(TransactionStatusEnum current) {
             Transaction transaction = transfer(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), "25.00", current);
 
@@ -118,7 +118,7 @@ class TransactionTest {
         }
 
         @Test
-        @DisplayName("Exige el estado del catálogo que corresponde al cambio pedido")
+        @DisplayName("Transversal - Exige el estado del catálogo que corresponde al cambio pedido")
         void deberiaExigirElEstadoDelCambio() {
             Transaction transaction = pending();
 

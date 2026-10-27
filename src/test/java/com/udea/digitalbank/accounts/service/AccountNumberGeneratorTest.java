@@ -22,7 +22,7 @@ class AccountNumberGeneratorTest {
     private AccountNumberPermutation permutation;
 
     @Test
-    @DisplayName("next - convierte el siguiente valor de la secuencia con la permutación, sin consultar si existe")
+    @DisplayName("HU10 CA06 / HU28 CA07 - next - convierte el siguiente valor de la secuencia con la permutación, sin consultar si existe")
     void next_deberiaPermutarElSiguienteValorDeLaSecuencia() {
         // Arrange
         when(accountRepository.nextAccountNumberValue()).thenReturn(7L);

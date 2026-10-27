@@ -78,11 +78,11 @@ class UserStatusServiceTest {
     }
 
     @Nested
-    @DisplayName("registerFailedAttempt - bloqueo tras 3 intentos fallidos")
+    @DisplayName("HU02 / HU09 - registerFailedAttempt - bloqueo tras 3 intentos fallidos")
     class RegisterFailedAttempt {
 
         @Test
-        @DisplayName("Primer intento fallido: suma uno y no bloquea")
+        @DisplayName("HU09 CA02 - Primer intento fallido: suma uno y no bloquea")
         void deberiaSumarUnIntentoSinBloquearEnElPrimerFallo() {
             // Arrange
             User user = buildUser(UUID.randomUUID(), UserStatusEnum.ACTIVE, 0);
@@ -98,7 +98,7 @@ class UserStatusServiceTest {
         }
 
         @Test
-        @DisplayName("Segundo intento fallido: suma uno y tampoco bloquea todavía")
+        @DisplayName("HU09 CA02 - Segundo intento fallido: suma uno y tampoco bloquea todavía")
         void deberiaSumarUnIntentoSinBloquearEnElSegundoFallo() {
             // Arrange: ya viene con 1 intento fallido previo
             User user = buildUser(UUID.randomUUID(), UserStatusEnum.ACTIVE, 1);
@@ -113,7 +113,7 @@ class UserStatusServiceTest {
         }
 
         @Test
-        @DisplayName("Tercer intento fallido: bloquea al usuario y revoca su sesión")
+        @DisplayName("HU02 CA04 / HU09 CA01 - Tercer intento fallido: bloquea al usuario y revoca su sesión")
         void deberiaBloquearAlUsuarioEnElTercerIntentoFallido() {
             // Arrange: ya viene con 2 intentos fallidos previos, este es el tercero
             UUID userId = UUID.randomUUID();
@@ -133,11 +133,11 @@ class UserStatusServiceTest {
     }
 
     @Nested
-    @DisplayName("changeStatus - invalida la sesión al cambiar de estado")
+    @DisplayName("HU08 / HU09 - changeStatus - invalida la sesión al cambiar de estado")
     class ChangeStatus {
 
         @Test
-        @DisplayName("Cambiar a ACTIVE resetea los intentos fallidos y no revoca sesión")
+        @DisplayName("HU08 CA01 - Cambiar a ACTIVE resetea los intentos fallidos y no revoca sesión")
         void deberiaResetearIntentosFallidosAlActivarYNoRevocarSesion() {
             // Arrange
             UUID userId = UUID.randomUUID();
@@ -156,7 +156,7 @@ class UserStatusServiceTest {
         }
 
         @Test
-        @DisplayName("Cambiar a un estado distinto de ACTIVE revoca la sesión del usuario")
+        @DisplayName("HU09 CA06 - Cambiar a un estado distinto de ACTIVE revoca la sesión del usuario")
         void deberiaRevocarLaSesionAlCambiarAUnEstadoNoActivo() {
             // Arrange
             UUID userId = UUID.randomUUID();
@@ -173,7 +173,7 @@ class UserStatusServiceTest {
         }
 
         @Test
-        @DisplayName("Usuario inexistente: rechaza el cambio de estado")
+        @DisplayName("HU08 CA03 - Usuario inexistente: rechaza el cambio de estado")
         void deberiaRechazarElCambioCuandoElUsuarioNoExiste() {
             // Arrange
             UUID userId = UUID.randomUUID();
@@ -187,7 +187,7 @@ class UserStatusServiceTest {
     }
 
     @Nested
-    @DisplayName("markInactiveCustomers - trabajo nocturno de inactividad, por lotes")
+    @DisplayName("HU09 - markInactiveCustomers - trabajo nocturno de inactividad, por lotes")
     class MarkInactiveCustomers {
 
         private List<UUID> ids(int count) {
@@ -195,7 +195,7 @@ class UserStatusServiceTest {
         }
 
         @Test
-        @DisplayName("Sin clientes inactivos no toca la base ni las sesiones")
+        @DisplayName("HU09 CA05 - Sin clientes inactivos no toca la base ni las sesiones")
         void noDeberiaHacerNadaSinClientesInactivos() {
             // Arrange
             when(userRepository.findIdleIds(eq("CUSTOMER"), eq("ACTIVE"), any(LocalDateTime.class)))
@@ -210,7 +210,7 @@ class UserStatusServiceTest {
         }
 
         @Test
-        @DisplayName("Mueve a INACTIVE a los clientes ACTIVE sin actividad en 12 meses y cierra sus sesiones")
+        @DisplayName("HU09 CA03 - Mueve a INACTIVE a los clientes ACTIVE sin actividad en 12 meses y cierra sus sesiones")
         void deberiaInactivarYRevocarSesiones() {
             // Arrange
             List<UUID> idle = ids(3);
@@ -236,7 +236,7 @@ class UserStatusServiceTest {
         }
 
         @Test
-        @DisplayName("Procesa por lotes de 500 para no exceder los parámetros de una sentencia")
+        @DisplayName("Transversal - Procesa por lotes de 500 para no exceder los parámetros de una sentencia")
         void deberiaProcesarPorLotes() {
             // Arrange
             List<UUID> idle = ids(1200);
@@ -256,7 +256,7 @@ class UserStatusServiceTest {
     }
 
     @Nested
-    @DisplayName("requestChange - cambio pedido por un administrador, con matriz de transiciones")
+    @DisplayName("HU08 - requestChange - cambio pedido por un administrador, con matriz de transiciones")
     class RequestChange {
 
         // Matriz acordada: PENDING_REVIEW -> ACTIVE|BLOCKED, ACTIVE -> INACTIVE|BLOCKED,
@@ -275,7 +275,7 @@ class UserStatusServiceTest {
 
         @ParameterizedTest(name = "{0} -> {1}")
         @MethodSource("everyPair")
-        @DisplayName("Aplica exactamente las transiciones permitidas y rechaza el resto sin tocar al usuario")
+        @DisplayName("HU08 CA01 / HU08 CA04 - Aplica exactamente las transiciones permitidas y rechaza el resto sin tocar al usuario")
         void deberiaAplicarSoloLasTransicionesPermitidas(UserStatusEnum from, UserStatusEnum to) {
             // Arrange
             UUID userId = UUID.randomUUID();
@@ -309,7 +309,7 @@ class UserStatusServiceTest {
         }
 
         @Test
-        @DisplayName("Usuario inexistente: rechaza el cambio")
+        @DisplayName("HU08 CA03 - Usuario inexistente: rechaza el cambio")
         void deberiaRechazarUnUsuarioInexistente() {
             // Arrange
             UUID userId = UUID.randomUUID();
@@ -321,7 +321,7 @@ class UserStatusServiceTest {
         }
 
         @Test
-        @DisplayName("Bloquear a un usuario ACTIVE revoca su sesión; reactivarlo reinicia los intentos fallidos")
+        @DisplayName("HU09 CA06 - Bloquear a un usuario ACTIVE revoca su sesión; reactivarlo reinicia los intentos fallidos")
         void deberiaRevocarAlBloquearYReiniciarIntentosAlReactivar() {
             // Arrange
             UUID userId = UUID.randomUUID();

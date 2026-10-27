@@ -22,7 +22,7 @@ class CustomerRequestsValidationTest {
     }
 
     @Test
-    @DisplayName("Perfil: todo es opcional, pero un nombre presente no puede estar en blanco ni pasar de 100")
+    @DisplayName("HU07 CA02 - Perfil: todo es opcional, pero un nombre presente no puede estar en blanco ni pasar de 100")
     void validaLosNombres() {
         UpdateCustomerProfileRequest request = new UpdateCustomerProfileRequest();
         assertThat(invalidFields(request)).isEmpty();
@@ -37,7 +37,7 @@ class CustomerRequestsValidationTest {
     }
 
     @Test
-    @DisplayName("Perfil: el teléfono, si viene, debe tener formato válido")
+    @DisplayName("HU07 CA02 - Perfil: el teléfono, si viene, debe tener formato válido")
     void validaElTelefono() {
         UpdateCustomerProfileRequest request = new UpdateCustomerProfileRequest();
         request.setPhone("no-es-un-telefono");
@@ -48,7 +48,7 @@ class CustomerRequestsValidationTest {
     }
 
     @Test
-    @DisplayName("Estado: exige el tipo y el número de documento y el estado")
+    @DisplayName("HU08 CA04 - Estado: exige el tipo y el número de documento y el estado")
     void validaElCambioDeEstado() {
         ChangeCustomerStatusRequest request = new ChangeCustomerStatusRequest();
         assertThat(invalidFields(request)).containsExactlyInAnyOrder("documentTypeId", "documentNumber", "status");
