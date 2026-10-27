@@ -14,15 +14,15 @@ on:
   pull_request:
     branches: [main, develop, quality]
     types: [opened, synchronize, reopened, closed]
-
-permissions:
-  contents: read
-  pull-requests: read
+  release:
+    types: [published]
 
 jobs:
   tests:
     name: Unit tests
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-java@v6
@@ -42,6 +42,9 @@ jobs:
     name: SonarCloud analysis
     needs: tests
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
     steps:
       - uses: actions/checkout@v7
         with:
@@ -77,12 +80,13 @@ jobs:
     name: Publish image to GHCR
     needs: sonarcloud
     if: >-
-      github.event_name == 'pull_request' &&
+      (github.event_name == 'pull_request' &&
       github.event.action == 'closed' &&
       github.event.pull_request.merged == true &&
       github.event.pull_request.base.ref == 'main' &&
-      (github.event.pull_request.head.ref == 'develop' ||
-      github.event.pull_request.head.ref == 'quality')
+      github.event.pull_request.head.ref == 'quality') ||
+      (github.event_name == 'release' &&
+      github.event.action == 'published')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -107,6 +111,7 @@ jobs:
               --username "${{ github.actor }}" \
               --password-stdin
       - name: Build container image
+        if: github.event_name == 'pull_request'
         run: |
           podman build \
             --file ./Containerfile \
@@ -114,16 +119,31 @@ jobs:
             --tag "${IMAGE}:${GITHUB_SHA}" \
             .
       - name: Push container images
+        if: github.event_name == 'pull_request'
         run: |
           podman push "${IMAGE}:latest"
           podman push "${IMAGE}:${GITHUB_SHA}"
+      - name: Tag image for Release
+        if: github.event_name == 'release'
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          SOURCE_TAG=$(git rev-parse HEAD)
+          podman pull "${IMAGE}:${SOURCE_TAG}"
+          podman tag "${IMAGE}:${SOURCE_TAG}" "${IMAGE}:${RELEASE_TAG}"
+          podman push "${IMAGE}:${RELEASE_TAG}"
 
   deploy:
     name: Deploy published image
     needs: container
-    if: ${{ needs.container.result == 'success' }}
+    if: >-
+      github.event_name == 'release' &&
+      github.event.action == 'published' &&
+      needs.container.result == 'success'
+    permissions:
+      contents: none
     uses: ./.github/workflows/deploy.yml
     with:
       image-name: ghcr.io/${{ github.repository }}
-      image-tag: ${{ github.sha }}
+      image-tag: ${{ github.event.release.tag_name }}
     secrets: inherit
