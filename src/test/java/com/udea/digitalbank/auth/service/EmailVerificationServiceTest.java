@@ -79,11 +79,11 @@ class EmailVerificationServiceTest {
     }
 
     @Nested
-    @DisplayName("verifyEmail")
+    @DisplayName("HU01 / HU27 - verifyEmail")
     class VerifyEmail {
 
         @Test
-        @DisplayName("Cliente: guarda la contraseña elegida y queda PENDING_REVIEW")
+        @DisplayName("HU01 CA01 / HU27 CA06 - Cliente: guarda la contraseña elegida y queda PENDING_REVIEW")
         void deberiaDejarAlClienteEnRevision() {
             // Arrange
             User user = buildUser(RoleEnum.CUSTOMER, UserStatusEnum.PENDING_VERIFICATION);
@@ -101,7 +101,7 @@ class EmailVerificationServiceTest {
         }
 
         @Test
-        @DisplayName("Administrador: guarda la contraseña elegida y queda ACTIVE")
+        @DisplayName("Transversal - Administrador: guarda la contraseña elegida y queda ACTIVE")
         void deberiaActivarDirectamenteAlAdministrador() {
             // Arrange
             User user = buildUser(RoleEnum.ADMIN, UserStatusEnum.PENDING_VERIFICATION);
@@ -117,7 +117,7 @@ class EmailVerificationServiceTest {
         }
 
         @Test
-        @DisplayName("La contraseña y su confirmación no coinciden: 400 y no se consume el código")
+        @DisplayName("HU27 CA06 - La contraseña y su confirmación no coinciden: 400 y no se consume el código")
         void deberiaRechazarSiLaConfirmacionNoCoincideSinConsumirElCodigo() {
             // Act & Assert
             assertThatThrownBy(() -> emailVerificationService.verifyEmail(EMAIL, CODE, PASSWORD, "Otra0ContraseñA!"))
@@ -127,7 +127,7 @@ class EmailVerificationServiceTest {
         }
 
         @Test
-        @DisplayName("Código inválido o expirado: se propaga y no se toca la contraseña ni el estado")
+        @DisplayName("HU27 CA06 - Código inválido o expirado: se propaga y no se toca la contraseña ni el estado")
         void deberiaPropagarElErrorDelCodigo() {
             // Arrange
             when(verificationService.verifyByEmail(EMAIL, PurposeEnum.EMAIL_CONFIRMATION, CODE))
@@ -140,7 +140,7 @@ class EmailVerificationServiceTest {
         }
 
         @Test
-        @DisplayName("Usuario que ya no está PENDING_VERIFICATION: rechaza y no cambia su contraseña")
+        @DisplayName("Transversal - Usuario que ya no está PENDING_VERIFICATION: rechaza y no cambia su contraseña")
         void deberiaRechazarSiElUsuarioYaNoEstaPendiente() {
             // Arrange: un reto viejo no debe poder cambiar la contraseña de una cuenta ya habilitada
             User user = buildUser(RoleEnum.CUSTOMER, UserStatusEnum.ACTIVE);
@@ -156,11 +156,11 @@ class EmailVerificationServiceTest {
     }
 
     @Nested
-    @DisplayName("resendVerification")
+    @DisplayName("HU27 - resendVerification")
     class ResendVerification {
 
         @Test
-        @DisplayName("Usuario pendiente de verificación: emite y envía un código nuevo (con intervalo mínimo)")
+        @DisplayName("HU27 CA05 - Usuario pendiente de verificación: emite y envía un código nuevo (con intervalo mínimo)")
         void deberiaReenviarElCodigoAUsuarioPendiente() {
             // Arrange
             User user = buildUser(RoleEnum.CUSTOMER, UserStatusEnum.PENDING_VERIFICATION);
@@ -174,7 +174,7 @@ class EmailVerificationServiceTest {
         }
 
         @Test
-        @DisplayName("Usuario que ya confirmó su correo: no envía nada")
+        @DisplayName("HU27 CA05 - Usuario que ya confirmó su correo: no envía nada")
         void noDeberiaReenviarSiElUsuarioYaNoEstaPendiente() {
             // Arrange
             User user = buildUser(RoleEnum.CUSTOMER, UserStatusEnum.PENDING_REVIEW);
@@ -188,7 +188,7 @@ class EmailVerificationServiceTest {
         }
 
         @Test
-        @DisplayName("Correo no registrado: no hace nada observable (no revela qué correos existen)")
+        @DisplayName("HU27 CA05 - Correo no registrado: no hace nada observable (no revela qué correos existen)")
         void noDeberiaHacerNadaSiElCorreoNoExiste() {
             // Arrange
             when(userRepository.findByEmail(anyString())).thenReturn(Optional.empty());

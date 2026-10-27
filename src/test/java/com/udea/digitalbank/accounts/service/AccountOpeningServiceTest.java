@@ -67,7 +67,7 @@ class AccountOpeningServiceTest {
     }
 
     @Nested
-    @DisplayName("quién puede abrir una cuenta")
+    @DisplayName("HU28 - quién puede abrir una cuenta")
     class WhoCanOpen {
 
         private final UUID customerUserId = UUID.randomUUID();
@@ -76,7 +76,7 @@ class AccountOpeningServiceTest {
         private final Actor adminActor = new Actor(UUID.randomUUID(), true);
 
         @Test
-        @DisplayName("Un administrador sin customerId no puede abrir una cuenta")
+        @DisplayName("HU28 complementario - Un administrador sin customerId no puede abrir una cuenta")
         void deberiaExigirElCustomerIdAlAdministrador() {
             assertThatThrownBy(() -> openingService.open(adminActor, null, null))
                     .isInstanceOf(InvalidRequestException.class)
@@ -85,7 +85,7 @@ class AccountOpeningServiceTest {
         }
 
         @Test
-        @DisplayName("Un cliente no puede abrir una cuenta a nombre de otro cliente")
+        @DisplayName("HU28 CA08 - Un cliente no puede abrir una cuenta a nombre de otro cliente")
         void deberiaRechazarQueUnClienteAbraLaCuentaDeOtro() {
             CustomerView customer = new CustomerView(customerId, customerUserId, "Ana", "Gómez",
                     "Cédula de ciudadanía", "1000000001", "ana@example.com", "ACTIVE");
@@ -98,7 +98,7 @@ class AccountOpeningServiceTest {
     }
 
     @Nested
-    @DisplayName("apertura - tipo de cuenta")
+    @DisplayName("HU10 / HU28 - apertura - tipo de cuenta")
     class Open {
 
         private final UUID customerId = UUID.randomUUID();
@@ -115,7 +115,7 @@ class AccountOpeningServiceTest {
         }
 
         @Test
-        @DisplayName("Sin tipo indicado abre una cuenta SAVINGS")
+        @DisplayName("HU10 CA01 / HU28 CA01 - Sin tipo indicado abre una cuenta SAVINGS")
         void deberiaAbrirCuentaDeAhorrosPorDefecto() {
             // Arrange
             stubOpening();
@@ -133,7 +133,7 @@ class AccountOpeningServiceTest {
         }
 
         @Test
-        @DisplayName("Abre la cuenta con el tipo indicado")
+        @DisplayName("HU28 CA01 - Abre la cuenta con el tipo indicado")
         void deberiaAbrirCuentaDelTipoIndicado() {
             // Arrange
             stubOpening();
@@ -149,7 +149,7 @@ class AccountOpeningServiceTest {
     }
 
     @Nested
-    @DisplayName("apertura - límite de tres cuentas abiertas")
+    @DisplayName("HU10 / HU28 - apertura - límite de tres cuentas abiertas")
     class OpenLimit {
 
         private final UUID customerId = UUID.randomUUID();
@@ -183,7 +183,7 @@ class AccountOpeningServiceTest {
         }
 
         @Test
-        @DisplayName("Rechaza abrir una cuarta cuenta cuando las tres están abiertas")
+        @DisplayName("HU10 CA03 / HU28 CA04 - Rechaza abrir una cuarta cuenta cuando las tres están abiertas")
         void deberiaRechazarLaCuartaCuentaAbierta() {
             // Arrange
             stubOpening(List.of(existing(AccountStatusEnum.ACTIVE, 1), existing(AccountStatusEnum.INACTIVE, 2),
@@ -197,7 +197,7 @@ class AccountOpeningServiceTest {
         }
 
         @Test
-        @DisplayName("Una cuenta cerrada libera su cupo: la nueva ocupa la posición que dejó libre")
+        @DisplayName("HU10 CA03 - Una cuenta cerrada libera su cupo: la nueva ocupa la posición que dejó libre")
         void deberiaReutilizarLaPosicionDeLaCuentaCerrada() {
             // Arrange: tres cuentas, la 2 cerrada
             stubOpening(List.of(existing(AccountStatusEnum.ACTIVE, 1), existing(AccountStatusEnum.CLOSED, 2),
@@ -212,7 +212,7 @@ class AccountOpeningServiceTest {
         }
 
         @Test
-        @DisplayName("Varias cuentas cerradas no cuentan: con una sola abierta se pueden abrir más")
+        @DisplayName("HU10 CA03 - Varias cuentas cerradas no cuentan: con una sola abierta se pueden abrir más")
         void noDeberiaContarLasCuentasCerradas() {
             // Arrange: la 1 abierta y las otras dos cerradas
             stubOpening(List.of(existing(AccountStatusEnum.ACTIVE, 1), existing(AccountStatusEnum.CLOSED, 2),
@@ -227,7 +227,7 @@ class AccountOpeningServiceTest {
         }
 
         @Test
-        @DisplayName("Sin cuentas previas la primera ocupa la posición 1")
+        @DisplayName("HU10 CA01 - Sin cuentas previas la primera ocupa la posición 1")
         void deberiaEmpezarEnLaPosicionUno() {
             // Arrange
             stubOpening(List.of());

@@ -19,7 +19,7 @@ class CodeHasherTest {
     private static final UUID USUARIO_2 = UUID.randomUUID();
 
     @Test
-    @DisplayName("El mismo código, usuario y propósito siempre produce el mismo hash (determinista)")
+    @DisplayName("Transversal - El mismo código, usuario y propósito siempre produce el mismo hash (determinista)")
     void deberiaSerDeterministaParaLosMismosDatos() {
         // Arrange & Act
         String hash1 = codeHasher.hash(USUARIO_1, (short) 1, "123456");
@@ -30,7 +30,7 @@ class CodeHasherTest {
     }
 
     @Test
-    @DisplayName("matches() acepta el hash correcto para el mismo (usuario, propósito, código)")
+    @DisplayName("Transversal - matches() acepta el hash correcto para el mismo (usuario, propósito, código)")
     void matchesDeberiaAceptarElHashCorrecto() {
         // Arrange
         String hash = codeHasher.hash(USUARIO_1, (short) 1, "123456");
@@ -40,7 +40,7 @@ class CodeHasherTest {
     }
 
     @Test
-    @DisplayName("matches() rechaza cuando el código no coincide")
+    @DisplayName("Transversal - matches() rechaza cuando el código no coincide")
     void matchesDeberiaRechazarUnCodigoDistinto() {
         // Arrange
         String hash = codeHasher.hash(USUARIO_1, (short) 1, "123456");
@@ -50,7 +50,7 @@ class CodeHasherTest {
     }
 
     @Test
-    @DisplayName("El mismo código produce hashes distintos para usuarios distintos")
+    @DisplayName("Transversal - El mismo código produce hashes distintos para usuarios distintos")
     void deberiaProducirHashesDistintosParaUsuariosDistintos() {
         // Arrange & Act
         String hashUsuario1 = codeHasher.hash(USUARIO_1, (short) 1, "123456");
@@ -61,7 +61,7 @@ class CodeHasherTest {
     }
 
     @Test
-    @DisplayName("El mismo código produce hashes distintos para propósitos distintos (LOGIN vs PASSWORD_RESET)")
+    @DisplayName("Transversal - El mismo código produce hashes distintos para propósitos distintos (LOGIN vs PASSWORD_RESET)")
     void deberiaProducirHashesDistintosParaPropositosDistintos() {
         // Arrange & Act
         String hashLogin = codeHasher.hash(USUARIO_1, (short) 1, "123456");
@@ -72,7 +72,7 @@ class CodeHasherTest {
     }
 
     @Test
-    @DisplayName("matches() rechaza un hash de un usuario/propósito distinto aunque el código sea el mismo")
+    @DisplayName("Transversal - matches() rechaza un hash de un usuario/propósito distinto aunque el código sea el mismo")
     void matchesDeberiaRechazarUnHashCalculadoParaOtroUsuario() {
         // Arrange
         String hashUsuario2 = codeHasher.hash(USUARIO_2, (short) 1, "123456");

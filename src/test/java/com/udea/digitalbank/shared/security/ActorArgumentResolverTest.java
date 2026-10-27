@@ -39,7 +39,7 @@ class ActorArgumentResolverTest {
     }
 
     @Test
-    @DisplayName("Solo atiende el parámetro Actor marcado con @CurrentActor")
+    @DisplayName("Transversal - Solo atiende el parámetro Actor marcado con @CurrentActor")
     void soloAtiendeElParametroMarcado() throws Exception {
         assertThat(resolver.supportsParameter(parameter(0))).isTrue();
         assertThat(resolver.supportsParameter(parameter(1))).isFalse();  // sin la anotación
@@ -47,7 +47,7 @@ class ActorArgumentResolverTest {
     }
 
     @Test
-    @DisplayName("Un cliente autenticado resuelve a un Actor sin permisos de administrador")
+    @DisplayName("Transversal - Un cliente autenticado resuelve a un Actor sin permisos de administrador")
     void clienteNoEsAdmin() throws Exception {
         UUID userId = UUID.randomUUID();
         authenticate(userId, "ROLE_CUSTOMER");
@@ -56,7 +56,7 @@ class ActorArgumentResolverTest {
     }
 
     @Test
-    @DisplayName("Un administrador autenticado resuelve a un Actor con admin=true")
+    @DisplayName("Transversal - Un administrador autenticado resuelve a un Actor con admin=true")
     void adminEsAdmin() throws Exception {
         UUID userId = UUID.randomUUID();
         authenticate(userId, "ROLE_ADMIN");
@@ -65,7 +65,7 @@ class ActorArgumentResolverTest {
     }
 
     @Test
-    @DisplayName("Sin autenticación o con un principal que no es el id del usuario falla con claridad")
+    @DisplayName("Transversal - Sin autenticación o con un principal que no es el id del usuario falla con claridad")
     void sinUsuarioAutenticado() throws Exception {
         assertThatThrownBy(() -> resolver.resolveArgument(parameter(0), null, null, null))
                 .isInstanceOf(IllegalStateException.class);

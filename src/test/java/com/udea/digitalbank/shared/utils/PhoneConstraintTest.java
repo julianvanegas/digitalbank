@@ -44,7 +44,7 @@ class PhoneConstraintTest {
     }
 
     @Nested
-    @DisplayName("Números que cumplen el formato E.164 simplificado")
+    @DisplayName("HU07 CA01 - Números que cumplen el formato E.164 simplificado")
     class NumerosValidos {
 
         @ParameterizedTest(name = "\"{0}\" es un teléfono válido")
@@ -66,7 +66,7 @@ class PhoneConstraintTest {
         }
 
         @Test
-        @DisplayName("Un valor nulo es válido (se combina con @NotBlank donde sea obligatorio)")
+        @DisplayName("Transversal - Un valor nulo es válido (se combina con @NotBlank donde sea obligatorio)")
         void deberiaAceptarValorNulo() {
             // Arrange
             PhoneHolder holder = new PhoneHolder(null);
@@ -80,7 +80,7 @@ class PhoneConstraintTest {
     }
 
     @Nested
-    @DisplayName("Números que deben ser rechazados")
+    @DisplayName("HU07 CA02 - Números que deben ser rechazados")
     class NumerosInvalidos {
 
         @ParameterizedTest(name = "\"{0}\" debe ser rechazado")

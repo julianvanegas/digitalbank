@@ -59,7 +59,7 @@ class AccountActionListenerTest {
     }
 
     @Test
-    @DisplayName("Bloqueo - avisa al titular con el motivo y solo los últimos 4 dígitos de la cuenta")
+    @DisplayName("HU15 CA01 - Bloqueo - avisa al titular con el motivo y solo los últimos 4 dígitos de la cuenta")
     void deberiaAvisarElBloqueoConElMotivo() {
         // Act
         listener.onAccountAction(new AccountActionEvent(
@@ -74,7 +74,7 @@ class AccountActionListenerTest {
     }
 
     @Test
-    @DisplayName("Desbloqueo - avisa al titular con el motivo y solo los últimos 4 dígitos de la cuenta")
+    @DisplayName("HU16 CA01 - Desbloqueo - avisa al titular con el motivo y solo los últimos 4 dígitos de la cuenta")
     void deberiaAvisarElDesbloqueoConElMotivo() {
         // Act
         listener.onAccountAction(new AccountActionEvent(
@@ -89,7 +89,7 @@ class AccountActionListenerTest {
     }
 
     @Test
-    @DisplayName("Cierre - avisa al titular con quién lo hizo y solo los últimos 4 dígitos de la cuenta")
+    @DisplayName("Transversal - Cierre - avisa al titular con quién lo hizo y solo los últimos 4 dígitos de la cuenta")
     void deberiaAvisarElCierreConElMotivo() {
         // Act
         listener.onAccountAction(new AccountActionEvent(
@@ -105,7 +105,7 @@ class AccountActionListenerTest {
     }
 
     @Test
-    @DisplayName("Un fallo al enviar el correo no se propaga: el cambio de estado ya está confirmado")
+    @DisplayName("Transversal - Un fallo al enviar el correo no se propaga: el cambio de estado ya está confirmado")
     void noDeberiaPropagarUnFalloDelCorreo() {
         // Arrange
         doThrow(new RuntimeException("Resend caído")).when(emailService).send(anyString(), anyString(), anyString());
@@ -117,7 +117,7 @@ class AccountActionListenerTest {
     }
 
     @Test
-    @DisplayName("Un fallo al buscar al titular tampoco se propaga ni envía correo")
+    @DisplayName("Transversal - Un fallo al buscar al titular tampoco se propaga ni envía correo")
     void noDeberiaPropagarUnFalloAlBuscarAlTitular() {
         // Arrange
         when(customerApi.getCustomer(CUSTOMER_ID)).thenThrow(new RuntimeException("sin cliente"));

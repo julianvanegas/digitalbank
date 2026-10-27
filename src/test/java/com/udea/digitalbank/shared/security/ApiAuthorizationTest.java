@@ -251,7 +251,7 @@ class ApiAuthorizationTest {
 
     @ParameterizedTest(name = "{0}")
     @MethodSource("endpoints")
-    @DisplayName("Sin token: 401 salvo en las rutas públicas")
+    @DisplayName("HU04 CA04 / HU06 CA02 / HU07 CA03 - Sin token: 401 salvo en las rutas públicas")
     void anonymous(Endpoint endpoint) throws Exception {
         int status = statusOf(endpoint, null);
 
@@ -265,7 +265,7 @@ class ApiAuthorizationTest {
 
     @ParameterizedTest(name = "{0}")
     @MethodSource("endpoints")
-    @DisplayName("Con token de cada rol: pasa si el rol está permitido y 403 si no")
+    @DisplayName("HU08 CA02 / HU28 CA08 - Con token de cada rol: pasa si el rol está permitido y 403 si no")
     void eachRole(Endpoint endpoint) throws Exception {
         for (String role : List.of(CUSTOMER, ADMIN)) {
             int status = statusOf(endpoint, bearer(role));
@@ -286,7 +286,7 @@ class ApiAuthorizationTest {
 
     @ParameterizedTest(name = "{0}")
     @MethodSource("restrictedEndpoints")
-    @DisplayName("Un rol no autorizado recibe 403 aunque los datos sean inválidos, nunca un 400 de validación")
+    @DisplayName("Transversal - Un rol no autorizado recibe 403 aunque los datos sean inválidos, nunca un 400 de validación")
     void unauthorizedRoleNeverSeesValidationErrors(Endpoint endpoint) throws Exception {
         // Mismo método y ruta, sin los parámetros de consulta y con un cuerpo que ni siquiera es JSON
         String barePath = endpoint.path().contains("?")
@@ -317,7 +317,7 @@ class ApiAuthorizationTest {
     private RequestMappingHandlerMapping handlerMapping;
 
     @Test
-    @DisplayName("Una ruta sin regla se deniega: 403 con token de cualquier rol y 401 sin token")
+    @DisplayName("Transversal - Una ruta sin regla se deniega: 403 con token de cualquier rol y 401 sin token")
     void aRouteWithoutRuleIsDenied() throws Exception {
         Endpoint forgotten = new Endpoint("GET", "/api/v1/zz-sin-regla", "", Access.NOBODY);
 
@@ -327,7 +327,7 @@ class ApiAuthorizationTest {
     }
 
     @Test
-    @DisplayName("Todo endpoint de la aplicación está en la matriz de permisos: uno nuevo sin entrada hace fallar esto")
+    @DisplayName("Transversal - Todo endpoint de la aplicación está en la matriz de permisos: uno nuevo sin entrada hace fallar esto")
     void everyEndpointIsInTheMatrix() {
         List<Endpoint> matrix = endpoints().toList();
         List<String> missing = new ArrayList<>();
@@ -365,7 +365,7 @@ class ApiAuthorizationTest {
     // ---- el filtro JWT: un token firmado no basta
 
     @Test
-    @DisplayName("Un token con firma inválida responde 401")
+    @DisplayName("HU04 CA04 - Un token con firma inválida responde 401")
     void invalidSignature() throws Exception {
         String forged = bearer(ADMIN).substring(0, bearer(ADMIN).length() - 4) + "abcd";
 
@@ -373,7 +373,7 @@ class ApiAuthorizationTest {
     }
 
     @Test
-    @DisplayName("Un token válido de una sesión revocada, vencida o de un usuario que ya no está ACTIVE responde 401")
+    @DisplayName("HU02 CA06 / HU04 CA01 - Un token válido de una sesión revocada, vencida o de un usuario que ya no está ACTIVE responde 401")
     void revokedSession() throws Exception {
         when(sessionService.validateAndTouch(any(), anyString())).thenReturn(false);
 
@@ -381,13 +381,13 @@ class ApiAuthorizationTest {
     }
 
     @Test
-    @DisplayName("Un encabezado Authorization que no es Bearer se trata como anónimo")
+    @DisplayName("Transversal - Un encabezado Authorization que no es Bearer se trata como anónimo")
     void notABearerHeader() throws Exception {
         assertThat(statusOf(adminEndpoint(), "Basic YWRtaW46YWRtaW4=")).isEqualTo(401);
     }
 
     @Test
-    @DisplayName("Los 401 y 403 de la cadena de seguridad llevan el cuerpo ErrorResponse en JSON")
+    @DisplayName("Transversal - Los 401 y 403 de la cadena de seguridad llevan el cuerpo ErrorResponse en JSON")
     void securityErrorsAreJson() throws Exception {
         var unauthorized = mockMvc.perform(request(adminEndpoint(), null)).andReturn().getResponse();
         var forbidden = mockMvc.perform(request(adminEndpoint(), bearer(CUSTOMER))).andReturn().getResponse();

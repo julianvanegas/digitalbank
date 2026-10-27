@@ -77,7 +77,7 @@ class AccountLifecycleServiceTest {
     }
 
     @Nested
-    @DisplayName("cierre de cuenta")
+    @DisplayName("Transversal - cierre de cuenta")
     class CloseAccount {
 
         private final UUID userId = UUID.randomUUID();
@@ -125,7 +125,7 @@ class AccountLifecycleServiceTest {
 
         @ParameterizedTest
         @EnumSource(value = AccountStatusEnum.class, names = {"ACTIVE", "INACTIVE"})
-        @DisplayName("El titular cierra una cuenta sin saldo: queda CLOSED con fecha de cierre")
+        @DisplayName("Transversal - El titular cierra una cuenta sin saldo: queda CLOSED con fecha de cierre")
         void deberiaCerrarLaCuentaDelTitular(AccountStatusEnum current) {
             // Arrange
             stubCustomer();
@@ -146,7 +146,7 @@ class AccountLifecycleServiceTest {
         }
 
         @Test
-        @DisplayName("Un administrador cierra la cuenta de cualquier cliente sin pasar por customerApi")
+        @DisplayName("Transversal - Un administrador cierra la cuenta de cualquier cliente sin pasar por customerApi")
         void deberiaCerrarCualquierCuentaComoAdministrador() {
             // Arrange
             Account account = accountOf(AccountStatusEnum.ACTIVE, "0", UUID.randomUUID());
@@ -164,7 +164,7 @@ class AccountLifecycleServiceTest {
         }
 
         @Test
-        @DisplayName("Una cuenta ajena responde como inexistente y no se cierra")
+        @DisplayName("Transversal - Una cuenta ajena responde como inexistente y no se cierra")
         void deberiaTratarUnaCuentaAjenaComoInexistente() {
             // Arrange
             stubCustomer();
@@ -180,7 +180,7 @@ class AccountLifecycleServiceTest {
         }
 
         @Test
-        @DisplayName("Lanza AccountNotFoundException cuando el número no existe")
+        @DisplayName("Transversal - Lanza AccountNotFoundException cuando el número no existe")
         void deberiaLanzarExcepcionCuandoLaCuentaNoExiste() {
             // Arrange
             when(accountRepository.findByAccountNumberForUpdate(ACCOUNT_NUMBER)).thenReturn(Optional.empty());
@@ -191,7 +191,7 @@ class AccountLifecycleServiceTest {
         }
 
         @Test
-        @DisplayName("Rechaza cerrar una cuenta con saldo, aunque lo pida un administrador")
+        @DisplayName("Transversal - Rechaza cerrar una cuenta con saldo, aunque lo pida un administrador")
         void deberiaRechazarUnaCuentaConSaldo() {
             // Arrange
             Account account = accountOf(AccountStatusEnum.ACTIVE, "0.01", UUID.randomUUID());
@@ -208,7 +208,7 @@ class AccountLifecycleServiceTest {
         }
 
         @Test
-        @DisplayName("Rechaza cerrar una cuenta bloqueada: primero se debe desbloquearla")
+        @DisplayName("Transversal - Rechaza cerrar una cuenta bloqueada: primero se debe desbloquearla")
         void deberiaRechazarUnaCuentaBloqueada() {
             // Arrange
             Account account = accountOf(AccountStatusEnum.BLOCKED, "0.00", UUID.randomUUID());
@@ -224,7 +224,7 @@ class AccountLifecycleServiceTest {
         }
 
         @Test
-        @DisplayName("Rechaza cerrar una cuenta que ya está cerrada")
+        @DisplayName("Transversal - Rechaza cerrar una cuenta que ya está cerrada")
         void deberiaRechazarUnaCuentaYaCerrada() {
             // Arrange
             Account account = accountOf(AccountStatusEnum.CLOSED, "0.00", UUID.randomUUID());
@@ -240,11 +240,11 @@ class AccountLifecycleServiceTest {
     }
 
     @Nested
-    @DisplayName("blockAccount - bloqueo de una cuenta")
+    @DisplayName("HU15 - blockAccount - bloqueo de una cuenta")
     class BlockAccount {
 
         @Test
-        @DisplayName("Bloquea una cuenta activa y registra la acción BLOCKED con motivo y administrador")
+        @DisplayName("HU15 CA01 - Bloquea una cuenta activa y registra la acción BLOCKED con motivo y administrador")
         void deberiaBloquearLaCuentaYRegistrarLaAccion() {
             // Arrange
             UUID adminId = UUID.randomUUID();
@@ -278,7 +278,7 @@ class AccountLifecycleServiceTest {
         }
 
         @Test
-        @DisplayName("Rechaza bloquear una cuenta que ya está bloqueada")
+        @DisplayName("HU15 CA02 - Rechaza bloquear una cuenta que ya está bloqueada")
         void deberiaRechazarUnaCuentaYaBloqueada() {
             // Arrange
             Account account = buildAccount(AccountStatusEnum.BLOCKED);
@@ -291,7 +291,7 @@ class AccountLifecycleServiceTest {
         }
 
         @Test
-        @DisplayName("Rechaza un motivo vacío")
+        @DisplayName("HU15 CA03 - Rechaza un motivo vacío")
         void deberiaRechazarUnMotivoVacio() {
             // Act & Assert
             assertThatThrownBy(() -> lifecycleService.blockAccount(ACCOUNT_NUMBER, "   ", UUID.randomUUID()))
@@ -301,11 +301,11 @@ class AccountLifecycleServiceTest {
     }
 
     @Nested
-    @DisplayName("unblockAccount - desbloqueo de una cuenta")
+    @DisplayName("HU16 - unblockAccount - desbloqueo de una cuenta")
     class UnblockAccount {
 
         @Test
-        @DisplayName("Devuelve a ACTIVE una cuenta bloqueada, conserva su saldo y registra la acción UNBLOCKED con su motivo")
+        @DisplayName("HU16 CA01 - Devuelve a ACTIVE una cuenta bloqueada, conserva su saldo y registra la acción UNBLOCKED con su motivo")
         void deberiaActivarLaCuentaYRegistrarElDesbloqueo() {
             // Arrange
             UUID adminId = UUID.randomUUID();
@@ -341,7 +341,7 @@ class AccountLifecycleServiceTest {
 
         @ParameterizedTest
         @EnumSource(value = AccountStatusEnum.class, names = "BLOCKED", mode = EnumSource.Mode.EXCLUDE)
-        @DisplayName("Rechaza con conflicto cualquier cuenta que no esté bloqueada")
+        @DisplayName("HU16 CA03 - Rechaza con conflicto cualquier cuenta que no esté bloqueada")
         void deberiaRechazarUnaCuentaQueNoEstaBloqueada(AccountStatusEnum current) {
             // Arrange
             Account account = buildAccount(current);
@@ -359,7 +359,7 @@ class AccountLifecycleServiceTest {
         @ParameterizedTest
         @NullSource
         @ValueSource(strings = {"", "   "})
-        @DisplayName("Rechaza un motivo vacío, en blanco o ausente sin tocar la cuenta")
+        @DisplayName("HU16 CA02 - Rechaza un motivo vacío, en blanco o ausente sin tocar la cuenta")
         void deberiaRechazarUnMotivoVacio(String reason) {
             // Act & Assert
             assertThatThrownBy(() -> lifecycleService.unblockAccount(ACCOUNT_NUMBER, reason, UUID.randomUUID()))
@@ -368,7 +368,7 @@ class AccountLifecycleServiceTest {
         }
 
         @Test
-        @DisplayName("Lanza AccountNotFoundException cuando el número no existe")
+        @DisplayName("Transversal - Lanza AccountNotFoundException cuando el número no existe")
         void deberiaLanzarExcepcionCuandoLaCuentaNoExiste() {
             // Arrange
             when(accountRepository.findByAccountNumberForUpdate(ACCOUNT_NUMBER)).thenReturn(Optional.empty());

@@ -17,7 +17,7 @@ class CatalogValidatorTest {
     private enum Color { RED, GREEN }
 
     @Test
-    @DisplayName("Sin diferencias entre el enum y la base no reporta nada y no falla")
+    @DisplayName("Transversal - Sin diferencias entre el enum y la base no reporta nada y no falla")
     void noDeberiaReportarNadaSiCoinciden() {
         List<String> problems = new ArrayList<>();
 
@@ -28,7 +28,7 @@ class CatalogValidatorTest {
     }
 
     @Test
-    @DisplayName("Reporta el valor del enum que falta en la base")
+    @DisplayName("Transversal - Reporta el valor del enum que falta en la base")
     void deberiaReportarLoQueFaltaEnLaBase() {
         List<String> problems = new ArrayList<>();
 
@@ -38,7 +38,7 @@ class CatalogValidatorTest {
     }
 
     @Test
-    @DisplayName("Reporta la fila de la base que el enum no declara")
+    @DisplayName("Transversal - Reporta la fila de la base que el enum no declara")
     void deberiaReportarLoQueFaltaEnElEnum() {
         List<String> problems = new ArrayList<>();
 
@@ -48,7 +48,7 @@ class CatalogValidatorTest {
     }
 
     @Test
-    @DisplayName("Acumula los problemas de varios catálogos y falla una sola vez con todos")
+    @DisplayName("Transversal - Acumula los problemas de varios catálogos y falla una sola vez con todos")
     void deberiaFallarConTodosLosProblemasJuntos() {
         List<String> problems = new ArrayList<>();
         CatalogValidator.compare(Color.class, Set.of("RED"), problems);
