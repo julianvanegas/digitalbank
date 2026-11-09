@@ -145,6 +145,11 @@ public class Account {
      * Cierre: solo una cuenta ACTIVE o INACTIVE y con saldo cero. Con dinero se debe retirar antes, y una
      * bloqueada se debe desbloquear primero, para que cerrarla no sirva para esquivar un bloqueo. Deja el estado
      * y la fecha de cierre a la vez, porque la base exige las dos cosas juntas.
+     * <p>
+     * HU17 CA03 (saldo negativo o valores pendientes de pago) no es alcanzable en este modelo: el CHECK
+     * ck_accounts_balance de la migración V4 y los invariantes de {@link #debit} y {@link #credit} impiden un saldo
+     * negativo, y no existen deudas, sobregiros ni pagos pendientes; las transferencias PENDING no retienen fondos.
+     * Como la comparación del saldo es {@code != 0}, un saldo negativo igual se rechazaría, con el mensaje de CA02.
      */
     public void close(AccountStatus closedStatus, LocalDateTime closedAt) {
         if (is(AccountStatusEnum.CLOSED)) {
@@ -156,7 +161,8 @@ public class Account {
         }
         if (balance.compareTo(BigDecimal.ZERO) != 0) {
             throw new AccountNotClosableException(
-                    "La cuenta " + accountNumber + " tiene saldo; debe estar en cero para poder cerrarla");
+                    "La cuenta " + accountNumber
+                            + " tiene saldo; debe retirar o transferir la totalidad de los fondos antes de cerrarla");
         }
         requireTarget(closedStatus, AccountStatusEnum.CLOSED);
         this.status = closedStatus;
