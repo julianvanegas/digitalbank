@@ -73,7 +73,7 @@ public class AccountController {
      * de tres.
      */
     @Operation(summary = "Listar mis cuentas")
-    @ApiResponse(responseCode = "200", description = "Cuentas del cliente autenticado")
+    @ApiResponse(responseCode = "200", description = "Cuentas del cliente autenticado (las activas y bloqueadas)")
     @ApiResponse(responseCode = "404", description = "No existe un perfil de cliente para el usuario")
     @GetMapping
     public ResponseEntity<List<AccountResponse>> myAccounts(@CurrentActor Actor actor) {
