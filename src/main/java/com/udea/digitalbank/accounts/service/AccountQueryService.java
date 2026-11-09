@@ -1,5 +1,6 @@
 package com.udea.digitalbank.accounts.service;
 
+import com.udea.digitalbank.accounts.api.AccountStatusEnum;
 import com.udea.digitalbank.accounts.domain.Account;
 import com.udea.digitalbank.accounts.dto.AccountBalanceResponse;
 import com.udea.digitalbank.accounts.dto.AccountResponse;
@@ -11,7 +12,9 @@ import com.udea.digitalbank.shared.security.Actor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -19,6 +22,10 @@ import java.util.UUID;
  */
 @Service
 public class AccountQueryService {
+
+    // Estados que el cliente ve en su propio listado (HU11); el resto solo se consulta por número
+    private static final Set<AccountStatusEnum> VISIBLE_TO_CUSTOMER =
+            EnumSet.of(AccountStatusEnum.ACTIVE, AccountStatusEnum.BLOCKED);
 
     private final AccountRepository accountRepository;
     private final CustomerApi customerApi;
@@ -35,10 +42,21 @@ public class AccountQueryService {
         this.accountLookup = accountLookup;
     }
 
+    /**
+     * Las cuentas del cliente autenticado que están ACTIVE o BLOCKED, en orden de apertura.
+     * <p>
+     * HU11 CA01 dice textualmente "todas sus cuentas", pero el alcance confirmado por el dueño del producto es mostrar
+     * al cliente solo las ACTIVE y las BLOCKED: las INACTIVE y las CLOSED no aparecen en el listado. Siguen siendo
+     * consultables por su número (HU12 saldo, HU13 detalle). El administrador sigue viendo todas por documento.
+     * <p>
+     * Se filtra aquí y no en la consulta para conservar la misma consulta (y su orden por created_at). La lista de
+     * estados es por la positiva: un estado nuevo queda oculto al cliente hasta que se decida mostrarlo.
+     */
     @Transactional(readOnly = true)
     public List<AccountResponse> getMyAccounts(UUID userId) {
         CustomerView customer = customerApi.getCustomerByUserId(userId);
         return accountRepository.findByCustomerIdOrderByCreatedAt(customer.id()).stream()
+                .filter(account -> VISIBLE_TO_CUSTOMER.stream().anyMatch(account::is))
                 .map(accountMapper::toResponse)
                 .toList();
     }
