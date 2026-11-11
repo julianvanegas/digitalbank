@@ -3,10 +3,8 @@ package com.udea.digitalbank.transactions.controller;
 import com.udea.digitalbank.shared.security.Actor;
 import com.udea.digitalbank.shared.security.CurrentActor;
 import com.udea.digitalbank.transactions.dto.ConfirmTransferRequest;
-import com.udea.digitalbank.transactions.dto.DepositRequest;
 import com.udea.digitalbank.transactions.dto.TransactionResponse;
 import com.udea.digitalbank.transactions.dto.TransferRequest;
-import com.udea.digitalbank.transactions.service.DepositService;
 import com.udea.digitalbank.transactions.service.TransactionQueryService;
 import com.udea.digitalbank.transactions.service.TransferService;
 import jakarta.validation.Valid;
@@ -35,13 +33,10 @@ import com.udea.digitalbank.shared.config.OpenApiExamples;
 public class TransactionController {
 
     private final TransferService transferService;
-    private final DepositService depositService;
     private final TransactionQueryService queryService;
 
-    public TransactionController(TransferService transferService, DepositService depositService,
-                                 TransactionQueryService queryService) {
+    public TransactionController(TransferService transferService, TransactionQueryService queryService) {
         this.transferService = transferService;
-        this.depositService = depositService;
         this.queryService = queryService;
     }
 
@@ -97,26 +92,6 @@ public class TransactionController {
                     example = OpenApiExamples.REFERENCE) @PathVariable String reference,
             @Valid @RequestBody ConfirmTransferRequest request) {
         return ResponseEntity.ok(transferService.confirm(actor, reference, request.getCode()));
-    }
-
-    /**
-     * Registra una consignación ({@code POST /api/v1/transactions/deposits}): acredita el monto a la cuenta de destino
-     * y devuelve el comprobante. Es exclusivo de los administradores y no lleva segundo factor.
-     *
-     * @param actor   administrador autenticado que registra el depósito
-     * @param request cuenta de destino y monto
-     * @return 201 con el comprobante del depósito completado
-     */
-    @Operation(summary = "Realizar una consignación (administrador)")
-    @ApiResponse(responseCode = "201", description = "Consignación completada; el saldo ya está actualizado")
-    @ApiResponse(responseCode = "400",
-            description = "Monto igual o menor que cero, solicitud inválida, cuenta de destino inexistente, o cuenta "
-                + "bloqueada, cerrada o inactiva")
-    @ApiResponse(responseCode = "403", description = "Sin permiso: solo un administrador puede consignar")
-    @PostMapping("/deposits")
-    public ResponseEntity<TransactionResponse> deposit(@CurrentActor Actor actor,
-                                                       @Valid @RequestBody DepositRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(depositService.deposit(actor, request));
     }
 
     /**
