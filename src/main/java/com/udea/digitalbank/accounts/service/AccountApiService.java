@@ -101,6 +101,15 @@ public class AccountApiService implements AccountApi {
         accountRepository.saveAll(List.of(sender, receiver));
     }
 
+    @Override
+    @Transactional
+    public AccountView applyDeposit(UUID receiverAccountId, BigDecimal amount) {
+        Account receiver = require(accountRepository.findAllByIdForUpdate(List.of(receiverAccountId)).stream()
+                .collect(Collectors.toMap(Account::getId, Function.identity())), receiverAccountId);
+        receiver.credit(amount);
+        return accountMapper.toView(accountRepository.save(receiver));
+    }
+
     // Cuenta de las bloqueadas, o AccountNotFoundException si la consulta no la devuelve
     private static Account require(Map<UUID, Account> accounts, UUID accountId) {
         Account account = accounts.get(accountId);
