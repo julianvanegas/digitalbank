@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 import java.util.UUID;
 
 /**
- * Arma el comprobante ({@link TransactionResponse}) de una transacción para {@code TransferService} y
+ * Arma el comprobante ({@link TransactionResponse}) de una transacción para los servicios de transferencia y
  * {@code TransactionQueryService}. La transacción guarda ids de cuenta pero el ordenante conoce números de cuenta, así
  * que la traducción se hace aquí, en un solo lugar.
  */

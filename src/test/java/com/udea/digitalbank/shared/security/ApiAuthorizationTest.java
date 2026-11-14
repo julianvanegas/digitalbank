@@ -22,7 +22,8 @@ import com.udea.digitalbank.transactions.security.TransactionSecurity;
 import com.udea.digitalbank.transactions.service.DepositService;
 import com.udea.digitalbank.transactions.service.TransactionLimitQueryService;
 import com.udea.digitalbank.transactions.service.TransactionQueryService;
-import com.udea.digitalbank.transactions.service.TransferService;
+import com.udea.digitalbank.transactions.service.TransferConfirmationService;
+import com.udea.digitalbank.transactions.service.TransferInitiationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -146,7 +147,9 @@ class ApiAuthorizationTest {
     @MockitoBean
     private AccountLifecycleService accountLifecycleService;
     @MockitoBean
-    private TransferService transferService;
+    private TransferInitiationService transferInitiationService;
+    @MockitoBean
+    private TransferConfirmationService transferConfirmationService;
     @MockitoBean
     private DepositService depositService;
     @MockitoBean
@@ -208,12 +211,12 @@ class ApiAuthorizationTest {
                 new Endpoint("PATCH", "/api/v1/accounts/" + NUMBER + "/unblock", "{\"reason\":\"Verificado\"}",
                         Access.ADMIN_ONLY),
                 new Endpoint("PATCH", "/api/v1/accounts/" + NUMBER + "/close", "", Access.CUSTOMER_OR_ADMIN),
-                // ---- transactions: transferir y confirmar son del cliente; el comprobante lo ve también el admin
+                // ---- transactions: transferir y confirmar son del cliente o del admin en su nombre; los topes y el comprobante, de ambos
                 new Endpoint("POST", "/api/v1/transactions/transfers",
                         "{\"senderAccountNumber\":\"" + NUMBER + "\",\"receiverAccountNumber\":\"210000000002\","
-                                + "\"amount\":10.00}", Access.CUSTOMER_ONLY),
+                                + "\"amount\":10.00}", Access.CUSTOMER_OR_ADMIN),
                 new Endpoint("POST", "/api/v1/transactions/TRF-20261017-7Xk2Pq9RmZ4tNvB8cHdWeA/confirm", "{\"code\":\"123456\"}",
-                        Access.CUSTOMER_ONLY),
+                        Access.CUSTOMER_OR_ADMIN),
                 new Endpoint("GET", "/api/v1/transactions/limits", "", Access.CUSTOMER_OR_ADMIN),
                 new Endpoint("GET", "/api/v1/transactions/limits?type=WITHDRAWAL&accountType=SAVINGS", "",
                         Access.CUSTOMER_OR_ADMIN),

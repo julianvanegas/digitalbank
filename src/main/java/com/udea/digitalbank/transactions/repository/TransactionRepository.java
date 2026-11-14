@@ -12,6 +12,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -34,13 +35,15 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
     Optional<Transaction> findByReferenceForUpdate(@Param("reference") String reference);
 
     /**
-     * Transacciones {@code PENDING} del usuario, con la fila bloqueada. Se usa al iniciar otra transferencia
-     * para cancelar las anteriores, porque su código de verificación deja de ser válido.
+     * Transacciones {@code PENDING} que salen de alguna de las cuentas indicadas, con la fila bloqueada. Se usa al
+     * iniciar otra transferencia para cancelar las anteriores del titular de esas cuentas, porque su código de
+     * verificación deja de ser válido. Se busca por cuenta de origen y no por ordenante, porque el código es del
+     * titular y una transferencia que ordenó un administrador comparte código con las suyas.
      */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("select t from Transaction t where t.userOriginatorId = :userId and t.status = :pending")
-    List<Transaction> findPendingOfUserForUpdate(@Param("userId") UUID userId,
-                                                 @Param("pending") TransactionStatus pending);
+    @Query("select t from Transaction t where t.senderAccountId in :accountIds and t.status = :pending")
+    List<Transaction> findPendingFromAccountsForUpdate(@Param("accountIds") Collection<UUID> accountIds,
+                                                       @Param("pending") TransactionStatus pending);
 
     /**
      * Suma de los montos de las transacciones del tipo indicado que ya se completaron y salieron de la cuenta en el

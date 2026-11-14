@@ -98,7 +98,8 @@ Es una excepción acotada a «solo el inmediato superior»: la flecha sigue yend
 | --- | --- |
 | `auth/api/VerificationApi.java`, `CodeCheckResult.java` | La fachada de 2FA y su resultado, sin excepciones. |
 | `auth/service/VerificationService.java` (`check`) | La verificación que distingue incorrecto, agotado y vencido. |
-| `transactions/service/TransferService.java` | El flujo en dos pasos, `noRollbackFor` y la revalidación al confirmar. |
+| `transactions/service/TransferInitiationService.java`, `TransferConfirmationService.java` | El flujo en dos pasos: cada paso en su servicio; `noRollbackFor` y la revalidación al confirmar están en el segundo. |
+| `transactions/service/PendingTransfers.java` | Cancelación de pendientes: una a una y el barrido de los códigos vencidos. |
 | `accounts/api/AccountApi.java` (`applyTransfer`) | El movimiento atómico con las cuentas bloqueadas en orden. |
 | `transactions/security/TransactionSecurity.java` | Quién puede iniciar, confirmar y consultar. |
 | `db/migration/V5__transactions.sql` | El propósito `TRANSACTION` (3 minutos, 3 intentos) en `challenge_purposes`, y los catálogos y la tabla `transactions`. |
