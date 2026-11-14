@@ -48,13 +48,24 @@ class CustomerRequestsValidationTest {
     }
 
     @Test
-    @DisplayName("HU07 CA02 - Perfil: un nombre con texto es válido aunque tenga espacios o saltos de línea alrededor")
+    @DisplayName("HU07 CA02 - Perfil: un nombre con texto es válido aunque tenga espacios alrededor")
     void aceptaLosNombresConTexto() {
         UpdateCustomerProfileRequest request = new UpdateCustomerProfileRequest();
 
-        for (String name : new String[] {"  Ana  ", "\nAna", "Ana María\n"}) {
+        for (String name : new String[] {"  Ana  ", "Ana María"}) {
             request.setFirstNames(name);
             assertThat(invalidFields(request)).isEmpty();
+        }
+    }
+
+    @Test
+    @DisplayName("HU07 CA02 - Perfil: un nombre con saltos de línea se rechaza, aunque tenga texto")
+    void rechazaLosNombresConSaltosDeLinea() {
+        UpdateCustomerProfileRequest request = new UpdateCustomerProfileRequest();
+
+        for (String name : new String[] {"\nAna", "Ana\n", "Ana\nGómez", "Ana\r\nGómez", "Ana\u2028Gómez"}) {
+            request.setFirstNames(name);
+            assertThat(invalidFields(request)).containsExactly("firstNames");
         }
     }
 

@@ -48,13 +48,24 @@ class EmployeeRequestsValidationTest {
     }
 
     @Test
-    @DisplayName("Transversal - Perfil: un nombre con texto es válido aunque tenga espacios o saltos de línea alrededor")
+    @DisplayName("Transversal - Perfil: un nombre con texto es válido aunque tenga espacios alrededor")
     void aceptaLosNombresConTexto() {
         UpdateEmployeeProfileRequest request = new UpdateEmployeeProfileRequest();
 
-        for (String name : new String[] {"  Ana  ", "\nAna", "Ana María\n"}) {
+        for (String name : new String[] {"  Ana  ", "Ana María"}) {
             request.setFirstNames(name);
             assertThat(invalidFields(request)).isEmpty();
+        }
+    }
+
+    @Test
+    @DisplayName("Transversal - Perfil: un nombre con saltos de línea se rechaza, aunque tenga texto")
+    void rechazaLosNombresConSaltosDeLinea() {
+        UpdateEmployeeProfileRequest request = new UpdateEmployeeProfileRequest();
+
+        for (String name : new String[] {"\nAna", "Ana\n", "Ana\nGómez", "Ana\r\nGómez", "Ana\u2028Gómez"}) {
+            request.setFirstNames(name);
+            assertThat(invalidFields(request)).containsExactly("firstNames");
         }
     }
 
