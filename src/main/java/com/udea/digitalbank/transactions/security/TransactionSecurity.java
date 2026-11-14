@@ -19,7 +19,8 @@ public class TransactionSecurity implements SecurityModule {
 
     /**
      * Rutas y roles autorizados. Las reglas no se solapan (cambian el método o el patrón), así que el orden no
-     * altera el resultado. Toda ruta que no esté aquí se deniega.
+     * altera el resultado, con una excepción: {@code GET /limits} va antes de {@code GET /*}, que de otro modo lo
+     * tomaría por la referencia de una transacción. Toda ruta que no esté aquí se deniega.
      */
     @Override
     public List<RoleRoute> roleRoutes() {
@@ -27,6 +28,7 @@ public class TransactionSecurity implements SecurityModule {
                 RoleRoute.post(BASE + "/transfers", Roles.CUSTOMER),
                 RoleRoute.post(BASE + "/*/confirm", Roles.CUSTOMER),
                 RoleRoute.post(BASE + "/deposits", Roles.ADMIN),
+                RoleRoute.get(BASE + "/limits", Roles.CUSTOMER, Roles.ADMIN),
                 RoleRoute.get(BASE + "/*", Roles.CUSTOMER, Roles.ADMIN));
     }
 }

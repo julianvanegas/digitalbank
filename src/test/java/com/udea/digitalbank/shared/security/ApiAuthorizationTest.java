@@ -20,6 +20,7 @@ import com.udea.digitalbank.shared.exception.GlobalExceptionHandler;
 import com.udea.digitalbank.shared.exception.SecurityErrorHandler;
 import com.udea.digitalbank.transactions.security.TransactionSecurity;
 import com.udea.digitalbank.transactions.service.DepositService;
+import com.udea.digitalbank.transactions.service.TransactionLimitQueryService;
 import com.udea.digitalbank.transactions.service.TransactionQueryService;
 import com.udea.digitalbank.transactions.service.TransferService;
 import org.junit.jupiter.api.BeforeEach;
@@ -151,6 +152,8 @@ class ApiAuthorizationTest {
     @MockitoBean
     private TransactionQueryService transactionQueryService;
     @MockitoBean
+    private TransactionLimitQueryService transactionLimitQueryService;
+    @MockitoBean
     private SessionService sessionService;
 
     @BeforeEach
@@ -211,6 +214,9 @@ class ApiAuthorizationTest {
                                 + "\"amount\":10.00}", Access.CUSTOMER_ONLY),
                 new Endpoint("POST", "/api/v1/transactions/TRF-20261017-7Xk2Pq9RmZ4tNvB8cHdWeA/confirm", "{\"code\":\"123456\"}",
                         Access.CUSTOMER_ONLY),
+                new Endpoint("GET", "/api/v1/transactions/limits", "", Access.CUSTOMER_OR_ADMIN),
+                new Endpoint("GET", "/api/v1/transactions/limits?type=WITHDRAWAL&accountType=SAVINGS", "",
+                        Access.CUSTOMER_OR_ADMIN),
                 new Endpoint("GET", "/api/v1/transactions/TRF-20261017-7Xk2Pq9RmZ4tNvB8cHdWeA", "", Access.CUSTOMER_OR_ADMIN),
                 new Endpoint("POST", "/api/v1/transactions/deposits",
                         "{\"receiverAccountNumber\":\"" + NUMBER + "\",\"amount\":10.00}", Access.ADMIN_ONLY),
