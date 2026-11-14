@@ -42,8 +42,8 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
+import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -233,8 +233,8 @@ class ApiAuthorizationTest {
     }
 
     private String bearer(String role) {
-        Date now = new Date();
-        Date expires = new Date(now.getTime() + 3_600_000);
+        Instant now = Instant.now();
+        Instant expires = now.plusSeconds(3_600);
         return "Bearer " + jwtUtil.generateToken(UUID.randomUUID(), role, UUID.randomUUID().toString(), now, expires);
     }
 

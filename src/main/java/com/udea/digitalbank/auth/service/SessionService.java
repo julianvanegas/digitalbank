@@ -11,9 +11,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Collection;
-import java.util.Date;
 import java.util.UUID;
 
 /**
@@ -47,7 +47,7 @@ public class SessionService {
         LocalDateTime tokenExpiresAt = issuedAt.plus(Duration.ofMillis(jwtUtil.getExpirationMs()));
         String jti = jwtUtil.generateJti();
         open(user.getId(), jti, issuedAt, expiresAt);
-        return jwtUtil.generateToken(user.getId(), user.getRole().getCode(), jti, toDate(issuedAt), toDate(tokenExpiresAt));
+        return jwtUtil.generateToken(user.getId(), user.getRole().getCode(), jti, toInstant(issuedAt), toInstant(tokenExpiresAt));
     }
 
     // Sesión única: sobrescribe la fila del usuario y con ello invalida el jti anterior. Va dentro de la transacción
@@ -95,7 +95,7 @@ public class SessionService {
         sessionRepository.deleteExpired(LocalDateTime.now(clock));
     }
 
-    private Date toDate(LocalDateTime value) {
-        return Date.from(value.atZone(clock.getZone()).toInstant());
+    private Instant toInstant(LocalDateTime value) {
+        return value.atZone(clock.getZone()).toInstant();
     }
 }
