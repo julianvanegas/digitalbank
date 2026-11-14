@@ -5,6 +5,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
 
 import java.math.BigDecimal;
@@ -18,6 +19,7 @@ import static com.udea.digitalbank.transactions.TransactionFixtures.status;
 import static com.udea.digitalbank.transactions.TransactionFixtures.transfer;
 import static com.udea.digitalbank.transactions.TransactionFixtures.type;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /** Las reglas del estado viven en la transacción: se prueban directamente, sin servicios ni mocks. */
@@ -26,6 +28,36 @@ class TransactionTest {
 
     private static Transaction pending() {
         return transfer(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), "25.00", TransactionStatusEnum.PENDING);
+    }
+
+    @Test
+    @DisplayName("Transversal - isOrderedBy - Solo quien ordenó la transacción es su ordenante")
+    void deberiaReconocerSoloAlOrdenante() {
+        UUID orderingUser = UUID.randomUUID();
+        Transaction transaction = transfer(orderingUser, UUID.randomUUID(), UUID.randomUUID(), "25.00",
+                TransactionStatusEnum.PENDING);
+
+        assertThat(transaction.isOrderedBy(orderingUser)).isTrue();
+        assertThat(transaction.isOrderedBy(UUID.randomUUID())).isFalse();
+    }
+
+    @Test
+    @DisplayName("HU21 - requireConfirmable - Una transacción PENDING admite confirmación")
+    void deberiaAdmitirLaConfirmacionDeUnaPendiente() {
+        assertThatCode(() -> pending().requireConfirmable()).doesNotThrowAnyException();
+    }
+
+    @ParameterizedTest
+    @CsvSource({"REJECTED,fue cancelada", "REVERSED,fue revertida", "COMPLETED,su estado es COMPLETED"})
+    @DisplayName("HU21 CA03 - requireConfirmable - Una transacción que ya no está pendiente dice en qué quedó y pide iniciar otra")
+    void deberiaRechazarLaConfirmacionDeUnaNoPendiente(TransactionStatusEnum current, String phrase) {
+        Transaction transaction = transfer(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), "25.00", current);
+
+        assertThatThrownBy(transaction::requireConfirmable)
+                .isInstanceOf(TransactionNotPendingException.class)
+                .hasMessageContaining(REFERENCE)
+                .hasMessageContaining(phrase)
+                .hasMessageContaining("Inicia una nueva");
     }
 
     @Test

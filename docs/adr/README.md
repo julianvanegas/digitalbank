@@ -12,6 +12,7 @@ Este directorio reúne las decisiones de arquitectura significativas del backend
 | [ADR-0002](0002-dividir-dominio-identidad-y-fijar-dependencias.md) | Dividir el dominio de identidad y fijar reglas de dependencia entre módulos | `accepted` | 2026-09-10 |
 | [ADR-0003](0003-usar-neon-como-plataforma-postgresql.md) | Usar Neon como plataforma gestionada de PostgreSQL | `accepted` | 2026-09-17 |
 | [ADR-0004](0004-transferir-en-dos-pasos-con-segundo-factor.md) | Transferir en dos pasos con segundo factor y permitir que `transactions` use `auth.api` | `accepted` | 2026-10-17 |
+| [ADR-0005](0005-topes-transaccionales-por-tipo-de-movimiento-y-de-cuenta.md) | Topes transaccionales por tipo de movimiento y de cuenta, y transferencias de un administrador en nombre del cliente | `accepted` | 2026-11-14 |
 
 ## Estados posibles
 

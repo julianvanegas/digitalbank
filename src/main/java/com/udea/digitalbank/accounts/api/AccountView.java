@@ -11,11 +11,12 @@ import java.util.UUID;
  * @param accountKey    llave visible de la cuenta
  * @param accountNumber número público de la cuenta (12 dígitos)
  * @param customerId    titular de la cuenta
+ * @param accountType   tipo de cuenta como código, por ejemplo {@code "SAVINGS"}; de él dependen los topes
  * @param status        estado como código, por ejemplo {@code "ACTIVE"}
  * @param balance       saldo actual
  */
 public record AccountView(UUID id, String accountKey, String accountNumber, UUID customerId,
-                          String status, BigDecimal balance) {
+                          String accountType, String status, BigDecimal balance) {
 
     /**
      * @return {@code true} si la cuenta puede mover dinero, es decir, si está {@code ACTIVE}. Evita que cada módulo

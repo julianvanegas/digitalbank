@@ -93,6 +93,48 @@ class AccountApiServiceTest {
     }
 
     @Test
+    @DisplayName("Topes - getAccount - la vista informa el tipo de cuenta como código")
+    void getAccount_deberiaInformarElTipoDeCuenta() {
+        // Arrange
+        Account account = buildAccount(AccountStatusEnum.ACTIVE);
+        ReflectionTestUtils.setField(account, "accountType", AccountFixtures.type(com.udea.digitalbank.accounts.api.AccountTypeEnum.CHECKING));
+        when(accountRepository.findById(account.getId())).thenReturn(Optional.of(account));
+
+        // Act
+        AccountView view = accountApiService.getAccount(account.getId());
+
+        // Assert
+        assertThat(view.accountType()).isEqualTo("CHECKING");
+    }
+
+    @Test
+    @DisplayName("Admin en nombre del cliente - getOwnerUserId - entrega el usuario del cliente titular de la cuenta")
+    void getOwnerUserId_deberiaDevolverElUsuarioDelTitular() {
+        // Arrange
+        Account account = buildAccount(AccountStatusEnum.ACTIVE);
+        UUID holderUserId = UUID.randomUUID();
+        when(accountRepository.findById(account.getId())).thenReturn(Optional.of(account));
+        when(customerApi.getCustomer(CUSTOMER_ID)).thenReturn(new CustomerView(CUSTOMER_ID, holderUserId, "Ana",
+                "Gómez", "CC", "1000000001", "ana@example.com", "ACTIVE"));
+
+        // Act + Assert
+        assertThat(accountApiService.getOwnerUserId(account.getId())).isEqualTo(holderUserId);
+    }
+
+    @Test
+    @DisplayName("Admin en nombre del cliente - getOwnerUserId - lanza AccountNotFoundException si la cuenta no existe")
+    void getOwnerUserId_deberiaFallarSiLaCuentaNoExiste() {
+        // Arrange
+        UUID missing = UUID.randomUUID();
+        when(accountRepository.findById(missing)).thenReturn(Optional.empty());
+
+        // Act + Assert
+        assertThatThrownBy(() -> accountApiService.getOwnerUserId(missing))
+                .isInstanceOf(AccountNotFoundException.class);
+        verifyNoInteractions(customerApi);
+    }
+
+    @Test
     @DisplayName("Transversal - getAccount - lanza AccountNotFoundException si la cuenta no existe")
     void getAccount_deberiaFallarSiNoExiste() {
         // Arrange

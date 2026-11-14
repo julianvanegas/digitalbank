@@ -5,7 +5,8 @@ import com.udea.digitalbank.transactions.dto.ConfirmTransferRequest;
 import com.udea.digitalbank.transactions.dto.TransactionResponse;
 import com.udea.digitalbank.transactions.dto.TransferRequest;
 import com.udea.digitalbank.transactions.service.TransactionQueryService;
-import com.udea.digitalbank.transactions.service.TransferService;
+import com.udea.digitalbank.transactions.service.TransferConfirmationService;
+import com.udea.digitalbank.transactions.service.TransferInitiationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -36,7 +37,9 @@ class TransactionControllerTest {
     private final Actor admin = new Actor(UUID.randomUUID(), true);
 
     @Mock
-    private TransferService transferService;
+    private TransferInitiationService initiationService;
+    @Mock
+    private TransferConfirmationService confirmationService;
     @Mock
     private TransactionQueryService queryService;
 
@@ -44,7 +47,7 @@ class TransactionControllerTest {
 
     @BeforeEach
     void setUp() {
-        controller = new TransactionController(transferService, queryService);
+        controller = new TransactionController(initiationService, confirmationService, queryService);
     }
 
     @Test
@@ -56,7 +59,7 @@ class TransactionControllerTest {
         request.setReceiverAccountNumber("200000000002");
         request.setAmount(new BigDecimal("10.00"));
         TransactionResponse expected = new TransactionResponse();
-        when(transferService.initiate(customer, request)).thenReturn(expected);
+        when(initiationService.initiate(customer, request)).thenReturn(expected);
 
         // Act
         ResponseEntity<TransactionResponse> response = controller.transfer(customer, request);
@@ -64,8 +67,8 @@ class TransactionControllerTest {
         // Assert
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         assertThat(response.getBody()).isSameAs(expected);
-        verify(transferService).initiate(customer, request);
-        verifyNoMoreInteractions(transferService);
+        verify(initiationService).initiate(customer, request);
+        verifyNoMoreInteractions(initiationService);
     }
 
     @Test
@@ -75,7 +78,7 @@ class TransactionControllerTest {
         ConfirmTransferRequest request = new ConfirmTransferRequest();
         request.setCode("123456");
         TransactionResponse expected = new TransactionResponse();
-        when(transferService.confirm(customer, REFERENCE, "123456")).thenReturn(expected);
+        when(confirmationService.confirm(customer, REFERENCE, "123456")).thenReturn(expected);
 
         // Act
         ResponseEntity<TransactionResponse> response = controller.confirm(customer, REFERENCE, request);
@@ -83,7 +86,7 @@ class TransactionControllerTest {
         // Assert
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isSameAs(expected);
-        verify(transferService).confirm(customer, REFERENCE, "123456");
+        verify(confirmationService).confirm(customer, REFERENCE, "123456");
     }
 
     @Test

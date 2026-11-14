@@ -12,10 +12,10 @@ import org.springframework.stereotype.Service;
 @Service
 public class TransactionScheduledJobs {
 
-    private final TransferService transferService;
+    private final PendingTransfers pendingTransfers;
 
-    public TransactionScheduledJobs(TransferService transferService) {
-        this.transferService = transferService;
+    public TransactionScheduledJobs(PendingTransfers pendingTransfers) {
+        this.pendingTransfers = pendingTransfers;
     }
 
     /**
@@ -24,7 +24,7 @@ public class TransactionScheduledJobs {
      */
     @Scheduled(cron = "0 * * * * *")
     public void rejectExpiredPending() {
-        int rejected = transferService.rejectExpiredPending();
+        int rejected = pendingTransfers.rejectExpired();
         if (rejected > 0) {
             log.info("Transferencias pendientes vencidas rechazadas: {}", rejected);
         }

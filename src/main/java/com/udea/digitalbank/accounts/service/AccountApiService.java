@@ -75,6 +75,12 @@ public class AccountApiService implements AccountApi {
         return accountMapper.toView(accountLookup.byNumberOwnedBy(accountNumber, customer.id()));
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public UUID getOwnerUserId(UUID accountId) {
+        return customerApi.getCustomer(accountLookup.byId(accountId).getCustomerId()).userId();
+    }
+
     /**
      * {@inheritDoc}
      *

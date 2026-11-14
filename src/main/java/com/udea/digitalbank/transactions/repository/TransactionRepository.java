@@ -2,6 +2,7 @@ package com.udea.digitalbank.transactions.repository;
 
 import com.udea.digitalbank.transactions.domain.Transaction;
 import com.udea.digitalbank.transactions.domain.TransactionStatus;
+import com.udea.digitalbank.transactions.domain.TransactionType;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
@@ -9,7 +10,9 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -32,13 +35,40 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
     Optional<Transaction> findByReferenceForUpdate(@Param("reference") String reference);
 
     /**
-     * Transacciones {@code PENDING} del usuario, con la fila bloqueada. Se usa al iniciar otra transferencia
-     * para cancelar las anteriores, porque su código de verificación deja de ser válido.
+     * Transacciones {@code PENDING} que salen de alguna de las cuentas indicadas, con la fila bloqueada. Se usa al
+     * iniciar otra transferencia para cancelar las anteriores del titular de esas cuentas, porque su código de
+     * verificación deja de ser válido. Se busca por cuenta de origen y no por ordenante, porque el código es del
+     * titular y una transferencia que ordenó un administrador comparte código con las suyas.
      */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("select t from Transaction t where t.userOriginatorId = :userId and t.status = :pending")
-    List<Transaction> findPendingOfUserForUpdate(@Param("userId") UUID userId,
-                                                 @Param("pending") TransactionStatus pending);
+    @Query("select t from Transaction t where t.senderAccountId in :accountIds and t.status = :pending")
+    List<Transaction> findPendingFromAccountsForUpdate(@Param("accountIds") Collection<UUID> accountIds,
+                                                       @Param("pending") TransactionStatus pending);
+
+    /**
+     * Suma de los montos de las transacciones del tipo indicado que ya se completaron y salieron de la cuenta en el
+     * intervalo {@code [from, to)}. Es el consumo del día contra el tope acumulado.
+     *
+     * @return la suma, o cero si no hay ninguna
+     */
+    @Query("""
+            select coalesce(sum(t.amount), 0) from Transaction t
+            where t.senderAccountId = :accountId and t.type = :type and t.status = :completed
+              and t.createdAt >= :from and t.createdAt < :to
+            """)
+    BigDecimal sumCompletedFromAccount(@Param("accountId") UUID accountId, @Param("type") TransactionType type,
+                                       @Param("completed") TransactionStatus completed,
+                                       @Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
+
+    /** Cantidad de transacciones del tipo indicado ya completadas desde la cuenta en {@code [from, to)}. */
+    @Query("""
+            select count(t) from Transaction t
+            where t.senderAccountId = :accountId and t.type = :type and t.status = :completed
+              and t.createdAt >= :from and t.createdAt < :to
+            """)
+    long countCompletedFromAccount(@Param("accountId") UUID accountId, @Param("type") TransactionType type,
+                                   @Param("completed") TransactionStatus completed,
+                                   @Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
 
     /**
      * Rechaza, en una sola sentencia, las transacciones {@code PENDING} creadas antes de {@code cutoff}. El

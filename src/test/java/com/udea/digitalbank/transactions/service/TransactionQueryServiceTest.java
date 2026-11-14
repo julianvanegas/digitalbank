@@ -51,7 +51,8 @@ class TransactionQueryServiceTest {
     @BeforeEach
     void setUp() {
         queryService = new TransactionQueryService(transactionRepository,
-                new TransactionResponses(Mappers.getMapper(TransactionMapper.class), accountApi));
+                new TransactionResponses(Mappers.getMapper(TransactionMapper.class), accountApi),
+                new TransactionAccess(accountApi));
         transaction = transfer(ownerId, senderId, receiverId, "75.00", TransactionStatusEnum.COMPLETED);
         lenient().when(transactionRepository.findByReference(REFERENCE)).thenReturn(Optional.of(transaction));
     }
@@ -62,8 +63,8 @@ class TransactionQueryServiceTest {
     }
 
     private static AccountView view(UUID id, String number) {
-        return new AccountView(id, "@AN1231", number, UUID.randomUUID(), AccountStatusEnum.ACTIVE.name(),
-                BigDecimal.ZERO);
+        return new AccountView(id, "@AN1231", number, UUID.randomUUID(), "SAVINGS",
+                AccountStatusEnum.ACTIVE.name(), BigDecimal.ZERO);
     }
 
     @Test
@@ -92,8 +93,21 @@ class TransactionQueryServiceTest {
     }
 
     @Test
+    @DisplayName("Admin en nombre del cliente - El titular de la cuenta de origen obtiene el comprobante aunque lo ordenara un administrador")
+    void deberiaEntregarElComprobanteAlTitularDeLaCuentaDeOrigen() {
+        numbersAreKnown();
+        UUID holderId = UUID.randomUUID();
+        when(accountApi.getOwnerUserId(senderId)).thenReturn(holderId);
+
+        TransactionResponse response = queryService.getTransaction(new Actor(holderId, false), REFERENCE);
+
+        assertThat(response.getReference()).isEqualTo(REFERENCE);
+    }
+
+    @Test
     @DisplayName("Transversal - La transacción de otro cliente responde igual que una inexistente")
     void deberiaOcultarLaTransaccionDeOtroCliente() {
+        when(accountApi.getOwnerUserId(senderId)).thenReturn(UUID.randomUUID());
         Actor actor = new Actor(UUID.randomUUID(), false);
         assertThatThrownBy(() -> queryService.getTransaction(actor, REFERENCE))
                 .isInstanceOf(TransactionNotFoundException.class)
