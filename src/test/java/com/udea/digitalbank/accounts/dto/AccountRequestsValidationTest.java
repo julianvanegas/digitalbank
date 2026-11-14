@@ -47,7 +47,7 @@ class AccountRequestsValidationTest {
 
         // Assert
         assertThat(violations).singleElement().satisfies(v -> {
-            assertThat(v.getPropertyPath().toString()).isEqualTo("reason");
+            assertThat(v.getPropertyPath()).hasToString("reason");
             assertThat(v.getMessage()).isEqualTo("El motivo del bloqueo es obligatorio");
         });
     }
@@ -77,7 +77,7 @@ class AccountRequestsValidationTest {
 
         // Assert
         assertThat(violations).singleElement().satisfies(v -> {
-            assertThat(v.getPropertyPath().toString()).isEqualTo("reason");
+            assertThat(v.getPropertyPath()).hasToString("reason");
             assertThat(v.getMessage()).isEqualTo("El motivo del desbloqueo es obligatorio");
         });
     }

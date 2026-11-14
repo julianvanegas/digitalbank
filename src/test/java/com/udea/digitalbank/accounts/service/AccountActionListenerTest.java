@@ -69,8 +69,9 @@ class AccountActionListenerTest {
         String[] email = sentEmail();
         assertThat(email[0]).isEqualTo("ana@example.com");
         assertThat(email[1]).isEqualTo("Tu cuenta fue bloqueada");
-        assertThat(email[2]).contains("Hola Ana", "terminada en 9012", "bloqueada", "Motivo: Actividad sospechosa");
-        assertThat(email[2]).doesNotContain(ACCOUNT_NUMBER);
+        assertThat(email[2])
+                .contains("Hola Ana", "terminada en 9012", "bloqueada", "Motivo: Actividad sospechosa")
+                .doesNotContain(ACCOUNT_NUMBER);
     }
 
     @Test
@@ -84,8 +85,10 @@ class AccountActionListenerTest {
         String[] email = sentEmail();
         assertThat(email[0]).isEqualTo("ana@example.com");
         assertThat(email[1]).isEqualTo("Tu cuenta fue desbloqueada");
-        assertThat(email[2]).contains("Hola Ana", "terminada en 9012", "desbloqueada", "Motivo: Titular verificado");
-        assertThat(email[2]).doesNotContain(ACCOUNT_NUMBER).doesNotContain("bloqueada temporalmente");
+        assertThat(email[2])
+                .contains("Hola Ana", "terminada en 9012", "desbloqueada", "Motivo: Titular verificado")
+                .doesNotContain(ACCOUNT_NUMBER)
+                .doesNotContain("bloqueada temporalmente");
     }
 
     @Test
@@ -99,9 +102,12 @@ class AccountActionListenerTest {
         String[] email = sentEmail();
         assertThat(email[0]).isEqualTo("ana@example.com");
         assertThat(email[1]).isEqualTo("Tu cuenta fue cerrada");
-        assertThat(email[2]).contains("Hola Ana", "terminada en 9012", "fue cerrada.",
-                "Motivo: Cierre realizado por un administrador");
-        assertThat(email[2]).doesNotContain(ACCOUNT_NUMBER).doesNotContain("bloqueada").doesNotContain("desbloqueada");
+        assertThat(email[2])
+                .contains("Hola Ana", "terminada en 9012", "fue cerrada.",
+                        "Motivo: Cierre realizado por un administrador")
+                .doesNotContain(ACCOUNT_NUMBER)
+                .doesNotContain("bloqueada")
+                .doesNotContain("desbloqueada");
     }
 
     @Test
@@ -111,8 +117,9 @@ class AccountActionListenerTest {
         doThrow(new RuntimeException("Resend caído")).when(emailService).send(anyString(), anyString(), anyString());
 
         // Act & Assert
-        assertThatCode(() -> listener.onAccountAction(new AccountActionEvent(
-                CUSTOMER_ID, ACCOUNT_NUMBER, AccountActionType.UNBLOCKED, "Titular verificado")))
+        AccountActionEvent accountActionEvent = new AccountActionEvent(
+                CUSTOMER_ID, ACCOUNT_NUMBER, AccountActionType.UNBLOCKED, "Titular verificado");
+        assertThatCode(() -> listener.onAccountAction(accountActionEvent))
                 .doesNotThrowAnyException();
     }
 
@@ -123,8 +130,9 @@ class AccountActionListenerTest {
         when(customerApi.getCustomer(CUSTOMER_ID)).thenThrow(new RuntimeException("sin cliente"));
 
         // Act & Assert
-        assertThatCode(() -> listener.onAccountAction(new AccountActionEvent(
-                CUSTOMER_ID, ACCOUNT_NUMBER, AccountActionType.BLOCKED, "Fraude")))
+        AccountActionEvent accountActionEvent = new AccountActionEvent(
+                CUSTOMER_ID, ACCOUNT_NUMBER, AccountActionType.BLOCKED, "Fraude");
+        assertThatCode(() -> listener.onAccountAction(accountActionEvent))
                 .doesNotThrowAnyException();
         verifyNoInteractions(emailService);
     }
