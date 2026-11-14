@@ -78,4 +78,28 @@ class EmployeeRequestsValidationTest {
         request.setStatus(UserStatusEnum.BLOCKED);
         assertThat(invalidFields(request)).isEmpty();
     }
+
+    @Test
+    @DisplayName("Transversal - UpdateEmployeeProfileRequest: los nombres se guardan sin espacios sobrantes")
+    void normalizaLosNombresDeUpdateEmployeeProfileRequest() {
+        UpdateEmployeeProfileRequest request = new UpdateEmployeeProfileRequest();
+
+        request.setFirstNames("    Ana     Vélez  ");
+        request.setLastNames("  Gómez    Ruiz ");
+
+        assertThat(request.getFirstNames()).isEqualTo("Ana Vélez");
+        assertThat(request.getLastNames()).isEqualTo("Gómez Ruiz");
+    }
+
+    @Test
+    @DisplayName("Transversal - CreateEmployeeRequest: los nombres se guardan sin espacios sobrantes")
+    void normalizaLosNombresDeCreateEmployeeRequest() {
+        CreateEmployeeRequest request = new CreateEmployeeRequest();
+
+        request.setFirstNames("    Ana     Vélez  ");
+        request.setLastNames("  Gómez    Ruiz ");
+
+        assertThat(request.getFirstNames()).isEqualTo("Ana Vélez");
+        assertThat(request.getLastNames()).isEqualTo("Gómez Ruiz");
+    }
 }

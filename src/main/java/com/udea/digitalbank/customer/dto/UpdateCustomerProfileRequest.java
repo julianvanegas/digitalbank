@@ -3,6 +3,7 @@ package com.udea.digitalbank.customer.dto;
 import com.udea.digitalbank.shared.utils.Phone;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import com.udea.digitalbank.shared.utils.Names;
 import lombok.Data;
 import io.swagger.v3.oas.annotations.media.Schema;
 import com.udea.digitalbank.shared.config.OpenApiExamples;
@@ -29,4 +30,12 @@ public class UpdateCustomerProfileRequest {
     @Schema(example = OpenApiExamples.PHONE)
     @Phone
     private String phone;
+
+    public void setFirstNames(String firstNames) {
+        this.firstNames = Names.normalize(firstNames);
+    }
+
+    public void setLastNames(String lastNames) {
+        this.lastNames = Names.normalize(lastNames);
+    }
 }

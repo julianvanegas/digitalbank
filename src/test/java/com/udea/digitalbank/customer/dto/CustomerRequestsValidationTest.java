@@ -91,4 +91,28 @@ class CustomerRequestsValidationTest {
         request.setStatus(UserStatusEnum.ACTIVE);
         assertThat(invalidFields(request)).isEmpty();
     }
+
+    @Test
+    @DisplayName("HU07 CA02 - UpdateCustomerProfileRequest: los nombres se guardan sin espacios sobrantes")
+    void normalizaLosNombresDeUpdateCustomerProfileRequest() {
+        UpdateCustomerProfileRequest request = new UpdateCustomerProfileRequest();
+
+        request.setFirstNames("    Ana     Vélez  ");
+        request.setLastNames("  Gómez    Ruiz ");
+
+        assertThat(request.getFirstNames()).isEqualTo("Ana Vélez");
+        assertThat(request.getLastNames()).isEqualTo("Gómez Ruiz");
+    }
+
+    @Test
+    @DisplayName("HU01 - CreateCustomerRequest: los nombres se guardan sin espacios sobrantes")
+    void normalizaLosNombresDeCreateCustomerRequest() {
+        CreateCustomerRequest request = new CreateCustomerRequest();
+
+        request.setFirstNames("    Ana     Vélez  ");
+        request.setLastNames("  Gómez    Ruiz ");
+
+        assertThat(request.getFirstNames()).isEqualTo("Ana Vélez");
+        assertThat(request.getLastNames()).isEqualTo("Gómez Ruiz");
+    }
 }

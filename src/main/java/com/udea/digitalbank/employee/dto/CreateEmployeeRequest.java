@@ -3,6 +3,7 @@ package com.udea.digitalbank.employee.dto;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import com.udea.digitalbank.shared.utils.Names;
 import lombok.Data;
 import io.swagger.v3.oas.annotations.media.Schema;
 import com.udea.digitalbank.shared.config.OpenApiExamples;
@@ -21,4 +22,12 @@ public class CreateEmployeeRequest {
     @Schema(example = OpenApiExamples.EMPLOYEE_EMAIL)
     @NotBlank @Email @Size(max = 254)
     private String email;
+
+    public void setFirstNames(String firstNames) {
+        this.firstNames = Names.normalize(firstNames);
+    }
+
+    public void setLastNames(String lastNames) {
+        this.lastNames = Names.normalize(lastNames);
+    }
 }
