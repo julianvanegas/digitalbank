@@ -15,7 +15,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Clock;
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 import static com.udea.digitalbank.transactions.TransactionFixtures.status;
 import static com.udea.digitalbank.transactions.TransactionFixtures.type;
@@ -34,8 +33,6 @@ import static org.mockito.Mockito.when;
 class PendingTransfersTest {
 
     private static final int CODE_TTL_MINUTES = 3;
-
-    private final UUID userId = UUID.randomUUID();
 
     @Mock
     private TransactionRepository transactionRepository;
