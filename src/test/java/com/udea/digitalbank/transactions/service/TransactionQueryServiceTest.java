@@ -62,8 +62,8 @@ class TransactionQueryServiceTest {
     }
 
     private static AccountView view(UUID id, String number) {
-        return new AccountView(id, "@AN1231", number, UUID.randomUUID(), AccountStatusEnum.ACTIVE.name(),
-                BigDecimal.ZERO);
+        return new AccountView(id, "@AN1231", number, UUID.randomUUID(), "SAVINGS",
+                AccountStatusEnum.ACTIVE.name(), BigDecimal.ZERO);
     }
 
     @Test

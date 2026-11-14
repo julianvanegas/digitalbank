@@ -36,6 +36,16 @@ public interface AccountApi {
     AccountView requireOwnedAccount(UUID userId, String accountNumber);
 
     /**
+     * Usuario titular de la cuenta, es decir, el usuario del cliente dueño. Sirve para dirigirle al titular lo que
+     * le corresponde cuando otro usuario (un administrador) opera sobre su cuenta, como el código de verificación.
+     *
+     * @param accountId cuenta de la que se pide el titular
+     * @return id del usuario del cliente titular
+     * @throws com.udea.digitalbank.shared.exception.accounts.AccountNotFoundException si la cuenta no existe
+     */
+    UUID getOwnerUserId(UUID accountId);
+
+    /**
      * Mueve un monto de una cuenta a otra de forma atómica. Bloquea las dos filas en un orden fijo (por id), exige que
      * ambas estén {@code ACTIVE} y que la cuenta de origen tenga saldo, y entonces debita y acredita.
      *

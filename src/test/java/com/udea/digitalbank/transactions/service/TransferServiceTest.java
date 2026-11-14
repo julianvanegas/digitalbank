@@ -103,8 +103,8 @@ class TransferServiceTest {
     }
 
     private static AccountView account(String number, AccountStatusEnum status, String balance) {
-        return new AccountView(UUID.randomUUID(), "@AN1231", number, UUID.randomUUID(), status.name(),
-                new BigDecimal(balance));
+        return new AccountView(UUID.randomUUID(), "@AN1231", number, UUID.randomUUID(), "SAVINGS",
+                status.name(), new BigDecimal(balance));
     }
 
     private static TransferRequest request(String from, String to, String amount) {
