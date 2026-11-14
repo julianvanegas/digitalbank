@@ -37,6 +37,28 @@ class EmployeeRequestsValidationTest {
     }
 
     @Test
+    @DisplayName("Transversal - Perfil: un nombre solo con espacios, tabulaciones o saltos de línea está en blanco")
+    void rechazaLosNombresEnBlancoDeCualquierTipo() {
+        UpdateEmployeeProfileRequest request = new UpdateEmployeeProfileRequest();
+
+        for (String blank : new String[] {"", " ", "\t", " \n ", "\r\n"}) {
+            request.setFirstNames(blank);
+            assertThat(invalidFields(request)).containsExactly("firstNames");
+        }
+    }
+
+    @Test
+    @DisplayName("Transversal - Perfil: un nombre con texto es válido aunque tenga espacios o saltos de línea alrededor")
+    void aceptaLosNombresConTexto() {
+        UpdateEmployeeProfileRequest request = new UpdateEmployeeProfileRequest();
+
+        for (String name : new String[] {"  Ana  ", "\nAna", "Ana María\n"}) {
+            request.setFirstNames(name);
+            assertThat(invalidFields(request)).isEmpty();
+        }
+    }
+
+    @Test
     @DisplayName("Transversal - Estado: exige el estado")
     void validaElCambioDeEstado() {
         ChangeEmployeeStatusRequest request = new ChangeEmployeeStatusRequest();

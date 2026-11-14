@@ -37,6 +37,28 @@ class CustomerRequestsValidationTest {
     }
 
     @Test
+    @DisplayName("HU07 CA02 - Perfil: un nombre solo con espacios, tabulaciones o saltos de línea está en blanco")
+    void rechazaLosNombresEnBlancoDeCualquierTipo() {
+        UpdateCustomerProfileRequest request = new UpdateCustomerProfileRequest();
+
+        for (String blank : new String[] {"", " ", "\t", " \n ", "\r\n"}) {
+            request.setFirstNames(blank);
+            assertThat(invalidFields(request)).containsExactly("firstNames");
+        }
+    }
+
+    @Test
+    @DisplayName("HU07 CA02 - Perfil: un nombre con texto es válido aunque tenga espacios o saltos de línea alrededor")
+    void aceptaLosNombresConTexto() {
+        UpdateCustomerProfileRequest request = new UpdateCustomerProfileRequest();
+
+        for (String name : new String[] {"  Ana  ", "\nAna", "Ana María\n"}) {
+            request.setFirstNames(name);
+            assertThat(invalidFields(request)).isEmpty();
+        }
+    }
+
+    @Test
     @DisplayName("HU07 CA02 - Perfil: el teléfono, si viene, debe tener formato válido")
     void validaElTelefono() {
         UpdateCustomerProfileRequest request = new UpdateCustomerProfileRequest();

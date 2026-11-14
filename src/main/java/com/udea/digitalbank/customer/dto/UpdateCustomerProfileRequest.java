@@ -12,11 +12,11 @@ import com.udea.digitalbank.shared.config.OpenApiExamples;
 public class UpdateCustomerProfileRequest {
     /** Todos los campos son opcionales, pero uno presente no puede estar en blanco. */
     @Schema(example = OpenApiExamples.FIRST_NAMES)
-    @Size(max = 100) @Pattern(regexp = ".*\\S.*", message = "no puede estar en blanco")
+    @Size(max = 100) @Pattern(regexp = "\\s*\\S[\\s\\S]*", message = "no puede estar en blanco")
     private String firstNames;
 
     @Schema(example = OpenApiExamples.LAST_NAMES)
-    @Size(max = 100) @Pattern(regexp = ".*\\S.*", message = "no puede estar en blanco")
+    @Size(max = 100) @Pattern(regexp = "\\s*\\S[\\s\\S]*", message = "no puede estar en blanco")
     private String lastNames;
 
     @Schema(example = OpenApiExamples.PHONE)
