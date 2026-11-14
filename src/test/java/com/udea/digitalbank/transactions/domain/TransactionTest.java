@@ -9,6 +9,7 @@ import org.junit.jupiter.params.provider.EnumSource;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.UUID;
 
@@ -30,7 +31,7 @@ class TransactionTest {
     @Test
     @DisplayName("Transversal - No expone setters: el estado solo cambia con complete y reject")
     void noDeberiaExponerSetters() {
-        assertThat(Arrays.stream(Transaction.class.getMethods()).map(m -> m.getName()))
+        assertThat(Arrays.stream(Transaction.class.getMethods()).map(Method::getName))
                 .noneMatch(name -> name.startsWith("set"));
     }
 
@@ -64,18 +65,28 @@ class TransactionTest {
         @Test
         @DisplayName("Transversal - Rechaza un estado inicial que no sea PENDING")
         void deberiaExigirElEstadoPending() {
-            assertThatThrownBy(() -> Transaction.transfer(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(),
-                    BigDecimal.TEN, REFERENCE, type(TransactionTypeEnum.TRANSFER),
-                    status(TransactionStatusEnum.COMPLETED), LocalDateTime.now()))
+            UUID id = UUID.randomUUID();
+            UUID userId = UUID.randomUUID();
+            UUID senderId = UUID.randomUUID();
+            UUID receiverId = UUID.randomUUID();
+            TransactionType transferType = type(TransactionTypeEnum.TRANSFER);
+            TransactionStatus completedStatus = status(TransactionStatusEnum.COMPLETED);
+            LocalDateTime now = LocalDateTime.now();
+            assertThatThrownBy(() -> Transaction.transfer(id, userId, senderId, receiverId, BigDecimal.TEN, REFERENCE, transferType, completedStatus, now))
                     .isInstanceOf(IllegalArgumentException.class);
         }
 
         @Test
         @DisplayName("Transversal - Rechaza un tipo que no sea TRANSFER")
         void deberiaExigirElTipoTransfer() {
-            assertThatThrownBy(() -> Transaction.transfer(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(),
-                    BigDecimal.TEN, REFERENCE, type(TransactionTypeEnum.DEPOSIT),
-                    status(TransactionStatusEnum.PENDING), LocalDateTime.now()))
+            UUID id = UUID.randomUUID();
+            UUID userId = UUID.randomUUID();
+            UUID senderId = UUID.randomUUID();
+            UUID receiverId = UUID.randomUUID();
+            TransactionType depositType = type(TransactionTypeEnum.DEPOSIT);
+            TransactionStatus pendingStatus = status(TransactionStatusEnum.PENDING);
+            LocalDateTime now = LocalDateTime.now();
+            assertThatThrownBy(() -> Transaction.transfer(id, userId, senderId, receiverId, BigDecimal.TEN, REFERENCE, depositType, pendingStatus, now))
                     .isInstanceOf(IllegalArgumentException.class);
         }
     }
@@ -110,9 +121,11 @@ class TransactionTest {
         void noDeberiaCambiarUnaTransaccionQueNoEstaPendiente(TransactionStatusEnum current) {
             Transaction transaction = transfer(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), "25.00", current);
 
-            assertThatThrownBy(() -> transaction.complete(status(TransactionStatusEnum.COMPLETED)))
+            TransactionStatus completedStatus = status(TransactionStatusEnum.COMPLETED);
+            assertThatThrownBy(() -> transaction.complete(completedStatus))
                     .isInstanceOf(TransactionNotPendingException.class);
-            assertThatThrownBy(() -> transaction.reject(status(TransactionStatusEnum.REJECTED)))
+            TransactionStatus rejectedStatus = status(TransactionStatusEnum.REJECTED);
+            assertThatThrownBy(() -> transaction.reject(rejectedStatus))
                     .isInstanceOf(TransactionNotPendingException.class);
             assertThat(transaction.is(current)).isTrue();
         }
@@ -122,7 +135,8 @@ class TransactionTest {
         void deberiaExigirElEstadoDelCambio() {
             Transaction transaction = pending();
 
-            assertThatThrownBy(() -> transaction.complete(status(TransactionStatusEnum.REJECTED)))
+            TransactionStatus rejectedStatus = status(TransactionStatusEnum.REJECTED);
+            assertThatThrownBy(() -> transaction.complete(rejectedStatus))
                     .isInstanceOf(IllegalArgumentException.class);
             assertThatThrownBy(() -> transaction.reject(null)).isInstanceOf(IllegalArgumentException.class);
             assertThat(transaction.is(TransactionStatusEnum.PENDING)).isTrue();

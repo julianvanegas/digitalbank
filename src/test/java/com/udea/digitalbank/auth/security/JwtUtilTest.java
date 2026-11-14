@@ -53,7 +53,8 @@ class JwtUtilTest {
         @Test
         @DisplayName("Transversal - Un secreto de menos de 32 bytes impide que la app arranque, con un mensaje claro")
         void deberiaRechazarUnSecretoCorto() {
-            assertThatThrownBy(() -> withSecret("a".repeat(31)).init())
+            JwtUtil util = withSecret("a".repeat(31));
+            assertThatThrownBy(util::init)
                     .isInstanceOf(IllegalStateException.class)
                     .hasMessageContaining("jwt.secret")
                     .hasMessageContaining("32")
@@ -63,8 +64,10 @@ class JwtUtilTest {
         @Test
         @DisplayName("Transversal - Un secreto ausente o vacío también se rechaza")
         void deberiaRechazarUnSecretoAusenteOVacio() {
-            assertThatThrownBy(() -> withSecret(null).init()).isInstanceOf(IllegalStateException.class);
-            assertThatThrownBy(() -> withSecret("").init()).isInstanceOf(IllegalStateException.class);
+            JwtUtil nullSecretUtil = withSecret(null);
+            JwtUtil emptySecretUtil = withSecret("");
+            assertThatThrownBy(nullSecretUtil::init).isInstanceOf(IllegalStateException.class);
+            assertThatThrownBy(emptySecretUtil::init).isInstanceOf(IllegalStateException.class);
         }
 
         @Test
