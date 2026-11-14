@@ -12,8 +12,8 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * Movimiento de dinero entre cuentas (transferencia, depósito o retiro). La creación está disponible solo para
- * transferencias, mediante {@link #transfer}.
+ * Movimiento de dinero entre cuentas (transferencia, depósito o retiro). La creación está disponible para
+ * transferencias, mediante {@link #transfer}, y para depósitos, mediante {@link #deposit}.
  *
  * <p>Las cuentas se referencian por id y no con {@code @ManyToOne}: así {@code transactions} no depende de las
  * entidades de {@code accounts} y los módulos siguen desacoplados.
@@ -109,6 +109,41 @@ public class Transaction implements Persistable<UUID> {
         transaction.reference = reference;
         transaction.type = transferType;
         transaction.status = pendingStatus;
+        transaction.createdAt = createdAt;
+        return transaction;
+    }
+
+    /**
+     * Crea un depósito (consignación) ya {@code COMPLETED}. No pasa por {@code PENDING} porque no lleva segundo
+     * factor: lo registra un administrador cuando la fuente de pago ya autorizó el ingreso, y el saldo se acredita en
+     * la misma operación.
+     *
+     * @param id                identificador de la transacción; lo aporta quien la crea porque la referencia se
+     *                          calcula a partir de él antes de guardarla
+     * @param userOriginatorId  administrador que registra el depósito
+     * @param receiverAccountId cuenta que recibe el dinero
+     * @param amount            monto positivo, con la escala de la columna ({@code NUMERIC(19,2)})
+     * @param reference         comprobante de la operación
+     * @param depositType       fila {@code DEPOSIT} del catálogo de tipos
+     * @param completedStatus   fila {@code COMPLETED} del catálogo de estados
+     * @param createdAt         instante de creación
+     * @return la transacción, aún sin guardar
+     * @throws IllegalArgumentException si {@code depositType} no es {@code DEPOSIT} o {@code completedStatus} no es
+     *                                  {@code COMPLETED}
+     */
+    public static Transaction deposit(UUID id, UUID userOriginatorId, UUID receiverAccountId, BigDecimal amount,
+                                      String reference, TransactionType depositType,
+                                      TransactionStatus completedStatus, LocalDateTime createdAt) {
+        requireType(depositType, TransactionTypeEnum.DEPOSIT);
+        requireStatus(completedStatus, TransactionStatusEnum.COMPLETED);
+        Transaction transaction = new Transaction();
+        transaction.id = id;
+        transaction.userOriginatorId = userOriginatorId;
+        transaction.receiverAccountId = receiverAccountId;
+        transaction.amount = amount;
+        transaction.reference = reference;
+        transaction.type = depositType;
+        transaction.status = completedStatus;
         transaction.createdAt = createdAt;
         return transaction;
     }

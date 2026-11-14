@@ -9,8 +9,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 
 /**
- * Arma la referencia de una transferencia, que es su comprobante: TRF-AAAAMMDD-{UUID en base58}, por ejemplo
- * TRF-20261017-7Xk2Pq9RmZ4tNvB8cHdWeA. La parte final es el UUID completo de la transacción escrito en 22
+ * Arma la referencia de una transacción, que es su comprobante: {PREFIJO}-AAAAMMDD-{UUID en base58}, por ejemplo
+ * TRF-20261017-7Xk2Pq9RmZ4tNvB8cHdWeA. El prefijo indica el tipo: TRF para transferencias y DEP para depósitos. La parte final es el UUID completo de la transacción escrito en 22
  * caracteres, así que la referencia lleva a su fila y es única por construcción: dos UUID distintos nunca dan el
  * mismo texto, y no se sortea ni se consulta si ya existe. La fecha es la de creación de la transacción.
  * <p>
@@ -21,7 +21,8 @@ import java.util.UUID;
 @Component
 class TransactionReferenceGenerator {
 
-    private static final String PREFIX = "TRF-";
+    private static final String TRANSFER_PREFIX = "TRF-";
+    private static final String DEPOSIT_PREFIX = "DEP-";
     static final String ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
     static final int CODE_LENGTH = 22;
     private static final BigInteger BASE = BigInteger.valueOf(ALPHABET.length());
@@ -34,7 +35,22 @@ class TransactionReferenceGenerator {
      * @return la referencia, de 35 caracteres
      */
     String forTransfer(UUID transactionId, LocalDateTime createdAt) {
-        return PREFIX + createdAt.toLocalDate().format(DateTimeFormatter.BASIC_ISO_DATE) + '-'
+        return build(TRANSFER_PREFIX, transactionId, createdAt);
+    }
+
+    /**
+     * Arma la referencia de un depósito.
+     *
+     * @param transactionId identificador de la transacción
+     * @param createdAt     instante de creación; aporta la fecha de la referencia
+     * @return la referencia, de 35 caracteres
+     */
+    String forDeposit(UUID transactionId, LocalDateTime createdAt) {
+        return build(DEPOSIT_PREFIX, transactionId, createdAt);
+    }
+
+    private static String build(String prefix, UUID transactionId, LocalDateTime createdAt) {
+        return prefix + createdAt.toLocalDate().format(DateTimeFormatter.BASIC_ISO_DATE) + '-'
                 + encode(transactionId);
     }
 

@@ -185,7 +185,7 @@ public class Account {
     }
 
     /**
-     * Abona un monto al saldo por una transferencia. La cuenta debe estar {@code ACTIVE}. Quien la llama debe haber
+     * Abona un monto al saldo por una transferencia o un depósito. La cuenta debe estar {@code ACTIVE}. Quien la llama debe haber
      * leído la cuenta con bloqueo de escritura.
      *
      * @param amount monto positivo a abonar

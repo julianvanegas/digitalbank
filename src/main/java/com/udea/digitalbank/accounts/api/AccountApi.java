@@ -54,4 +54,17 @@ public interface AccountApi {
      * @throws IllegalArgumentException si ambas cuentas son la misma o el monto no es positivo
      */
     void applyTransfer(UUID senderAccountId, UUID receiverAccountId, BigDecimal amount);
+
+    /**
+     * Acredita un monto a una cuenta por un depósito. Bloquea la fila, exige que la cuenta esté {@code ACTIVE} y
+     * entonces suma el monto al saldo. Participa en la transacción del llamante.
+     *
+     * @param receiverAccountId cuenta que recibe el dinero
+     * @param amount            monto positivo
+     * @return la vista de la cuenta con el saldo ya actualizado
+     * @throws com.udea.digitalbank.shared.exception.accounts.AccountNotFoundException  si la cuenta no existe
+     * @throws com.udea.digitalbank.shared.exception.accounts.AccountNotActiveException si la cuenta no está activa
+     * @throws IllegalArgumentException si el monto no es positivo
+     */
+    AccountView applyDeposit(UUID receiverAccountId, BigDecimal amount);
 }

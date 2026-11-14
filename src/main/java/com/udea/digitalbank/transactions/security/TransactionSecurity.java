@@ -8,8 +8,8 @@ import java.util.List;
 
 /**
  * Permisos por rol de las rutas de transacciones. Iniciar y confirmar una transferencia son exclusivos de los
- * clientes: la operación es del titular y la autoriza con su propio segundo factor. El comprobante también puede
- * consultarlo un administrador.
+ * clientes: la operación es del titular y la autoriza con su propio segundo factor. La consignación es exclusiva de
+ * los administradores. El comprobante pueden consultarlo ambos.
  */
 @Component
 public class TransactionSecurity implements SecurityModule {
@@ -26,6 +26,7 @@ public class TransactionSecurity implements SecurityModule {
         return List.of(
                 RoleRoute.post(BASE + "/transfers", Roles.CUSTOMER),
                 RoleRoute.post(BASE + "/*/confirm", Roles.CUSTOMER),
+                RoleRoute.post(BASE + "/deposits", Roles.ADMIN),
                 RoleRoute.get(BASE + "/*", Roles.CUSTOMER, Roles.ADMIN));
     }
 }
