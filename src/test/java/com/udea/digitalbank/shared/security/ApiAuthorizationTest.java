@@ -15,6 +15,7 @@ import com.udea.digitalbank.customer.security.CustomerSecurity;
 import com.udea.digitalbank.customer.service.CustomerService;
 import com.udea.digitalbank.employee.security.EmployeeSecurity;
 import com.udea.digitalbank.employee.service.EmployeeService;
+import com.udea.digitalbank.shared.config.ClockConfig;
 import com.udea.digitalbank.shared.exception.GlobalExceptionHandler;
 import com.udea.digitalbank.shared.exception.SecurityErrorHandler;
 import com.udea.digitalbank.transactions.security.TransactionSecurity;
@@ -69,7 +70,7 @@ import static org.mockito.Mockito.when;
 @WebMvcTest
 @Import({SecurityConfig.class, AuthSecurity.class, CustomerSecurity.class, EmployeeSecurity.class,
         AccountSecurity.class, TransactionSecurity.class, ApiAuthorizationTest.UndeclaredEndpointController.class, JwtAuthenticationFilter.class,
-        JwtUtil.class, SecurityErrorHandler.class, GlobalExceptionHandler.class, ActorWebConfig.class})
+        JwtUtil.class, SecurityErrorHandler.class, GlobalExceptionHandler.class, ActorWebConfig.class, ClockConfig.class})
 @TestPropertySource(properties = {
         "cors.allowed-origins=http://localhost",
         "jwt.secret=test-only-secret-with-more-than-thirty-two-chars",

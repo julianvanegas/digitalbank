@@ -16,6 +16,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -37,6 +38,7 @@ public class AccountLifecycleService {
     private final AccountLookup accountLookup;
     private final AccountCatalog accountCatalog;
     private final ApplicationEventPublisher eventPublisher;
+    private final Clock clock;
 
     public AccountLifecycleService(AccountRepository accountRepository,
                                    AccountActionRepository accountActionRepository,
@@ -44,7 +46,8 @@ public class AccountLifecycleService {
                                    AccountMapper accountMapper,
                                    AccountLookup accountLookup,
                                    AccountCatalog accountCatalog,
-                                   ApplicationEventPublisher eventPublisher) {
+                                   ApplicationEventPublisher eventPublisher,
+                                   Clock clock) {
         this.accountRepository = accountRepository;
         this.accountActionRepository = accountActionRepository;
         this.customerApi = customerApi;
@@ -52,6 +55,7 @@ public class AccountLifecycleService {
         this.accountLookup = accountLookup;
         this.accountCatalog = accountCatalog;
         this.eventPublisher = eventPublisher;
+        this.clock = clock;
     }
 
     /**
@@ -141,7 +145,7 @@ public class AccountLifecycleService {
      * bloqueada se debe desbloquear primero, para que cerrarla no sirva para esquivar un bloqueo.
      */
     private AccountResponse close(Account account, String reason, UUID actingUserId) {
-        account.close(accountCatalog.status(AccountStatusEnum.CLOSED), LocalDateTime.now());
+        account.close(accountCatalog.status(AccountStatusEnum.CLOSED), LocalDateTime.now(clock));
         accountActionRepository.save(AccountAction.closed(account.getId(), reason, actingUserId));
 
         Account closed = accountRepository.save(account);

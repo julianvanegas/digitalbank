@@ -17,6 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.time.Clock;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -63,9 +64,10 @@ class LoginFlowTest {
         for (UserStatusEnum status : UserStatusEnum.values()) {
             lenient().when(catalogs.status(status)).thenReturn(AuthFixtures.status(status));
         }
-        UserStatusService userStatusService = new UserStatusService(userRepository, sessionService, catalogs);
+        UserStatusService userStatusService = new UserStatusService(userRepository, sessionService, catalogs,
+                Clock.systemDefaultZone());
         authService = new AuthService(userRepository, sessionService, passwordEncoder, verificationService,
-                verificationDispatcher, userStatusService);
+                verificationDispatcher, userStatusService, Clock.systemDefaultZone());
         user = AuthFixtures.customer(EMAIL, passwordEncoder.encode(PASSWORD), UserStatusEnum.ACTIVE);
         lenient().when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(user));
         lenient().when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -121,9 +123,10 @@ class LoginFlowTest {
         failLogin();
         failLogin();
         failLogin();
+        LoginRequest request = request(EMAIL, PASSWORD);
 
         // Act + Assert
-        assertThatThrownBy(() -> authService.login(request(EMAIL, PASSWORD)))
+        assertThatThrownBy(() -> authService.login(request))
                 .isInstanceOf(UserNotEnabledException.class)
                 .hasMessageContaining("bloqueado");
         verify(verificationDispatcher, never()).issueAndSend(any(User.class), any(PurposeEnum.class));
@@ -181,9 +184,10 @@ class LoginFlowTest {
     void deberiaRechazarAUnClientePendienteDeRevision() {
         // Arrange
         user.setStatus(AuthFixtures.status(UserStatusEnum.PENDING_REVIEW));
+        LoginRequest request = request(EMAIL, PASSWORD);
 
         // Act + Assert
-        assertThatThrownBy(() -> authService.login(request(EMAIL, PASSWORD)))
+        assertThatThrownBy(() -> authService.login(request))
                 .isInstanceOf(UserNotEnabledException.class)
                 .hasMessageContaining("revisión");
         verify(sessionService, never()).revoke(any());

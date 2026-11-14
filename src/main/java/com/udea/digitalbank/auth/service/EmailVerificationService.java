@@ -11,6 +11,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -23,17 +24,20 @@ public class EmailVerificationService {
     private final VerificationDispatcher verificationDispatcher;
     private final UserStatusService userStatusService;
     private final PasswordEncoder passwordEncoder;
+    private final Clock clock;
 
     public EmailVerificationService(UserRepository userRepository,
                                     VerificationService verificationService,
                                     VerificationDispatcher verificationDispatcher,
                                     UserStatusService userStatusService,
-                                    PasswordEncoder passwordEncoder) {
+                                    PasswordEncoder passwordEncoder,
+                                    Clock clock) {
         this.userRepository = userRepository;
         this.verificationService = verificationService;
         this.verificationDispatcher = verificationDispatcher;
         this.userStatusService = userStatusService;
         this.passwordEncoder = passwordEncoder;
+        this.clock = clock;
     }
 
     /**
@@ -57,7 +61,7 @@ public class EmailVerificationService {
         }
 
         user.setPasswordHash(passwordEncoder.encode(password));
-        user.setPasswordChangedAt(LocalDateTime.now());
+        user.setPasswordChangedAt(LocalDateTime.now(clock));
         userRepository.save(user);
 
         UserStatusEnum next = user.getRole().is(RoleEnum.CUSTOMER)

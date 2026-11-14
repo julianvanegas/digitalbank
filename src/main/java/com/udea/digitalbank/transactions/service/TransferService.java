@@ -28,6 +28,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -56,6 +57,7 @@ public class TransferService {
     private final AccountApi accountApi;
     private final VerificationApi verificationApi;
     private final ApplicationEventPublisher eventPublisher;
+    private final Clock clock;
 
     public TransferService(TransactionRepository transactionRepository,
                            TransactionCatalog catalog,
@@ -63,7 +65,8 @@ public class TransferService {
                            TransactionReferenceGenerator referenceGenerator,
                            AccountApi accountApi,
                            VerificationApi verificationApi,
-                           ApplicationEventPublisher eventPublisher) {
+                           ApplicationEventPublisher eventPublisher,
+                           Clock clock) {
         this.transactionRepository = transactionRepository;
         this.catalog = catalog;
         this.responses = responses;
@@ -71,6 +74,7 @@ public class TransferService {
         this.accountApi = accountApi;
         this.verificationApi = verificationApi;
         this.eventPublisher = eventPublisher;
+        this.clock = clock;
     }
 
     /**
@@ -118,7 +122,7 @@ public class TransferService {
 
         // El id se asigna antes de guardar porque la referencia (el comprobante) se deriva de él
         UUID transactionId = UUID.randomUUID();
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(clock);
         Transaction transaction = transactionRepository.save(Transaction.transfer(
                 transactionId, actor.userId(), sender.id(), receiver.id(), amount,
                 referenceGenerator.forTransfer(transactionId, now),
@@ -203,7 +207,7 @@ public class TransferService {
      */
     @Transactional
     public int rejectExpiredPending() {
-        LocalDateTime cutoff = LocalDateTime.now().minusMinutes(verificationApi.transactionCodeTtlMinutes());
+        LocalDateTime cutoff = LocalDateTime.now(clock).minusMinutes(verificationApi.transactionCodeTtlMinutes());
         return transactionRepository.rejectPendingCreatedBefore(cutoff,
                 catalog.status(TransactionStatusEnum.PENDING), catalog.status(TransactionStatusEnum.REJECTED));
     }

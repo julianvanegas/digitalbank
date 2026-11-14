@@ -16,6 +16,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Clock;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -60,7 +61,8 @@ class VerificationFlowTest {
     /** Servicio con el intervalo mínimo entre reenvíos indicado, en segundos. */
     private VerificationService service(long resendIntervalSeconds) {
         return new VerificationService(challengeRepository, userRepository, catalogs,
-                new CodeHasher("secreto-de-prueba-para-el-hmac"), resendIntervalSeconds);
+                new CodeHasher("secreto-de-prueba-para-el-hmac"), resendIntervalSeconds,
+                Clock.systemDefaultZone());
     }
 
     /** Un código de 6 dígitos distinto del correcto. */
@@ -78,6 +80,8 @@ class VerificationFlowTest {
             // Arrange
             VerificationService service = service(0);
             IssuedChallenge issued = service.issue(user, PurposeEnum.LOGIN);
+            UUID challengeId = issued.challengeId();
+            String code = issued.code();
 
             // Act
             UUID verified = service.verifyById(issued.challengeId(), PurposeEnum.LOGIN, issued.code());
@@ -85,7 +89,7 @@ class VerificationFlowTest {
             // Assert
             assertThat(verified).isEqualTo(user.getId());
             assertThat(store.get(issued.challengeId())).isNull();
-            assertThatThrownBy(() -> service.verifyById(issued.challengeId(), PurposeEnum.LOGIN, issued.code()))
+            assertThatThrownBy(() -> service.verifyById(challengeId, PurposeEnum.LOGIN, code))
                     .isInstanceOf(InvalidVerificationCodeException.class);
         }
 
@@ -114,9 +118,11 @@ class VerificationFlowTest {
             VerificationService service = service(0);
             IssuedChallenge issued = service.issue(user, PurposeEnum.LOGIN);
             store.expire(issued.challengeId());
+            UUID challengeId = issued.challengeId();
+            String code = issued.code();
 
             // Act + Assert
-            assertThatThrownBy(() -> service.verifyById(issued.challengeId(), PurposeEnum.LOGIN, issued.code()))
+            assertThatThrownBy(() -> service.verifyById(challengeId, PurposeEnum.LOGIN, code))
                     .isInstanceOf(InvalidVerificationCodeException.class)
                     .hasMessage(INVALID_MESSAGE);
             assertThat(store.get(issued.challengeId())).isNull();
@@ -129,16 +135,18 @@ class VerificationFlowTest {
             VerificationService service = service(0);
             IssuedChallenge issued = service.issue(user, PurposeEnum.LOGIN);
             String bad = wrong(issued.code());
+            String code = issued.code();
+            UUID challengeId = issued.challengeId();
 
             // Act
             for (int attempt = 1; attempt <= 3; attempt++) {
-                assertThatThrownBy(() -> service.verifyById(issued.challengeId(), PurposeEnum.LOGIN, bad))
+                assertThatThrownBy(() -> service.verifyById(challengeId, PurposeEnum.LOGIN, bad))
                         .isInstanceOf(InvalidVerificationCodeException.class);
             }
 
             // Assert
             assertThat(store.get(issued.challengeId())).isNull();
-            assertThatThrownBy(() -> service.verifyById(issued.challengeId(), PurposeEnum.LOGIN, issued.code()))
+            assertThatThrownBy(() -> service.verifyById(challengeId, PurposeEnum.LOGIN, code))
                     .isInstanceOf(InvalidVerificationCodeException.class);
         }
 
@@ -155,7 +163,9 @@ class VerificationFlowTest {
             // Assert
             assertThat(resent.challenge().challengeId()).isEqualTo(first.challengeId());
             if (!resent.challenge().code().equals(first.code())) {
-                assertThatThrownBy(() -> service.verifyById(first.challengeId(), PurposeEnum.LOGIN, first.code()))
+                UUID firstChallengeId = first.challengeId();
+                String firstCode = first.code();
+                assertThatThrownBy(() -> service.verifyById(firstChallengeId, PurposeEnum.LOGIN, firstCode))
                         .isInstanceOf(InvalidVerificationCodeException.class);
             }
             assertThat(service.verifyById(first.challengeId(), PurposeEnum.LOGIN, resent.challenge().code()))
@@ -168,6 +178,7 @@ class VerificationFlowTest {
             // Arrange
             VerificationService service = service(0);
             IssuedChallenge issued = service.issue(user, PurposeEnum.LOGIN);
+            UUID challengeId = issued.challengeId();
 
             // Act
             ResentChallenge firstResend = service.resend(issued.challengeId(), PurposeEnum.LOGIN);
@@ -176,7 +187,7 @@ class VerificationFlowTest {
             // Assert
             assertThat(firstResend.remainingResends()).isEqualTo(1);
             assertThat(secondResend.remainingResends()).isZero();
-            assertThatThrownBy(() -> service.resend(issued.challengeId(), PurposeEnum.LOGIN))
+            assertThatThrownBy(() -> service.resend(challengeId, PurposeEnum.LOGIN))
                     .isInstanceOf(TooManyRequestsException.class);
         }
 
@@ -187,9 +198,10 @@ class VerificationFlowTest {
             VerificationService service = service(0);
             IssuedChallenge issued = service.issue(user, PurposeEnum.LOGIN);
             store.expire(issued.challengeId());
+            UUID challengeId = issued.challengeId();
 
             // Act + Assert
-            assertThatThrownBy(() -> service.resend(issued.challengeId(), PurposeEnum.LOGIN))
+            assertThatThrownBy(() -> service.resend(challengeId, PurposeEnum.LOGIN))
                     .isInstanceOf(InvalidVerificationCodeException.class);
         }
 
@@ -215,6 +227,8 @@ class VerificationFlowTest {
             // Arrange
             VerificationService service = service(0);
             IssuedChallenge first = service.issue(user, PurposeEnum.LOGIN);
+            UUID firstChallengeId = first.challengeId();
+            String firstCode = first.code();
 
             // Act
             IssuedChallenge second = service.issue(user, PurposeEnum.LOGIN);
@@ -222,7 +236,7 @@ class VerificationFlowTest {
             // Assert
             assertThat(store.get(first.challengeId())).isNull();
             assertThat(store.size()).isEqualTo(1);
-            assertThatThrownBy(() -> service.verifyById(first.challengeId(), PurposeEnum.LOGIN, first.code()))
+            assertThatThrownBy(() -> service.verifyById(firstChallengeId, PurposeEnum.LOGIN, firstCode))
                     .isInstanceOf(InvalidVerificationCodeException.class);
             assertThat(service.verifyById(second.challengeId(), PurposeEnum.LOGIN, second.code()))
                     .isEqualTo(user.getId());
@@ -234,9 +248,10 @@ class VerificationFlowTest {
             // Arrange
             VerificationService service = service(0);
             IssuedChallenge issued = service.issue(user, PurposeEnum.LOGIN);
+            String code = issued.code();
 
             // Act + Assert
-            assertThatThrownBy(() -> service.verifyByEmail(EMAIL, PurposeEnum.PASSWORD_RESET, issued.code()))
+            assertThatThrownBy(() -> service.verifyByEmail(EMAIL, PurposeEnum.PASSWORD_RESET, code))
                     .isInstanceOf(InvalidVerificationCodeException.class);
             assertThat(store.get(issued.challengeId())).isNotNull();
         }
@@ -252,13 +267,14 @@ class VerificationFlowTest {
             // Arrange
             VerificationService service = service(0);
             IssuedChallenge issued = service.issue(user, PurposeEnum.PASSWORD_RESET);
+            String code = issued.code();
 
             // Act
             UUID verified = service.verifyByEmail(EMAIL, PurposeEnum.PASSWORD_RESET, issued.code());
 
             // Assert
             assertThat(verified).isEqualTo(user.getId());
-            assertThatThrownBy(() -> service.verifyByEmail(EMAIL, PurposeEnum.PASSWORD_RESET, issued.code()))
+            assertThatThrownBy(() -> service.verifyByEmail(EMAIL, PurposeEnum.PASSWORD_RESET, code))
                     .isInstanceOf(InvalidVerificationCodeException.class);
         }
 
@@ -269,6 +285,7 @@ class VerificationFlowTest {
             VerificationService service = service(0);
             IssuedChallenge issued = service.issue(user, PurposeEnum.PASSWORD_RESET);
             String bad = wrong(issued.code());
+            String code = issued.code();
 
             // Act
             assertThatThrownBy(() -> service.verifyByEmail(EMAIL, PurposeEnum.PASSWORD_RESET, bad))
@@ -282,7 +299,7 @@ class VerificationFlowTest {
             // Assert
             assertThat(afterTwo).isEqualTo((short) 2);
             assertThat(store.get(issued.challengeId())).isNull();
-            assertThatThrownBy(() -> service.verifyByEmail(EMAIL, PurposeEnum.PASSWORD_RESET, issued.code()))
+            assertThatThrownBy(() -> service.verifyByEmail(EMAIL, PurposeEnum.PASSWORD_RESET, code))
                     .isInstanceOf(InvalidVerificationCodeException.class);
         }
 
@@ -293,9 +310,10 @@ class VerificationFlowTest {
             VerificationService service = service(0);
             IssuedChallenge issued = service.issue(user, PurposeEnum.PASSWORD_RESET);
             store.expire(issued.challengeId());
+            String code = issued.code();
 
             // Act + Assert
-            assertThatThrownBy(() -> service.verifyByEmail(EMAIL, PurposeEnum.PASSWORD_RESET, issued.code()))
+            assertThatThrownBy(() -> service.verifyByEmail(EMAIL, PurposeEnum.PASSWORD_RESET, code))
                     .isInstanceOf(InvalidVerificationCodeException.class)
                     .hasMessage(INVALID_MESSAGE);
         }

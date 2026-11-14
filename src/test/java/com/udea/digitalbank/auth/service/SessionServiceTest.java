@@ -14,6 +14,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
@@ -41,7 +42,7 @@ class SessionServiceTest {
 
     @BeforeEach
     void setUp() {
-        sessionService = new SessionService(sessionRepository, jwtUtil, 5);
+        sessionService = new SessionService(sessionRepository, jwtUtil, 5, Clock.systemDefaultZone());
     }
 
     private static Role buildRole(String code) {

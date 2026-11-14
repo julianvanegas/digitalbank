@@ -1,6 +1,5 @@
 package com.udea.digitalbank.shared.exception;
 
-import com.udea.digitalbank.shared.exception.InvalidRequestException;
 import com.udea.digitalbank.shared.exception.auth.DuplicateUserException;
 import com.udea.digitalbank.shared.exception.auth.InvalidCredentialsException;
 import com.udea.digitalbank.shared.exception.auth.InvalidVerificationCodeException;
@@ -32,6 +31,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.context.request.WebRequest;
 
 import java.sql.SQLException;
+import java.time.Clock;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -48,7 +48,7 @@ class GlobalExceptionHandlerTest {
 
     @BeforeEach
     void setUp() {
-        handler = new GlobalExceptionHandler();
+        handler = new GlobalExceptionHandler(Clock.systemDefaultZone());
     }
 
     @Nested
@@ -299,6 +299,7 @@ class GlobalExceptionHandlerTest {
         /** Método señuelo, solo para poder construir un MethodParameter real. */
         @SuppressWarnings("unused")
         private void dummyMethod(Object arg) {
+            // Sin cuerpo a propósito: solo importa su firma
         }
 
         private MethodParameter buildMethodParameter() throws NoSuchMethodException {

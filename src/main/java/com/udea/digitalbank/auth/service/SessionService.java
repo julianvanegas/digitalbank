@@ -9,9 +9,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.Collection;
 import java.util.Date;
 import java.util.UUID;
@@ -27,19 +27,22 @@ public class SessionService {
     private final AuthSessionRepository sessionRepository;
     private final JwtUtil jwtUtil;
     private final Duration inactivityTimeout;
+    private final Clock clock;
 
     public SessionService(AuthSessionRepository sessionRepository,
                           JwtUtil jwtUtil,
-                          @Value("${session.inactivity-timeout-minutes}") long inactivityTimeoutMinutes) {
+                          @Value("${session.inactivity-timeout-minutes}") long inactivityTimeoutMinutes,
+                          Clock clock) {
         this.sessionRepository = sessionRepository;
         this.jwtUtil = jwtUtil;
         this.inactivityTimeout = Duration.ofMinutes(inactivityTimeoutMinutes);
+        this.clock = clock;
     }
 
     /** Abre la sesión del usuario y devuelve el token firmado que la representa. */
     @Transactional
     public String start(User user) {
-        LocalDateTime issuedAt = LocalDateTime.now();
+        LocalDateTime issuedAt = LocalDateTime.now(clock);
         LocalDateTime expiresAt = issuedAt.plus(inactivityTimeout);
         LocalDateTime tokenExpiresAt = issuedAt.plus(Duration.ofMillis(jwtUtil.getExpirationMs()));
         String jti = jwtUtil.generateJti();
@@ -81,7 +84,7 @@ public class SessionService {
         } catch (IllegalArgumentException e) {
             return false;
         }
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(clock);
         return sessionRepository.touch(userId, jtiValue, now, now.plus(inactivityTimeout),
                 UserStatusEnum.ACTIVE.name()) > 0;
     }
@@ -89,10 +92,10 @@ public class SessionService {
     /** Las sesiones vencidas ya no valen (validateAndTouch las rechaza); esto solo evita que se acumulen. */
     @Transactional
     public void deleteExpired() {
-        sessionRepository.deleteExpired(LocalDateTime.now());
+        sessionRepository.deleteExpired(LocalDateTime.now(clock));
     }
 
-    private static Date toDate(LocalDateTime value) {
-        return Date.from(value.atZone(ZoneId.systemDefault()).toInstant());
+    private Date toDate(LocalDateTime value) {
+        return Date.from(value.atZone(clock.getZone()).toInstant());
     }
 }

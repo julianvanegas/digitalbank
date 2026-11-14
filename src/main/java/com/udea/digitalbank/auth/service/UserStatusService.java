@@ -10,6 +10,7 @@ import com.udea.digitalbank.shared.exception.auth.UserNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -25,13 +26,16 @@ public class UserStatusService {
     private final UserRepository userRepository;
     private final SessionService sessionService;
     private final Catalogs catalogs;
+    private final Clock clock;
 
     public UserStatusService(UserRepository userRepository,
                              SessionService sessionService,
-                             Catalogs catalogs) {
+                             Catalogs catalogs,
+                             Clock clock) {
         this.userRepository = userRepository;
         this.sessionService = sessionService;
         this.catalogs = catalogs;
+        this.clock = clock;
     }
 
     /**
@@ -80,7 +84,7 @@ public class UserStatusService {
      */
     @Transactional
     public void markInactiveCustomers() {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(clock);
         List<UUID> ids = userRepository.findIdleIds(
                 RoleEnum.CUSTOMER.name(), UserStatusEnum.ACTIVE.name(), now.minusMonths(INACTIVITY_MONTHS));
         if (ids.isEmpty()) {
@@ -100,7 +104,7 @@ public class UserStatusService {
         UserStatus target = catalogs.status(statusEnum);
         if (!user.getStatus().getCode().equals(target.getCode())) {
             user.setStatus(target);
-            user.setStatusChangedAt(LocalDateTime.now());
+            user.setStatusChangedAt(LocalDateTime.now(clock));
         }
         if (statusEnum == UserStatusEnum.ACTIVE) {
             user.setFailedAttempts((short) 0);

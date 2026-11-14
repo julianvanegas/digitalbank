@@ -31,6 +31,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -81,7 +82,7 @@ class AccountCloseHuTest {
     void setUp() {
         lifecycleService = new AccountLifecycleService(accountRepository, accountActionRepository, customerApi,
                 Mappers.getMapper(AccountMapper.class), new AccountLookup(accountRepository), accountCatalog,
-                eventPublisher);
+                eventPublisher, Clock.systemDefaultZone());
         CustomerView customer = new CustomerView(customerId, userId, "Ana", "Gómez",
                 "Cédula de ciudadanía", "1000000001", "ana@example.com", "ACTIVE");
         when(customerApi.getCustomerByUserId(userId)).thenReturn(customer);

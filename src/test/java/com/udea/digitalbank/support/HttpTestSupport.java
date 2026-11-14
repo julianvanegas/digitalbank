@@ -13,6 +13,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Clock;
 import java.util.List;
 import java.util.UUID;
 
@@ -29,7 +30,7 @@ public final class HttpTestSupport {
 
     public static MockMvc mockMvc(Object controller) {
         return MockMvcBuilders.standaloneSetup(controller)
-                .setControllerAdvice(new GlobalExceptionHandler())
+                .setControllerAdvice(new GlobalExceptionHandler(Clock.systemDefaultZone()))
                 .setCustomArgumentResolvers(new ActorArgumentResolver())
                 .build();
     }

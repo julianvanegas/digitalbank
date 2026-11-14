@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -36,17 +37,20 @@ public class DepositService {
     private final TransactionResponses responses;
     private final TransactionReferenceGenerator referenceGenerator;
     private final AccountApi accountApi;
+    private final Clock clock;
 
     public DepositService(TransactionRepository transactionRepository,
                           TransactionCatalog catalog,
                           TransactionResponses responses,
                           TransactionReferenceGenerator referenceGenerator,
-                          AccountApi accountApi) {
+                          AccountApi accountApi,
+                          Clock clock) {
         this.transactionRepository = transactionRepository;
         this.catalog = catalog;
         this.responses = responses;
         this.referenceGenerator = referenceGenerator;
         this.accountApi = accountApi;
+        this.clock = clock;
     }
 
     /**
@@ -77,7 +81,7 @@ public class DepositService {
 
         // El id se asigna antes de guardar porque la referencia (el comprobante) se deriva de él
         UUID transactionId = UUID.randomUUID();
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(clock);
         Transaction transaction = transactionRepository.save(Transaction.deposit(
                 transactionId, actor.userId(), receiver.id(), amount,
                 referenceGenerator.forDeposit(transactionId, now),
