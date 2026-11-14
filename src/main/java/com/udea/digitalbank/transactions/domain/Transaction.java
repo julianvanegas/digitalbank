@@ -164,9 +164,38 @@ public class Transaction implements Persistable<UUID> {
         persisted = true;
     }
 
+    /** @return {@code true} si el usuario indicado es quien ordenó la transacción. */
+    public boolean isOrderedBy(UUID userId) {
+        return userOriginatorId.equals(userId);
+    }
+
     /** @return {@code true} si la transacción está en el estado indicado. */
     public boolean is(TransactionStatusEnum expected) {
         return status.is(expected);
+    }
+
+    /**
+     * Exige que la transacción siga esperando su confirmación. Quien llama ya resolvió el caso de una transacción
+     * {@code COMPLETED} (confirmar es idempotente); cualquier otro estado distinto de {@code PENDING} no admite
+     * confirmación.
+     *
+     * @throws TransactionNotPendingException si la transacción ya no está {@code PENDING}; el mensaje dice en qué
+     *                                        quedó y que se debe iniciar una nueva
+     */
+    public void requireConfirmable() {
+        if (!is(TransactionStatusEnum.PENDING)) {
+            throw new TransactionNotPendingException("La transferencia " + reference + " ya no se puede confirmar: "
+                    + describeStatus() + ". Inicia una nueva");
+        }
+    }
+
+    // El estado en palabras, para mostrárselo al ordenante
+    private String describeStatus() {
+        return switch (status.getCode()) {
+            case "REJECTED" -> "fue cancelada";
+            case "REVERSED" -> "fue revertida";
+            default -> "su estado es " + status.getCode();
+        };
     }
 
     /**
