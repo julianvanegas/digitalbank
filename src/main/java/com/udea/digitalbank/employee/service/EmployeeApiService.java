@@ -54,7 +54,7 @@ public class EmployeeApiService implements EmployeeApi {
     @Override
     @Transactional(readOnly = true)
     public EmployeeView requireActiveEmployee(UUID employeeId) {
-        EmployeeView view = getEmployee(employeeId);
+        EmployeeView view = toView(employeeLookup.byId(employeeId));
         if (!UserStatusEnum.ACTIVE.name().equals(view.status())) {
             throw new EmployeeNotActiveException("El empleado no está activo: " + employeeId);
         }

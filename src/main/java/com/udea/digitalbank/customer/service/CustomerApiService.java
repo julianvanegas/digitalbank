@@ -60,7 +60,7 @@ public class CustomerApiService implements CustomerApi {
     @Override
     @Transactional(readOnly = true)
     public CustomerView requireActiveCustomer(UUID customerId) {
-        CustomerView view = getCustomer(customerId);
+        CustomerView view = toView(customerLookup.byId(customerId));
         if (!UserStatusEnum.ACTIVE.name().equals(view.status())) {
             throw new CustomerNotActiveException("El cliente no está activo: " + customerId);
         }
