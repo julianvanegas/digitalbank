@@ -28,7 +28,7 @@ public interface SecurityModule {
         return List.of();
     }
 
-    default void customize(HttpSecurity http) throws Exception {
+    default void customize(HttpSecurity http) {
     }
 
     /**
