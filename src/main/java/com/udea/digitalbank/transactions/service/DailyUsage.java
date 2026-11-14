@@ -1,13 +1,10 @@
 package com.udea.digitalbank.transactions.service;
 
 import com.udea.digitalbank.transactions.domain.TransactionStatusEnum;
-import com.udea.digitalbank.transactions.domain.TransactionTypeEnum;
 import com.udea.digitalbank.transactions.repository.TransactionRepository;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.UUID;
 
 /**
  * Cuánto ha movido una cuenta en un día: lo que consumen las reglas diarias de {@link LimitRule}. Concentra aquí el

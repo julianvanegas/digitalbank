@@ -97,11 +97,6 @@ class TransactionLimitServiceTest {
         return limit(TransactionTypeEnum.TRANSFER, accountType, null, null, "80000000.00");
     }
 
-    private void allLimitsExist() {
-        when(limitRepository.findAllOrdered()).thenReturn(List.of(
-                transferLimit("SAVINGS"), transferLimit("CHECKING"), withdrawal("SAVINGS"), withdrawal("CHECKING")));
-    }
-
     @Nested
     @DisplayName("requireWithinLimits - cumplimiento de los topes")
     class RequireWithinLimits {
@@ -141,9 +136,10 @@ class TransactionLimitServiceTest {
             // Arrange
             withdrawalLimit();
 
+            BigDecimal amount = new BigDecimal("2500000.01");
+
             // Act + Assert
-            assertThatThrownBy(() -> service.requireWithinLimits(savings, TransactionTypeEnum.WITHDRAWAL,
-                    new BigDecimal("2500000.01")))
+            assertThatThrownBy(() -> service.requireWithinLimits(savings, TransactionTypeEnum.WITHDRAWAL, amount))
                     .isInstanceOf(TransactionLimitExceededException.class)
                     .hasMessageContaining("máximo por operación")
                     .hasMessageContaining("2500000.00 COP");
@@ -157,9 +153,10 @@ class TransactionLimitServiceTest {
             withdrawalLimit();
             consumed(4, "100.00");
 
+            BigDecimal amount = new BigDecimal("1.00");
+
             // Act + Assert
-            assertThatThrownBy(() -> service.requireWithinLimits(savings, TransactionTypeEnum.WITHDRAWAL,
-                    new BigDecimal("1.00")))
+            assertThatThrownBy(() -> service.requireWithinLimits(savings, TransactionTypeEnum.WITHDRAWAL, amount))
                     .isInstanceOf(TransactionLimitExceededException.class)
                     .hasMessageContaining("4 operaciones diarias");
         }
@@ -171,9 +168,10 @@ class TransactionLimitServiceTest {
             withdrawalLimit();
             consumed(2, "9000000.00");
 
+            BigDecimal amount = new BigDecimal("1000000.01");
+
             // Act + Assert
-            assertThatThrownBy(() -> service.requireWithinLimits(savings, TransactionTypeEnum.WITHDRAWAL,
-                    new BigDecimal("1000000.01")))
+            assertThatThrownBy(() -> service.requireWithinLimits(savings, TransactionTypeEnum.WITHDRAWAL, amount))
                     .isInstanceOf(TransactionLimitExceededException.class)
                     .hasMessageContaining("10000000.00 COP")
                     .hasMessageContaining("Cupo disponible hoy: 1000000.00 COP");
@@ -198,9 +196,10 @@ class TransactionLimitServiceTest {
             transferLimitExists();
             consumed(0, "79999999.99");
 
+            BigDecimal amount = new BigDecimal("0.02");
+
             // Act + Assert
-            assertThatThrownBy(() -> service.requireWithinLimits(savings, TransactionTypeEnum.TRANSFER,
-                    new BigDecimal("0.02")))
+            assertThatThrownBy(() -> service.requireWithinLimits(savings, TransactionTypeEnum.TRANSFER, amount))
                     .isInstanceOf(TransactionLimitExceededException.class)
                     .hasMessageContaining("80000000.00 COP")
                     .hasMessageContaining("Cupo disponible hoy: 0.01 COP");
@@ -247,9 +246,10 @@ class TransactionLimitServiceTest {
             // Arrange
             when(limitRepository.findByTypeAndAccountType(anyString(), anyString())).thenReturn(Optional.empty());
 
+            BigDecimal amount = new BigDecimal("1.00");
+
             // Act + Assert
-            assertThatThrownBy(() -> service.requireWithinLimits(savings, TransactionTypeEnum.TRANSFER,
-                    new BigDecimal("1.00")))
+            assertThatThrownBy(() -> service.requireWithinLimits(savings, TransactionTypeEnum.TRANSFER, amount))
                     .isInstanceOf(IllegalStateException.class);
         }
     }

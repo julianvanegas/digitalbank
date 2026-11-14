@@ -7,11 +7,8 @@ import com.udea.digitalbank.auth.api.CodeCheckResult;
 import com.udea.digitalbank.auth.api.VerificationApi;
 import com.udea.digitalbank.shared.exception.TooManyRequestsException;
 import com.udea.digitalbank.shared.exception.accounts.AccountNotActiveException;
-import com.udea.digitalbank.shared.exception.accounts.AccountNotFoundException;
 import com.udea.digitalbank.shared.exception.accounts.InsufficientFundsException;
-import com.udea.digitalbank.shared.exception.transactions.InvalidReceiverAccountException;
 import com.udea.digitalbank.shared.exception.transactions.InvalidTransactionCodeException;
-import com.udea.digitalbank.shared.exception.transactions.SameAccountTransferException;
 import com.udea.digitalbank.shared.exception.transactions.TransactionCodeExpiredException;
 import com.udea.digitalbank.shared.exception.transactions.TransactionLimitExceededException;
 import com.udea.digitalbank.shared.exception.transactions.TransactionNotFoundException;
@@ -21,12 +18,10 @@ import com.udea.digitalbank.transactions.domain.Transaction;
 import com.udea.digitalbank.transactions.domain.TransactionStatusEnum;
 import com.udea.digitalbank.transactions.domain.TransactionTypeEnum;
 import com.udea.digitalbank.transactions.dto.TransactionResponse;
-import com.udea.digitalbank.transactions.dto.TransferRequest;
 import com.udea.digitalbank.transactions.mapper.TransactionMapper;
 import com.udea.digitalbank.transactions.repository.TransactionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -39,8 +34,6 @@ import org.springframework.context.ApplicationEventPublisher;
 
 import java.math.BigDecimal;
 import java.time.Clock;
-import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -52,9 +45,9 @@ import static com.udea.digitalbank.transactions.TransactionFixtures.transfer;
 import static com.udea.digitalbank.transactions.TransactionFixtures.type;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.assertj.core.api.Assertions.within;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -111,20 +104,6 @@ class TransferConfirmationServiceTest {
         return new AccountView(UUID.randomUUID(), "@AN1231", number, UUID.randomUUID(), "SAVINGS",
                 status.name(), new BigDecimal(balance));
     }
-
-    private static TransferRequest request(String from, String to, String amount) {
-        TransferRequest request = new TransferRequest();
-        request.setSenderAccountNumber(from);
-        request.setReceiverAccountNumber(to);
-        request.setAmount(new BigDecimal(amount));
-        return request;
-    }
-
-    private void accountsExist() {
-        when(accountApi.requireOwnedAccount(userId, SENDER_NUMBER)).thenReturn(sender);
-        when(accountApi.getAccountByNumber(RECEIVER_NUMBER)).thenReturn(receiver);
-    }
-
 
     private Transaction pending() {
         Transaction transaction = transfer(userId, sender.id(), receiver.id(), "120.50",
@@ -239,7 +218,7 @@ class TransferConfirmationServiceTest {
         // Arrange
         Transaction transaction = pending();
         when(verificationApi.verifyTransactionCode(userId, "123456")).thenReturn(CodeCheckResult.valid());
-        org.mockito.Mockito.doThrow(new InsufficientFundsException("Fondos insuficientes en la cuenta " + SENDER_NUMBER))
+        doThrow(new InsufficientFundsException("Fondos insuficientes en la cuenta " + SENDER_NUMBER))
                 .when(accountApi).applyTransfer(any(), any(), any());
 
         // Act + Assert
@@ -256,7 +235,7 @@ class TransferConfirmationServiceTest {
         // Arrange
         Transaction transaction = pending();
         when(verificationApi.verifyTransactionCode(userId, "123456")).thenReturn(CodeCheckResult.valid());
-        org.mockito.Mockito.doThrow(new AccountNotActiveException("La cuenta " + RECEIVER_NUMBER + " no está activa"))
+        doThrow(new AccountNotActiveException("La cuenta " + RECEIVER_NUMBER + " no está activa"))
                 .when(accountApi).applyTransfer(any(), any(), any());
 
         // Act + Assert
@@ -328,7 +307,7 @@ class TransferConfirmationServiceTest {
         Transaction transaction = pending();
         when(accountApi.getAccount(sender.id())).thenReturn(sender);
         when(verificationApi.verifyTransactionCode(userId, "123456")).thenReturn(CodeCheckResult.valid());
-        org.mockito.Mockito.doThrow(new TransactionLimitExceededException("El monto supera el acumulado diario"))
+        doThrow(new TransactionLimitExceededException("El monto supera el acumulado diario"))
                 .when(limitService).requireWithinLimits(any(), any(), any());
 
         // Act + Assert

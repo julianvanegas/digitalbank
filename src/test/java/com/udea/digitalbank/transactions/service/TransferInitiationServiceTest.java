@@ -3,19 +3,13 @@ package com.udea.digitalbank.transactions.service;
 import com.udea.digitalbank.accounts.api.AccountApi;
 import com.udea.digitalbank.accounts.api.AccountStatusEnum;
 import com.udea.digitalbank.accounts.api.AccountView;
-import com.udea.digitalbank.auth.api.CodeCheckResult;
 import com.udea.digitalbank.auth.api.VerificationApi;
-import com.udea.digitalbank.shared.exception.TooManyRequestsException;
 import com.udea.digitalbank.shared.exception.accounts.AccountNotActiveException;
 import com.udea.digitalbank.shared.exception.accounts.AccountNotFoundException;
 import com.udea.digitalbank.shared.exception.accounts.InsufficientFundsException;
 import com.udea.digitalbank.shared.exception.transactions.InvalidReceiverAccountException;
-import com.udea.digitalbank.shared.exception.transactions.InvalidTransactionCodeException;
 import com.udea.digitalbank.shared.exception.transactions.SameAccountTransferException;
-import com.udea.digitalbank.shared.exception.transactions.TransactionCodeExpiredException;
 import com.udea.digitalbank.shared.exception.transactions.TransactionLimitExceededException;
-import com.udea.digitalbank.shared.exception.transactions.TransactionNotFoundException;
-import com.udea.digitalbank.shared.exception.transactions.TransactionNotPendingException;
 import com.udea.digitalbank.shared.security.Actor;
 import com.udea.digitalbank.transactions.domain.Transaction;
 import com.udea.digitalbank.transactions.domain.TransactionStatusEnum;
@@ -26,7 +20,6 @@ import com.udea.digitalbank.transactions.mapper.TransactionMapper;
 import com.udea.digitalbank.transactions.repository.TransactionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -41,7 +34,6 @@ import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 import static com.udea.digitalbank.transactions.TransactionFixtures.RECEIVER_NUMBER;
@@ -55,11 +47,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.within;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 /**
@@ -126,7 +118,6 @@ class TransferInitiationServiceTest {
         when(accountApi.requireOwnedAccount(userId, SENDER_NUMBER)).thenReturn(sender);
         when(accountApi.getAccountByNumber(RECEIVER_NUMBER)).thenReturn(receiver);
     }
-
 
     @Test
     @DisplayName("HU20 CA01 / HU21 CA01 - Cuentas activas y saldo suficiente: queda PENDING, envía el código y responde con el vencimiento")
@@ -322,7 +313,7 @@ class TransferInitiationServiceTest {
     void deberiaRechazarAlClienteQueSuperaElTope() {
         // Arrange
         accountsExist();
-        org.mockito.Mockito.doThrow(new TransactionLimitExceededException("El monto supera el acumulado diario"))
+        doThrow(new TransactionLimitExceededException("El monto supera el acumulado diario"))
                 .when(limitService).requireWithinLimits(any(), any(), any());
         TransferRequest request = request(SENDER_NUMBER, RECEIVER_NUMBER, "120.50");
 
