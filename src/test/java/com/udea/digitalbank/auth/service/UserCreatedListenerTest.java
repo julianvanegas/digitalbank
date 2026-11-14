@@ -61,9 +61,10 @@ class UserCreatedListenerTest {
         // Arrange
         UUID userId = UUID.randomUUID();
         when(userRepository.findById(userId)).thenReturn(Optional.empty());
+        UserCreatedEvent userCreatedEvent = new UserCreatedEvent(userId);
 
         // Act + Assert
-        assertThatCode(() -> listener.onUserCreated(new UserCreatedEvent(userId))).doesNotThrowAnyException();
+        assertThatCode(() -> listener.onUserCreated(userCreatedEvent)).doesNotThrowAnyException();
         verify(verificationDispatcher, never()).issueAndSend(any(User.class), any(PurposeEnum.class));
     }
 
@@ -75,8 +76,9 @@ class UserCreatedListenerTest {
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
         when(verificationDispatcher.issueAndSend(user, PurposeEnum.EMAIL_CONFIRMATION))
                 .thenThrow(new IllegalStateException("Resend caído"));
+        UserCreatedEvent userCreatedEvent = new UserCreatedEvent(user.getId());
 
         // Act + Assert
-        assertThatCode(() -> listener.onUserCreated(new UserCreatedEvent(user.getId()))).doesNotThrowAnyException();
+        assertThatCode(() -> listener.onUserCreated(userCreatedEvent)).doesNotThrowAnyException();
     }
 }

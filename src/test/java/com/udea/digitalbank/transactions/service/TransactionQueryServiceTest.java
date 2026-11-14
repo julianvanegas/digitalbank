@@ -94,7 +94,8 @@ class TransactionQueryServiceTest {
     @Test
     @DisplayName("Transversal - La transacción de otro cliente responde igual que una inexistente")
     void deberiaOcultarLaTransaccionDeOtroCliente() {
-        assertThatThrownBy(() -> queryService.getTransaction(new Actor(UUID.randomUUID(), false), REFERENCE))
+        Actor actor = new Actor(UUID.randomUUID(), false);
+        assertThatThrownBy(() -> queryService.getTransaction(actor, REFERENCE))
                 .isInstanceOf(TransactionNotFoundException.class)
                 .hasMessage("Transacción no encontrada: " + REFERENCE);
     }
@@ -104,7 +105,8 @@ class TransactionQueryServiceTest {
     void deberiaFallarSiNoExiste() {
         when(transactionRepository.findByReference("TRF-NOEXISTE")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> queryService.getTransaction(new Actor(ownerId, false), "TRF-NOEXISTE"))
+        Actor actor = new Actor(ownerId, false);
+        assertThatThrownBy(() -> queryService.getTransaction(actor, "TRF-NOEXISTE"))
                 .isInstanceOf(TransactionNotFoundException.class);
     }
 }

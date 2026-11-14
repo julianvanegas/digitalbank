@@ -20,9 +20,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.time.Clock;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -54,6 +56,9 @@ class AuthServiceTest {
     private VerificationDispatcher verificationDispatcher;
     @Mock
     private UserStatusService userStatusService;
+
+    @Spy
+    private Clock clock = Clock.systemDefaultZone();
 
     @InjectMocks
     private AuthService authService;

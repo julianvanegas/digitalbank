@@ -15,6 +15,7 @@ import com.udea.digitalbank.customer.security.CustomerSecurity;
 import com.udea.digitalbank.customer.service.CustomerService;
 import com.udea.digitalbank.employee.security.EmployeeSecurity;
 import com.udea.digitalbank.employee.service.EmployeeService;
+import com.udea.digitalbank.shared.config.ClockConfig;
 import com.udea.digitalbank.shared.exception.GlobalExceptionHandler;
 import com.udea.digitalbank.shared.exception.SecurityErrorHandler;
 import com.udea.digitalbank.transactions.security.TransactionSecurity;
@@ -41,8 +42,8 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
+import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -69,7 +70,7 @@ import static org.mockito.Mockito.when;
 @WebMvcTest
 @Import({SecurityConfig.class, AuthSecurity.class, CustomerSecurity.class, EmployeeSecurity.class,
         AccountSecurity.class, TransactionSecurity.class, ApiAuthorizationTest.UndeclaredEndpointController.class, JwtAuthenticationFilter.class,
-        JwtUtil.class, SecurityErrorHandler.class, GlobalExceptionHandler.class, ActorWebConfig.class})
+        JwtUtil.class, SecurityErrorHandler.class, GlobalExceptionHandler.class, ActorWebConfig.class, ClockConfig.class})
 @TestPropertySource(properties = {
         "cors.allowed-origins=http://localhost",
         "jwt.secret=test-only-secret-with-more-than-thirty-two-chars",
@@ -232,8 +233,8 @@ class ApiAuthorizationTest {
     }
 
     private String bearer(String role) {
-        Date now = new Date();
-        Date expires = new Date(now.getTime() + 3_600_000);
+        Instant now = Instant.now();
+        Instant expires = now.plusSeconds(3_600);
         return "Bearer " + jwtUtil.generateToken(UUID.randomUUID(), role, UUID.randomUUID().toString(), now, expires);
     }
 

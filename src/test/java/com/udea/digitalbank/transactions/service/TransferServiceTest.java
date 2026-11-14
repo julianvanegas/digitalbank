@@ -37,6 +37,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -94,7 +95,7 @@ class TransferServiceTest {
     void setUp() {
         TransactionResponses responses = new TransactionResponses(Mappers.getMapper(TransactionMapper.class), accountApi);
         transferService = new TransferService(transactionRepository, catalog, responses, referenceGenerator, accountApi,
-                verificationApi, eventPublisher);
+                verificationApi, eventPublisher, Clock.systemDefaultZone());
         lenient().when(catalog.status(any())).thenAnswer(i -> status(i.getArgument(0)));
         lenient().when(catalog.type(any())).thenAnswer(i -> type(i.getArgument(0)));
         lenient().when(transactionRepository.save(any(Transaction.class))).thenAnswer(i -> i.getArgument(0));
@@ -196,9 +197,10 @@ class TransferServiceTest {
         void deberiaRechazarPorFondosInsuficientes() {
             // Arrange
             accountsExist();
+            TransferRequest request = request(SENDER_NUMBER, RECEIVER_NUMBER, "500.01");
 
             // Act + Assert
-            assertThatThrownBy(() -> transferService.initiate(actor, request(SENDER_NUMBER, RECEIVER_NUMBER, "500.01")))
+            assertThatThrownBy(() -> transferService.initiate(actor, request))
                     .isInstanceOf(InsufficientFundsException.class)
                     .hasMessageContaining("Fondos insuficientes");
             verify(transactionRepository, never()).save(any());
@@ -222,8 +224,9 @@ class TransferServiceTest {
         @Test
         @DisplayName("HU20 CA03 - Cuenta destino igual a la de origen: indica que no se puede y no consulta nada")
         void deberiaRechazarUnaTransferenciaALaMismaCuenta() {
+            TransferRequest request = request(SENDER_NUMBER, SENDER_NUMBER, "10.00");
             // Act + Assert
-            assertThatThrownBy(() -> transferService.initiate(actor, request(SENDER_NUMBER, SENDER_NUMBER, "10.00")))
+            assertThatThrownBy(() -> transferService.initiate(actor, request))
                     .isInstanceOf(SameAccountTransferException.class)
                     .hasMessage("No se pueden realizar transferencias a la misma cuenta");
             verifyNoInteractions(accountApi, verificationApi);
@@ -237,9 +240,10 @@ class TransferServiceTest {
             when(accountApi.requireOwnedAccount(userId, SENDER_NUMBER)).thenReturn(sender);
             when(accountApi.getAccountByNumber(RECEIVER_NUMBER))
                     .thenThrow(new AccountNotFoundException("Cuenta no encontrada: " + RECEIVER_NUMBER));
+            TransferRequest request = request(SENDER_NUMBER, RECEIVER_NUMBER, "10.00");
 
             // Act + Assert
-            assertThatThrownBy(() -> transferService.initiate(actor, request(SENDER_NUMBER, RECEIVER_NUMBER, "10.00")))
+            assertThatThrownBy(() -> transferService.initiate(actor, request))
                     .isInstanceOf(InvalidReceiverAccountException.class)
                     .hasMessage("La cuenta de destino no existe");
             verify(transactionRepository, never()).save(any());
@@ -253,9 +257,10 @@ class TransferServiceTest {
             when(accountApi.requireOwnedAccount(userId, SENDER_NUMBER)).thenReturn(sender);
             when(accountApi.getAccountByNumber(RECEIVER_NUMBER))
                     .thenReturn(account(RECEIVER_NUMBER, status, "20.00"));
+            TransferRequest request = request(SENDER_NUMBER, RECEIVER_NUMBER, "10.00");
 
             // Act + Assert
-            assertThatThrownBy(() -> transferService.initiate(actor, request(SENDER_NUMBER, RECEIVER_NUMBER, "10.00")))
+            assertThatThrownBy(() -> transferService.initiate(actor, request))
                     .isInstanceOf(InvalidReceiverAccountException.class)
                     .hasMessageContaining(word);
             verify(transactionRepository, never()).save(any());
@@ -268,9 +273,10 @@ class TransferServiceTest {
             // Arrange
             when(accountApi.requireOwnedAccount(userId, SENDER_NUMBER))
                     .thenReturn(account(SENDER_NUMBER, status, "500.00"));
+            TransferRequest request = request(SENDER_NUMBER, RECEIVER_NUMBER, "10.00");
 
             // Act + Assert
-            assertThatThrownBy(() -> transferService.initiate(actor, request(SENDER_NUMBER, RECEIVER_NUMBER, "10.00")))
+            assertThatThrownBy(() -> transferService.initiate(actor, request))
                     .isInstanceOf(AccountNotActiveException.class)
                     .hasMessageContaining(word);
             verify(accountApi, never()).getAccountByNumber(anyString());
@@ -282,9 +288,10 @@ class TransferServiceTest {
             // Arrange
             when(accountApi.requireOwnedAccount(userId, SENDER_NUMBER))
                     .thenThrow(new AccountNotFoundException("Cuenta no encontrada: " + SENDER_NUMBER));
+            TransferRequest request = request(SENDER_NUMBER, RECEIVER_NUMBER, "10.00");
 
             // Act + Assert
-            assertThatThrownBy(() -> transferService.initiate(actor, request(SENDER_NUMBER, RECEIVER_NUMBER, "10.00")))
+            assertThatThrownBy(() -> transferService.initiate(actor, request))
                     .isInstanceOf(AccountNotFoundException.class);
             verify(transactionRepository, never()).save(any());
             verifyNoInteractions(verificationApi);

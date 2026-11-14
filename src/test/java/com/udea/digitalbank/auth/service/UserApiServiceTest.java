@@ -21,6 +21,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.Clock;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -64,7 +65,8 @@ class UserApiServiceTest {
 
     @BeforeEach
     void setUp() {
-        userApi = new UserApiService(userRepository, userStatusService, catalogs, passwordEncoder, eventPublisher);
+        userApi = new UserApiService(userRepository, userStatusService, catalogs, passwordEncoder, eventPublisher,
+                Clock.systemDefaultZone());
     }
 
     private Role buildRole(short id, String code) {

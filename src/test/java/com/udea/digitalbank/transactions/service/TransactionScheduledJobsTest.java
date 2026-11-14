@@ -10,6 +10,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -38,7 +39,7 @@ class TransactionScheduledJobsTest {
             jobs.rejectExpiredPending();
             jobs.rejectExpiredPending();
         }).doesNotThrowAnyException();
-        verify(transferService, org.mockito.Mockito.times(2)).rejectExpiredPending();
+        verify(transferService, times(2)).rejectExpiredPending();
     }
 
     @Test

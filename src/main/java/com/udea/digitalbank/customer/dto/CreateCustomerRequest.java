@@ -1,6 +1,7 @@
 package com.udea.digitalbank.customer.dto;
 
 import jakarta.validation.constraints.*;
+import com.udea.digitalbank.shared.utils.Names;
 import lombok.Data;
 import com.udea.digitalbank.shared.utils.Phone;
 import java.time.LocalDate;
@@ -39,4 +40,12 @@ public class CreateCustomerRequest {
     @Schema(example = OpenApiExamples.EMAIL)
     @NotBlank @Email @Size(max = 254)
     private String email;
+
+    public void setFirstNames(String firstNames) {
+        this.firstNames = Names.normalize(firstNames);
+    }
+
+    public void setLastNames(String lastNames) {
+        this.lastNames = Names.normalize(lastNames);
+    }
 }

@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.Collection;
@@ -32,17 +33,20 @@ public class UserApiService implements UserApi {
     private final Catalogs catalogs;
     private final PasswordEncoder passwordEncoder;
     private final ApplicationEventPublisher eventPublisher;
+    private final Clock clock;
 
     public UserApiService(UserRepository userRepository,
                       UserStatusService userStatusService,
                       Catalogs catalogs,
                       PasswordEncoder passwordEncoder,
-                      ApplicationEventPublisher eventPublisher) {
+                      ApplicationEventPublisher eventPublisher,
+                      Clock clock) {
         this.userRepository = userRepository;
         this.userStatusService = userStatusService;
         this.catalogs = catalogs;
         this.passwordEncoder = passwordEncoder;
         this.eventPublisher = eventPublisher;
+        this.clock = clock;
     }
 
     @Override
@@ -52,7 +56,7 @@ public class UserApiService implements UserApi {
             throw new DuplicateUserException("Ya existe un usuario registrado con ese email");
         }
 
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(clock);
         User user = new User();
         user.setEmail(email);
         user.setPasswordHash(passwordEncoder.encode(temporaryPassword()));

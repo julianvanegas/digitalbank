@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -35,22 +36,29 @@ public class VerificationService {
     private final CodeHasher codeHasher;
     private final long resendIntervalSeconds;
     private final SecureRandom random = new SecureRandom();
+    private final Clock clock;
 
     public VerificationService(VerificationChallengeRepository challengeRepository,
                                UserRepository userRepository,
                                Catalogs catalogs,
                                CodeHasher codeHasher,
-                               @Value("${verification.resend-interval-seconds}") long resendIntervalSeconds) {
+                               @Value("${verification.resend-interval-seconds}") long resendIntervalSeconds,
+                               Clock clock) {
         this.challengeRepository = challengeRepository;
         this.userRepository = userRepository;
         this.catalogs = catalogs;
         this.codeHasher = codeHasher;
         this.resendIntervalSeconds = resendIntervalSeconds;
+        this.clock = clock;
     }
 
     /** Un reto por (usuario, propósito): pedir uno nuevo reemplaza el anterior. */
     @Transactional
     public IssuedChallenge issue(User user, PurposeEnum purposeEnum) {
+        return createChallenge(user, purposeEnum);
+    }
+
+    private IssuedChallenge createChallenge(User user, PurposeEnum purposeEnum) {
         ChallengePurpose purpose = catalogs.purpose(purposeEnum);
         String code = generateNumericCode();
 
@@ -61,7 +69,7 @@ public class VerificationService {
         challenge.setUserId(user.getId());
         challenge.setPurpose(purpose);
         challenge.setCodeHash(codeHasher.hash(user.getId(), purpose.getId(), code));
-        challenge.setExpiresAt(LocalDateTime.now().plusMinutes(purpose.getTtlMinutes()));
+        challenge.setExpiresAt(LocalDateTime.now(clock).plusMinutes(purpose.getTtlMinutes()));
         challengeRepository.save(challenge);
 
         return new IssuedChallenge(challenge.getId(), code, purpose.getTtlMinutes());
@@ -73,8 +81,8 @@ public class VerificationService {
         Optional<VerificationChallenge> current =
                 challengeRepository.lockByUserAndPurpose(user.getId(), purposeEnum.name());
         boolean tooSoon = current.isPresent()
-                && current.get().issuedAt().plusSeconds(resendIntervalSeconds).isAfter(LocalDateTime.now());
-        return tooSoon ? Optional.empty() : Optional.of(issue(user, purposeEnum));
+                && current.get().issuedAt().plusSeconds(resendIntervalSeconds).isAfter(LocalDateTime.now(clock));
+        return tooSoon ? Optional.empty() : Optional.of(createChallenge(user, purposeEnum));
     }
 
     /**
@@ -87,7 +95,7 @@ public class VerificationService {
     public ResentChallenge resend(UUID challengeId, PurposeEnum purposeEnum) {
         VerificationChallenge challenge = challengeRepository.lockByIdAndPurpose(challengeId, purposeEnum.name())
                 .orElseThrow(() -> new InvalidVerificationCodeException(INVALID_MESSAGE));
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(clock);
         // Sin borrar: la excepción revierte la transacción y de la limpieza se encarga deleteExpired
         if (challenge.getExpiresAt().isBefore(now)) {
             throw new InvalidVerificationCodeException(INVALID_MESSAGE);
@@ -100,7 +108,8 @@ public class VerificationService {
         }
         LocalDateTime nextAllowed = challenge.issuedAt().plusSeconds(resendIntervalSeconds);
         if (nextAllowed.isAfter(now)) {
-            long wait = Math.max(1, (long) Math.ceil(Duration.between(now, nextAllowed).toMillis() / 1000.0));
+            long millis = Duration.between(now.atZone(clock.getZone()), nextAllowed.atZone(clock.getZone())).toMillis();
+            long wait = Math.max(1, (long) Math.ceil(millis / 1000.0));
             throw new TooManyRequestsException("Espera " + wait + " segundos antes de pedir otro código", wait);
         }
 
@@ -162,7 +171,7 @@ public class VerificationService {
 
     @Transactional
     public void deleteExpired() {
-        challengeRepository.deleteExpired(LocalDateTime.now());
+        challengeRepository.deleteExpired(LocalDateTime.now(clock));
     }
 
     /**
@@ -193,7 +202,7 @@ public class VerificationService {
      * @return el resultado de la verificación
      */
     private CodeCheckResult evaluate(VerificationChallenge challenge, String code) {
-        if (challenge.getExpiresAt().isBefore(LocalDateTime.now())) {
+        if (challenge.getExpiresAt().isBefore(LocalDateTime.now(clock))) {
             challengeRepository.delete(challenge);
             return CodeCheckResult.expired();
         }

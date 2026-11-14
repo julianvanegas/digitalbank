@@ -8,6 +8,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -20,17 +21,20 @@ public class PasswordResetService {
     private final VerificationService verificationService;
     private final VerificationDispatcher verificationDispatcher;
     private final SessionService sessionService;
+    private final Clock clock;
 
     public PasswordResetService(UserRepository userRepository,
                                 PasswordEncoder passwordEncoder,
                                 VerificationService verificationService,
                                 VerificationDispatcher verificationDispatcher,
-                                SessionService sessionService) {
+                                SessionService sessionService,
+                                Clock clock) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.verificationService = verificationService;
         this.verificationDispatcher = verificationDispatcher;
         this.sessionService = sessionService;
+        this.clock = clock;
     }
 
     /** Responde igual exista o no el usuario, para no revelar qué emails están registrados. */
@@ -46,7 +50,7 @@ public class PasswordResetService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new InvalidVerificationCodeException("Código de verificación inválido o expirado"));
         user.setPasswordHash(passwordEncoder.encode(newPassword));
-        user.setPasswordChangedAt(LocalDateTime.now());
+        user.setPasswordChangedAt(LocalDateTime.now(clock));
         user.setFailedAttempts((short) 0);
         userRepository.save(user);
         sessionService.revoke(userId);

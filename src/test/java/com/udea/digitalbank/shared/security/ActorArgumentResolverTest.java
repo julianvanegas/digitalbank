@@ -22,6 +22,7 @@ class ActorArgumentResolverTest {
 
     @SuppressWarnings("unused")
     void endpoint(@CurrentActor Actor actor, Actor withoutAnnotation, @CurrentActor String wrongType) {
+        // Sin cuerpo a propósito: solo importa su firma
     }
 
     @AfterEach
@@ -67,11 +68,12 @@ class ActorArgumentResolverTest {
     @Test
     @DisplayName("Transversal - Sin autenticación o con un principal que no es el id del usuario falla con claridad")
     void sinUsuarioAutenticado() throws Exception {
-        assertThatThrownBy(() -> resolver.resolveArgument(parameter(0), null, null, null))
+        MethodParameter parameter = parameter(0);
+        assertThatThrownBy(() -> resolver.resolveArgument(parameter, null, null, null))
                 .isInstanceOf(IllegalStateException.class);
 
         authenticate("anonimo", "ROLE_CUSTOMER");
-        assertThatThrownBy(() -> resolver.resolveArgument(parameter(0), null, null, null))
+        assertThatThrownBy(() -> resolver.resolveArgument(parameter, null, null, null))
                 .isInstanceOf(IllegalStateException.class);
     }
 }

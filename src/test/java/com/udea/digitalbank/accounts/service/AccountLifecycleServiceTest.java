@@ -34,6 +34,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -73,7 +74,7 @@ class AccountLifecycleServiceTest {
     void setUp() {
         lifecycleService = new AccountLifecycleService(accountRepository, accountActionRepository, customerApi,
                 Mappers.getMapper(AccountMapper.class), new AccountLookup(accountRepository), accountCatalog,
-                eventPublisher);
+                eventPublisher, Clock.systemDefaultZone());
     }
 
     @Nested
@@ -170,9 +171,10 @@ class AccountLifecycleServiceTest {
             stubCustomer();
             Account foreign = accountOf(AccountStatusEnum.ACTIVE, "0.00", UUID.randomUUID());
             when(accountRepository.findByAccountNumberForUpdate(ACCOUNT_NUMBER)).thenReturn(Optional.of(foreign));
+            Actor actor = new Actor(userId, false);
 
             // Act & Assert
-            assertThatThrownBy(() -> lifecycleService.closeAccount(new Actor(userId, false), ACCOUNT_NUMBER))
+            assertThatThrownBy(() -> lifecycleService.closeAccount(actor, ACCOUNT_NUMBER))
                     .isInstanceOf(AccountNotFoundException.class)
                     .hasMessageContaining(ACCOUNT_NUMBER);
             assertThat(foreign.getStatus().is(AccountStatusEnum.ACTIVE)).isTrue();
@@ -184,9 +186,10 @@ class AccountLifecycleServiceTest {
         void deberiaLanzarExcepcionCuandoLaCuentaNoExiste() {
             // Arrange
             when(accountRepository.findByAccountNumberForUpdate(ACCOUNT_NUMBER)).thenReturn(Optional.empty());
+            Actor actor = new Actor(adminId, true);
 
             // Act & Assert
-            assertThatThrownBy(() -> lifecycleService.closeAccount(new Actor(adminId, true), ACCOUNT_NUMBER))
+            assertThatThrownBy(() -> lifecycleService.closeAccount(actor, ACCOUNT_NUMBER))
                     .isInstanceOf(AccountNotFoundException.class);
         }
 
@@ -196,9 +199,10 @@ class AccountLifecycleServiceTest {
             // Arrange
             Account account = accountOf(AccountStatusEnum.ACTIVE, "0.01", UUID.randomUUID());
             when(accountRepository.findByAccountNumberForUpdate(ACCOUNT_NUMBER)).thenReturn(Optional.of(account));
+            Actor actor = new Actor(adminId, true);
 
             // Act & Assert
-            assertThatThrownBy(() -> lifecycleService.closeAccount(new Actor(adminId, true), ACCOUNT_NUMBER))
+            assertThatThrownBy(() -> lifecycleService.closeAccount(actor, ACCOUNT_NUMBER))
                     .isInstanceOf(AccountNotClosableException.class)
                     .hasMessageContaining("saldo");
             assertThat(account.getStatus().is(AccountStatusEnum.ACTIVE)).isTrue();
@@ -213,9 +217,10 @@ class AccountLifecycleServiceTest {
             // Arrange
             Account account = accountOf(AccountStatusEnum.BLOCKED, "0.00", UUID.randomUUID());
             when(accountRepository.findByAccountNumberForUpdate(ACCOUNT_NUMBER)).thenReturn(Optional.of(account));
+            Actor actor = new Actor(adminId, true);
 
             // Act & Assert
-            assertThatThrownBy(() -> lifecycleService.closeAccount(new Actor(adminId, true), ACCOUNT_NUMBER))
+            assertThatThrownBy(() -> lifecycleService.closeAccount(actor, ACCOUNT_NUMBER))
                     .isInstanceOf(AccountNotClosableException.class)
                     .hasMessageContaining("bloqueada");
             assertThat(account.getStatus().is(AccountStatusEnum.BLOCKED)).isTrue();
@@ -229,9 +234,10 @@ class AccountLifecycleServiceTest {
             // Arrange
             Account account = accountOf(AccountStatusEnum.CLOSED, "0.00", UUID.randomUUID());
             when(accountRepository.findByAccountNumberForUpdate(ACCOUNT_NUMBER)).thenReturn(Optional.of(account));
+            Actor actor = new Actor(adminId, true);
 
             // Act & Assert
-            assertThatThrownBy(() -> lifecycleService.closeAccount(new Actor(adminId, true), ACCOUNT_NUMBER))
+            assertThatThrownBy(() -> lifecycleService.closeAccount(actor, ACCOUNT_NUMBER))
                     .isInstanceOf(AccountNotClosableException.class)
                     .hasMessageContaining("ya está cerrada");
             verify(accountRepository, never()).save(any());
@@ -283,9 +289,10 @@ class AccountLifecycleServiceTest {
             // Arrange
             Account account = buildAccount(AccountStatusEnum.BLOCKED);
             when(accountRepository.findByAccountNumberForUpdate(ACCOUNT_NUMBER)).thenReturn(Optional.of(account));
+            UUID unknownUserId = UUID.randomUUID();
 
             // Act & Assert
-            assertThatThrownBy(() -> lifecycleService.blockAccount(ACCOUNT_NUMBER, "Motivo", UUID.randomUUID()))
+            assertThatThrownBy(() -> lifecycleService.blockAccount(ACCOUNT_NUMBER, "Motivo", unknownUserId))
                     .isInstanceOf(AccountNotBlockableException.class);
             verifyNoInteractions(accountActionRepository);
         }
@@ -293,8 +300,9 @@ class AccountLifecycleServiceTest {
         @Test
         @DisplayName("HU15 CA03 - Rechaza un motivo vacío")
         void deberiaRechazarUnMotivoVacio() {
+            UUID unknownUserId = UUID.randomUUID();
             // Act & Assert
-            assertThatThrownBy(() -> lifecycleService.blockAccount(ACCOUNT_NUMBER, "   ", UUID.randomUUID()))
+            assertThatThrownBy(() -> lifecycleService.blockAccount(ACCOUNT_NUMBER, "   ", unknownUserId))
                     .isInstanceOf(InvalidRequestException.class);
             verifyNoInteractions(accountActionRepository);
         }
@@ -346,9 +354,10 @@ class AccountLifecycleServiceTest {
             // Arrange
             Account account = buildAccount(current);
             when(accountRepository.findByAccountNumberForUpdate(ACCOUNT_NUMBER)).thenReturn(Optional.of(account));
+            UUID unknownUserId = UUID.randomUUID();
 
             // Act & Assert
-            assertThatThrownBy(() -> lifecycleService.unblockAccount(ACCOUNT_NUMBER, "Titular verificado", UUID.randomUUID()))
+            assertThatThrownBy(() -> lifecycleService.unblockAccount(ACCOUNT_NUMBER, "Titular verificado", unknownUserId))
                     .isInstanceOf(AccountNotUnblockableException.class)
                     .hasMessageContaining(current.name());
             assertThat(account.getStatus().is(current)).isTrue();
@@ -361,8 +370,9 @@ class AccountLifecycleServiceTest {
         @ValueSource(strings = {"", "   "})
         @DisplayName("HU16 CA02 - Rechaza un motivo vacío, en blanco o ausente sin tocar la cuenta")
         void deberiaRechazarUnMotivoVacio(String reason) {
+            UUID unknownUserId = UUID.randomUUID();
             // Act & Assert
-            assertThatThrownBy(() -> lifecycleService.unblockAccount(ACCOUNT_NUMBER, reason, UUID.randomUUID()))
+            assertThatThrownBy(() -> lifecycleService.unblockAccount(ACCOUNT_NUMBER, reason, unknownUserId))
                     .isInstanceOf(InvalidRequestException.class);
             verifyNoInteractions(accountRepository, accountActionRepository);
         }
@@ -372,9 +382,10 @@ class AccountLifecycleServiceTest {
         void deberiaLanzarExcepcionCuandoLaCuentaNoExiste() {
             // Arrange
             when(accountRepository.findByAccountNumberForUpdate(ACCOUNT_NUMBER)).thenReturn(Optional.empty());
+            UUID unknownUserId = UUID.randomUUID();
 
             // Act & Assert
-            assertThatThrownBy(() -> lifecycleService.unblockAccount(ACCOUNT_NUMBER, "Titular verificado", UUID.randomUUID()))
+            assertThatThrownBy(() -> lifecycleService.unblockAccount(ACCOUNT_NUMBER, "Titular verificado", unknownUserId))
                     .isInstanceOf(AccountNotFoundException.class);
             verify(accountRepository, never()).save(any());
         }

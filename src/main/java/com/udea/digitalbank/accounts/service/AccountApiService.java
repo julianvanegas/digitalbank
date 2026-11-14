@@ -61,7 +61,7 @@ public class AccountApiService implements AccountApi {
     @Override
     @Transactional(readOnly = true)
     public AccountView requireActiveAccount(UUID accountId) {
-        AccountView view = getAccount(accountId);
+        AccountView view = accountMapper.toView(accountLookup.byId(accountId));
         if (!view.isActive()) {
             throw new AccountNotActiveException("La cuenta no está activa: " + accountId);
         }

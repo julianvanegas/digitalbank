@@ -37,6 +37,39 @@ class CustomerRequestsValidationTest {
     }
 
     @Test
+    @DisplayName("HU07 CA02 - Perfil: un nombre solo con espacios, tabulaciones o saltos de línea está en blanco")
+    void rechazaLosNombresEnBlancoDeCualquierTipo() {
+        UpdateCustomerProfileRequest request = new UpdateCustomerProfileRequest();
+
+        for (String blank : new String[] {"", " ", "\t", " \n ", "\r\n"}) {
+            request.setFirstNames(blank);
+            assertThat(invalidFields(request)).containsExactly("firstNames");
+        }
+    }
+
+    @Test
+    @DisplayName("HU07 CA02 - Perfil: un nombre con texto es válido aunque tenga espacios alrededor")
+    void aceptaLosNombresConTexto() {
+        UpdateCustomerProfileRequest request = new UpdateCustomerProfileRequest();
+
+        for (String name : new String[] {"  Ana  ", "Ana María"}) {
+            request.setFirstNames(name);
+            assertThat(invalidFields(request)).isEmpty();
+        }
+    }
+
+    @Test
+    @DisplayName("HU07 CA02 - Perfil: un nombre con saltos de línea se rechaza, aunque tenga texto")
+    void rechazaLosNombresConSaltosDeLinea() {
+        UpdateCustomerProfileRequest request = new UpdateCustomerProfileRequest();
+
+        for (String name : new String[] {"\nAna", "Ana\n", "Ana\nGómez", "Ana\r\nGómez", "Ana\u2028Gómez"}) {
+            request.setFirstNames(name);
+            assertThat(invalidFields(request)).containsExactly("firstNames");
+        }
+    }
+
+    @Test
     @DisplayName("HU07 CA02 - Perfil: el teléfono, si viene, debe tener formato válido")
     void validaElTelefono() {
         UpdateCustomerProfileRequest request = new UpdateCustomerProfileRequest();
@@ -57,5 +90,29 @@ class CustomerRequestsValidationTest {
         request.setDocumentNumber("1000000001");
         request.setStatus(UserStatusEnum.ACTIVE);
         assertThat(invalidFields(request)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("HU07 CA02 - UpdateCustomerProfileRequest: los nombres se guardan sin espacios sobrantes")
+    void normalizaLosNombresDeUpdateCustomerProfileRequest() {
+        UpdateCustomerProfileRequest request = new UpdateCustomerProfileRequest();
+
+        request.setFirstNames("    Ana     Vélez  ");
+        request.setLastNames("  Gómez    Ruiz ");
+
+        assertThat(request.getFirstNames()).isEqualTo("Ana Vélez");
+        assertThat(request.getLastNames()).isEqualTo("Gómez Ruiz");
+    }
+
+    @Test
+    @DisplayName("HU01 - CreateCustomerRequest: los nombres se guardan sin espacios sobrantes")
+    void normalizaLosNombresDeCreateCustomerRequest() {
+        CreateCustomerRequest request = new CreateCustomerRequest();
+
+        request.setFirstNames("    Ana     Vélez  ");
+        request.setLastNames("  Gómez    Ruiz ");
+
+        assertThat(request.getFirstNames()).isEqualTo("Ana Vélez");
+        assertThat(request.getLastNames()).isEqualTo("Gómez Ruiz");
     }
 }

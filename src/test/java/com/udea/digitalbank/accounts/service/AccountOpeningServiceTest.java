@@ -91,7 +91,8 @@ class AccountOpeningServiceTest {
                     "Cédula de ciudadanía", "1000000001", "ana@example.com", "ACTIVE");
             when(customerApi.getCustomerByUserId(customerUserId)).thenReturn(customer);
 
-            assertThatThrownBy(() -> openingService.open(customerActor, UUID.randomUUID(), null))
+            UUID unknownCustomerId = UUID.randomUUID();
+            assertThatThrownBy(() -> openingService.open(customerActor, unknownCustomerId, null))
                     .isInstanceOf(AccountOwnershipException.class);
             verify(accountRepository, never()).save(any());
         }
@@ -188,9 +189,10 @@ class AccountOpeningServiceTest {
             // Arrange
             stubOpening(List.of(existing(AccountStatusEnum.ACTIVE, 1), existing(AccountStatusEnum.INACTIVE, 2),
                     existing(AccountStatusEnum.BLOCKED, 3)));
+            Actor actor = new Actor(UUID.randomUUID(), true);
 
             // Act & Assert
-            assertThatThrownBy(() -> openingService.open(new Actor(UUID.randomUUID(), true), customerId, null))
+            assertThatThrownBy(() -> openingService.open(actor, customerId, null))
                     .isInstanceOf(AccountLimitReachedException.class)
                     .hasMessageContaining("abiertas");
             verify(accountRepository, never()).save(any());

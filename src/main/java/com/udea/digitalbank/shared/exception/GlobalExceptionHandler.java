@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.stream.Collectors;
 
@@ -32,6 +33,12 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     private static final String MALFORMED_REQUEST = "Solicitud mal formada: revisa el cuerpo y los parámetros";
 
+    private final Clock clock;
+
+    public GlobalExceptionHandler(Clock clock) {
+        this.clock = clock;
+    }
+
     /** Todas las excepciones de negocio: cada una declara su categoría y aquí se decide el código HTTP. */
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ErrorResponse> handleBusiness(BusinessException ex) {
@@ -41,7 +48,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         if (ex instanceof TooManyRequestsException tooMany && tooMany.getRetryAfterSeconds() > 0) {
             response.header(HttpHeaders.RETRY_AFTER, String.valueOf(tooMany.getRetryAfterSeconds()));
         }
-        return response.body(new ErrorResponse(status.value(), ex.getMessage(), LocalDateTime.now()));
+        return response.body(new ErrorResponse(status.value(), ex.getMessage(), LocalDateTime.now(clock)));
     }
 
     // Exhaustivo: una categoría nueva no compila hasta que se decide qué código le corresponde
@@ -153,7 +160,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     protected ResponseEntity<Object> handleExceptionInternal(Exception ex, Object body, HttpHeaders headers,
                                                              HttpStatusCode statusCode, WebRequest request) {
         return ResponseEntity.status(statusCode).headers(headers)
-                .body(new ErrorResponse(statusCode.value(), messageFor(statusCode), LocalDateTime.now()));
+                .body(new ErrorResponse(statusCode.value(), messageFor(statusCode), LocalDateTime.now(clock)));
     }
 
     private static String messageFor(HttpStatusCode status) {
@@ -169,11 +176,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     private ResponseEntity<Object> body(HttpStatus status, HttpHeaders headers, String message) {
         return ResponseEntity.status(status).headers(headers)
-                .body(new ErrorResponse(status.value(), message, LocalDateTime.now()));
+                .body(new ErrorResponse(status.value(), message, LocalDateTime.now(clock)));
     }
 
     private ResponseEntity<ErrorResponse> build(HttpStatus status, String message) {
         return ResponseEntity.status(status)
-                .body(new ErrorResponse(status.value(), message, LocalDateTime.now()));
+                .body(new ErrorResponse(status.value(), message, LocalDateTime.now(clock)));
     }
 }
