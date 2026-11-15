@@ -4,6 +4,7 @@ import com.udea.digitalbank.accounts.api.AccountApi;
 import com.udea.digitalbank.auth.api.CodeCheckResult;
 import com.udea.digitalbank.auth.api.VerificationApi;
 import com.udea.digitalbank.shared.exception.BusinessException;
+import com.udea.digitalbank.shared.exception.InvalidRequestException;
 import com.udea.digitalbank.shared.exception.TooManyRequestsException;
 import com.udea.digitalbank.shared.exception.accounts.AccountNotActiveException;
 import com.udea.digitalbank.shared.exception.accounts.AccountNotFoundException;
@@ -16,6 +17,7 @@ import com.udea.digitalbank.shared.exception.transactions.TransactionNotPendingE
 import com.udea.digitalbank.shared.security.Actor;
 import com.udea.digitalbank.transactions.domain.Transaction;
 import com.udea.digitalbank.transactions.domain.TransactionStatusEnum;
+import com.udea.digitalbank.transactions.domain.TransactionTypeEnum;
 import com.udea.digitalbank.transactions.dto.TransactionResponse;
 import com.udea.digitalbank.transactions.repository.TransactionRepository;
 import org.springframework.context.ApplicationEventPublisher;
@@ -83,6 +85,8 @@ public class TransferConfirmationService {
      * @param code      código de 6 dígitos recibido por correo
      * @return el comprobante de la transferencia ya completada
      * @throws TransactionNotFoundException      si la referencia no existe o pertenece a otro usuario
+     * @throws InvalidRequestException           si la referencia es de otro tipo de transacción (un retiro o un
+     *                                           depósito); se rechaza antes de verificar el código, que no se gasta
      * @throws TransactionNotPendingException    si la transferencia está cancelada o revertida
      * @throws InvalidTransactionCodeException   si el código es incorrecto y quedan intentos
      * @throws TooManyRequestsException          si se han agotado los intentos; la transferencia queda {@code REJECTED}
@@ -97,6 +101,13 @@ public class TransferConfirmationService {
         Transaction transaction = transactionRepository.findByReferenceForUpdate(reference)
                 .filter(t -> t.isOrderedBy(actor.userId()))
                 .orElseThrow(() -> new TransactionNotFoundException("Transacción no encontrada: " + reference));
+
+        // Antes que nada que dependa del tipo: el comprobante de una transacción completada y, sobre todo, la
+        // verificación del código, que gastaría un intento del cliente por mandar la referencia equivocada
+        if (!transaction.getType().is(TransactionTypeEnum.TRANSFER)) {
+            throw new InvalidRequestException("La referencia " + reference
+                    + " no es de una transferencia: aquí solo se confirman transferencias");
+        }
 
         if (transaction.is(TransactionStatusEnum.COMPLETED)) {
             return responses.of(transaction);
