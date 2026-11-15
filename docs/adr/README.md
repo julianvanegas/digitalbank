@@ -13,6 +13,7 @@ Este directorio reúne las decisiones de arquitectura significativas del backend
 | [ADR-0003](0003-usar-neon-como-plataforma-postgresql.md) | Usar Neon como plataforma gestionada de PostgreSQL | `accepted` | 2026-09-17 |
 | [ADR-0004](0004-transferir-en-dos-pasos-con-segundo-factor.md) | Transferir en dos pasos con segundo factor y permitir que `transactions` use `auth.api` | `accepted` | 2026-10-17 |
 | [ADR-0005](0005-topes-transaccionales-por-tipo-de-movimiento-y-de-cuenta.md) | Topes transaccionales por tipo de movimiento y de cuenta, y transferencias de un administrador en nombre del cliente | `accepted` | 2026-11-14 |
+| [ADR-0006](0006-retirar-en-dos-pasos-con-confirmacion-propia.md) | Retirar en dos pasos con una confirmación propia, con el código del titular y los topes del cliente | `proposed` | 2026-11-15 |
 
 ## Estados posibles
 
@@ -34,7 +35,7 @@ Cada registro usa encabezado YAML al estilo MADR (`status`, `date`, `decision-ma
 5. **Consecuencias** — qué se gana y qué se paga.
 6. **Evidencia en el repositorio** — dónde se ve la decisión en el código.
 
-## Alcance del sistema al momento de este registro
+## Alcance del sistema al 2026-09-25 (ADR-0001 a ADR-0003)
 
 DigitalBank es el backend de una banca digital en construcción. Los módulos implementados son `auth` (identidad de acceso) y `customer` (ciclo de vida del cliente), sobre un módulo transversal `shared`. Los módulos de cuentas y transacciones están previstos y no se han implementado todavía: las decisiones que los mencionan definen el lugar que ocuparán, no código existente.
 
