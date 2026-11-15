@@ -9,7 +9,8 @@ import java.util.List;
 /**
  * Permisos por rol de las rutas de transacciones. Iniciar y confirmar una transferencia lo hacen los clientes, que son
  * titulares de la operación, y los administradores, que operan en nombre de un cliente: el código de segundo factor
- * siempre va al titular de la cuenta de origen. La consignación es exclusiva de los administradores. El comprobante y
+ * siempre va al titular de la cuenta de origen. El retiro sigue las mismas reglas que la transferencia. La consignación
+ * es exclusiva de los administradores. El comprobante y
  * los topes los consulta cualquier usuario autenticado.
  */
 @Component
@@ -29,6 +30,10 @@ public class TransactionSecurity implements SecurityModule {
                 RoleRoute.post(BASE + "/transfers", Roles.CUSTOMER, Roles.ADMIN),
                 RoleRoute.post(BASE + "/*/confirm", Roles.CUSTOMER, Roles.ADMIN),
                 RoleRoute.post(BASE + "/deposits", Roles.ADMIN),
+                // Retiro (HU19): como la transferencia, lo inician y confirman el cliente o un administrador en su
+                // nombre. /withdrawals/*/confirm no se solapa con /*/confirm, que tiene un solo segmento antes
+                RoleRoute.post(BASE + "/withdrawals", Roles.CUSTOMER, Roles.ADMIN),
+                RoleRoute.post(BASE + "/withdrawals/*/confirm", Roles.CUSTOMER, Roles.ADMIN),
                 RoleRoute.get(BASE + "/limits", Roles.CUSTOMER, Roles.ADMIN),
                 RoleRoute.get(BASE + "/*", Roles.CUSTOMER, Roles.ADMIN));
     }

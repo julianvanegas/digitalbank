@@ -106,7 +106,8 @@ public class TransferConfirmationService {
         // verificación del código, que gastaría un intento del cliente por mandar la referencia equivocada
         if (!transaction.getType().is(TransactionTypeEnum.TRANSFER)) {
             throw new InvalidRequestException("La referencia " + reference
-                    + " no es de una transferencia: aquí solo se confirman transferencias");
+                    + " no es de una transferencia: aquí solo se confirman transferencias. Los retiros se confirman en "
+                    + "POST /api/v1/transactions/withdrawals/{referencia}/confirm");
         }
 
         if (transaction.is(TransactionStatusEnum.COMPLETED)) {
