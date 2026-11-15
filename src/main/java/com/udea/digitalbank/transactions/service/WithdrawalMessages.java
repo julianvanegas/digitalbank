@@ -38,4 +38,24 @@ final class WithdrawalMessages {
     static String insufficientFunds() {
         return "Saldo insuficiente para realizar el retiro";
     }
+
+    /** Código incorrecto con intentos disponibles (CA04): el retiro sigue pendiente. */
+    static String wrongCode(int remainingAttempts) {
+        return "Código incorrecto. " + TransferMessages.remainingAttempts(remainingAttempts);
+    }
+
+    /** Último intento fallido (CA04): el retiro se cancela. */
+    static String exhaustedAttempts() {
+        return "Superaste el número de intentos: el retiro fue cancelado. Inicia uno nuevo";
+    }
+
+    /** Código vencido o inexistente: el retiro se cancela. */
+    static String expiredCode() {
+        return "El código expiró: el retiro fue cancelado. Inicia el proceso de nuevo";
+    }
+
+    /** Una referencia que no es de un retiro enviada a la confirmación de retiros. */
+    static String notAWithdrawal(String reference) {
+        return "La referencia " + reference + " no es de un retiro: aquí solo se confirman retiros";
+    }
 }
