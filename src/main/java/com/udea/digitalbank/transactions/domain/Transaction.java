@@ -220,7 +220,8 @@ public class Transaction implements Persistable<UUID> {
      */
     public void requireConfirmable() {
         if (!is(TransactionStatusEnum.PENDING)) {
-            throw new TransactionNotPendingException("La transferencia " + reference + " ya no se puede confirmar: "
+            // Neutro: lo usan la confirmación de transferencias y la de retiros
+            throw new TransactionNotPendingException("La transacción " + reference + " ya no se puede confirmar: "
                     + describeStatus() + ". Inicia una nueva");
         }
     }
