@@ -58,7 +58,7 @@ DigitalBank es una API stateless para gestionar clientes, cuentas y transaccione
 - springdoc-openapi 3.2.0 para generar la especificación OpenAPI y publicar Swagger UI.
 - Resend Java 4.30.0 para el envío de notificaciones por correo electrónico.
 - JUnit y Spring Boot Test para pruebas automatizadas.
-- JaCoCo 0.8.16 para cobertura de código, con un umbral mínimo del 65%, y SonarCloud para análisis estático y calidad.
+- JaCoCo 0.8.16 para cobertura de código, con un umbral mínimo del 80%, y SonarCloud para análisis estático y calidad.
 - Maven Wrapper para la compilación reproducible.
 - Containerfile para empaquetar y ejecutar la aplicación dentro de contenedores según los estándares de la Open Container Initiative (OCI).
 
@@ -184,7 +184,7 @@ Authorization: Bearer <token>
 ./mvnw verify
 ```
 
-Ejecuta las pruebas automatizadas, genera el reporte de cobertura en `target/site/jacoco/index.html` y falla si la cobertura de líneas es inferior al 65%. El mismo comando corre en el pipeline de CI, seguido del análisis de SonarCloud.
+Ejecuta las pruebas automatizadas, genera el reporte de cobertura en `target/site/jacoco/index.html` y falla si la cobertura de líneas es inferior al 80%. El mismo comando corre en el pipeline de CI, seguido del análisis de SonarCloud.
 
 Para ejecutar solo las pruebas:
 
