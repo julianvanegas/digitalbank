@@ -56,12 +56,12 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 /**
- * Pruebas unitarias (AAA) de {@link TransferConfirmationService}: el segundo paso de la transferencia, con un caso por
+ * Pruebas unitarias (AAA) de {@link TransactionConfirmationService} con una transferencia: el segundo paso de la transferencia, con un caso por
  * cada regla de negocio. Las dependencias externas se mockean; el mapper, {@link TransferParties} y
  * {@link PendingTransfers} son reales.
  */
 @ExtendWith(MockitoExtension.class)
-@DisplayName("TransferConfirmationService - HU21 segundo paso: verificar el código")
+@DisplayName("TransactionConfirmationService (transferencias) - HU21 segundo paso: verificar el código")
 class TransferConfirmationServiceTest {
 
     private static final int CODE_TTL_MINUTES = 3;
@@ -84,7 +84,7 @@ class TransferConfirmationServiceTest {
     @Mock
     private ApplicationEventPublisher eventPublisher;
 
-    private TransferConfirmationService service;
+    private TransactionConfirmationService service;
 
     @BeforeEach
     void setUp() {
@@ -92,8 +92,8 @@ class TransferConfirmationServiceTest {
         Clock clock = Clock.systemDefaultZone();
         TransferParties parties = new TransferParties(accountApi, limitService);
         PendingTransfers pendingTransfers = new PendingTransfers(transactionRepository, catalog, accountApi, verificationApi, clock);
-        service = new TransferConfirmationService(transactionRepository, catalog, responses, parties,
-                pendingTransfers, accountApi, verificationApi, eventPublisher);
+        service = ConfirmationServices.of(transactionRepository, catalog, responses, parties, pendingTransfers,
+                limitService, accountApi, verificationApi, eventPublisher);
         lenient().when(catalog.status(any())).thenAnswer(i -> status(i.getArgument(0)));
         lenient().when(catalog.type(any())).thenAnswer(i -> type(i.getArgument(0)));
         lenient().when(transactionRepository.save(any(Transaction.class))).thenAnswer(i -> i.getArgument(0));

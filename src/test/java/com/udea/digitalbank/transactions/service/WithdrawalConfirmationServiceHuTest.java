@@ -1,11 +1,11 @@
 package com.udea.digitalbank.transactions.service;
 
+import org.springframework.context.ApplicationEventPublisher;
 import com.udea.digitalbank.accounts.api.AccountApi;
 import com.udea.digitalbank.accounts.api.AccountStatusEnum;
 import com.udea.digitalbank.accounts.api.AccountView;
 import com.udea.digitalbank.auth.api.CodeCheckResult;
 import com.udea.digitalbank.auth.api.VerificationApi;
-import com.udea.digitalbank.shared.exception.InvalidRequestException;
 import com.udea.digitalbank.shared.exception.TooManyRequestsException;
 import com.udea.digitalbank.shared.exception.accounts.InsufficientFundsException;
 import com.udea.digitalbank.shared.exception.transactions.InvalidTransactionCodeException;
@@ -33,9 +33,8 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
-import static com.udea.digitalbank.transactions.TransactionFixtures.REFERENCE;
+import static org.mockito.Mockito.mock;
 import static com.udea.digitalbank.transactions.TransactionFixtures.status;
-import static com.udea.digitalbank.transactions.TransactionFixtures.transfer;
 import static com.udea.digitalbank.transactions.TransactionFixtures.type;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -49,13 +48,13 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /**
- * Pruebas unitarias (AAA) de {@link WithdrawalConfirmationService}, el segundo paso del retiro de HU19. Se monta como
+ * Pruebas unitarias (AAA) de {@link TransactionConfirmationService} con un retiro, el segundo paso del retiro de HU19. Se monta como
  * TransferConfirmationServiceTest: TransferParties y PendingTransfers reales sobre los mocks. Que el rechazo se
  * confirme en la base gracias al noRollbackFor no se puede ver con mocks: lo prueba
  * WithdrawalConfirmationTransactionHuTest con el proxy transaccional de Spring.
  */
 @ExtendWith(MockitoExtension.class)
-@DisplayName("HU19 - WithdrawalConfirmationService - confirmación del retiro")
+@DisplayName("HU19 - TransactionConfirmationService (retiros) - confirmación del retiro")
 class WithdrawalConfirmationServiceHuTest {
 
     private static final String WITHDRAWAL_REFERENCE = "RET-20261017-7Xk2Pq9RmZ4tNvB8cHdWeA";
@@ -78,7 +77,7 @@ class WithdrawalConfirmationServiceHuTest {
     @Mock
     private VerificationApi verificationApi;
 
-    private WithdrawalConfirmationService service;
+    private TransactionConfirmationService service;
 
     @BeforeEach
     void setUp() {
@@ -86,8 +85,8 @@ class WithdrawalConfirmationServiceHuTest {
         TransferParties parties = new TransferParties(accountApi, limitService);
         PendingTransfers pendingTransfers = new PendingTransfers(transactionRepository, catalog, accountApi,
                 verificationApi, Clock.systemDefaultZone());
-        service = new WithdrawalConfirmationService(transactionRepository, catalog, responses, parties,
-                pendingTransfers, limitService, accountApi, verificationApi);
+        service = ConfirmationServices.of(transactionRepository, catalog, responses, parties, pendingTransfers,
+                limitService, accountApi, verificationApi, mock(ApplicationEventPublisher.class));
         lenient().when(catalog.status(any())).thenAnswer(i -> status(i.getArgument(0)));
         lenient().when(transactionRepository.save(any(Transaction.class))).thenAnswer(i -> i.getArgument(0));
     }
@@ -280,20 +279,5 @@ class WithdrawalConfirmationServiceHuTest {
                 .isInstanceOf(TransactionNotFoundException.class);
         verifyNoInteractions(verificationApi, accountApi);
         assertThat(withdrawal.is(TransactionStatusEnum.PENDING)).isTrue();
-    }
-
-    @Test
-    @DisplayName("HU19 - Una referencia de transferencia se rechaza antes de verificar el código, que no se gasta")
-    void deberiaRechazarUnaReferenciaDeTransferencia() {
-        // Arrange
-        Transaction transfer = transfer(userId, account.id(), UUID.randomUUID(), "10.00", TransactionStatusEnum.PENDING);
-        when(transactionRepository.findByReferenceForUpdate(REFERENCE)).thenReturn(Optional.of(transfer));
-
-        // Act + Assert
-        assertThatThrownBy(() -> service.confirm(customer, REFERENCE, CODE))
-                .isInstanceOf(InvalidRequestException.class)
-                .hasMessageContaining("no es de un retiro");
-        verifyNoInteractions(verificationApi, accountApi);
-        assertThat(transfer.is(TransactionStatusEnum.PENDING)).isTrue();
     }
 }
