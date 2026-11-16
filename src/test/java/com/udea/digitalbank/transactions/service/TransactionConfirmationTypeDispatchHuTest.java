@@ -47,7 +47,7 @@ import static org.mockito.Mockito.when;
 /**
  * Pruebas unitarias (AAA) del despacho por tipo en {@link TransactionConfirmationService#confirm}: la misma ruta
  * confirma transferencias y retiros, cada uno con su operación; un tipo sin operación (el depósito, que se hace en un
- * paso) se rechaza antes de verificar el código, sin gastar un intento del cliente (ADR-0006). Se monta con
+ * paso) se rechaza antes de verificar el código, sin gastar un intento del cliente. Se monta con
  * TransferParties y PendingTransfers reales sobre los mocks.
  */
 @ExtendWith(MockitoExtension.class)

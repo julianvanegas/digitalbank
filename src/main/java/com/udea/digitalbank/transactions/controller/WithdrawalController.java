@@ -19,10 +19,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Endpoint de inicio del retiro (HU19), el primer paso de dos como en la transferencia. Comparte la ruta base de
+ * Endpoint de inicio del retiro, el primer paso de dos como en la transferencia. Comparte la ruta base de
  * transacciones, pero va en su propio controller, como el de consignaciones, porque su cuerpo es otro. El segundo paso
- * no tiene ruta propia: se confirma con {@code POST /api/v1/transactions/{reference}/confirm}, como una transferencia
- * (ADR-0006), y el comprobante se consulta con {@code GET /api/v1/transactions/{reference}}.
+ * no tiene ruta propia: se confirma con {@code POST /api/v1/transactions/{reference}/confirm}, como una transferencia,
+ * y el comprobante se consulta con {@code GET /api/v1/transactions/{reference}}.
  *
  * <p>Qué rol entra a cada ruta lo decide {@code TransactionSecurity} en la cadena de seguridad, y qué puede hacer cada
  * uno lo deciden los servicios: aquí solo se traduce HTTP.

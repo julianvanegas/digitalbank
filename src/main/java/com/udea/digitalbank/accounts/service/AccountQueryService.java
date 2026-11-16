@@ -23,7 +23,7 @@ import java.util.UUID;
 @Service
 public class AccountQueryService {
 
-    // Estados que el cliente ve en su propio listado (HU11); el resto solo se consulta por número
+    // Estados que el cliente ve en su propio listado; el resto solo se consulta por número
     private static final Set<AccountStatusEnum> VISIBLE_TO_CUSTOMER =
             EnumSet.of(AccountStatusEnum.ACTIVE, AccountStatusEnum.BLOCKED);
 
@@ -45,9 +45,9 @@ public class AccountQueryService {
     /**
      * Las cuentas del cliente autenticado que están ACTIVE o BLOCKED, en orden de apertura.
      * <p>
-     * HU11 CA01 dice textualmente "todas sus cuentas", pero el alcance confirmado por el dueño del producto es mostrar
-     * al cliente solo las ACTIVE y las BLOCKED: las INACTIVE y las CLOSED no aparecen en el listado. Siguen siendo
-     * consultables por su número (HU12 saldo, HU13 detalle). El administrador sigue viendo todas por documento.
+     * Al cliente solo se le muestran las cuentas ACTIVE y BLOCKED: las INACTIVE y las CLOSED no aparecen en el
+     * listado. Siguen siendo consultables por su número (saldo y detalle). El administrador sigue viendo todas por
+     * documento.
      * <p>
      * Se filtra aquí y no en la consulta para conservar la misma consulta (y su orden por created_at). La lista de
      * estados es por la positiva: un estado nuevo queda oculto al cliente hasta que se decida mostrarlo.

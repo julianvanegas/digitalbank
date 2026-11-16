@@ -22,7 +22,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * Primer paso del retiro (HU19): valida la operación y la deja {@code PENDING} mientras el segundo factor la autoriza.
+ * Primer paso del retiro: valida la operación y la deja {@code PENDING} mientras el segundo factor la autoriza.
  * Sigue el flujo de {@link TransferInitiationService}, para un movimiento de un solo lado: el dinero sale de la cuenta
  * y no llega a ninguna otra. El segundo paso es {@link TransactionConfirmationService}.
  *
@@ -75,7 +75,7 @@ public class WithdrawalInitiationService {
      * que lo autoriza.
      *
      * <p>Las validaciones se hacen en este orden: cuenta (del ordenante si es cliente, de cualquier cliente si es
-     * administrador) y activa; saldo suficiente (CA02); topes (CA03, solo si el ordenante es cliente). La comprobación
+     * administrador) y activa; saldo suficiente; topes (solo si el ordenante es cliente). La comprobación
      * del saldo y de los topes permite fallar rápido, pero la definitiva ocurre al confirmar.
      *
      * <p>Si el titular ya tenía otra transacción {@code PENDING} (un retiro o una transferencia), esa se rechaza: solo
@@ -87,8 +87,8 @@ public class WithdrawalInitiationService {
      * @return el comprobante en estado {@code PENDING}, con el instante en que vence el código
      * @throws AccountNotFoundException          si la cuenta no existe o, para un cliente, no es suya
      * @throws AccountNotActiveException         si la cuenta no está activa
-     * @throws InsufficientFundsException        si el saldo no alcanza (CA02)
-     * @throws TransactionLimitExceededException si un cliente supera alguno de los topes de su cuenta (CA03)
+     * @throws InsufficientFundsException        si el saldo no alcanza
+     * @throws TransactionLimitExceededException si un cliente supera alguno de los topes de su cuenta
      */
     @Transactional
     public TransactionResponse initiate(Actor actor, String accountNumber, BigDecimal amount) {

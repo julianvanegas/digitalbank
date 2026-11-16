@@ -7,7 +7,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>4.0.8</version>
+		<version>4.1.2</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.udea</groupId>
@@ -29,7 +29,7 @@
 		<url/>
 	</scm>
 	<properties>
-		<java.version>21</java.version>
+		<java.version>25</java.version>
 		<sonar.organization>julianvanegas</sonar.organization>
 	</properties>
 	<dependencies>
@@ -48,7 +48,7 @@
 		<dependency>
 			<groupId>com.resend</groupId>
 			<artifactId>resend-java</artifactId>
-			<version>4.26.0</version>
+			<version>4.30.0</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -148,7 +148,7 @@
 		<dependency>
 			<groupId>org.springdoc</groupId>
 			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-			<version>3.1.1</version>
+			<version>3.2.0</version>
 		</dependency>
 
 	</dependencies>
@@ -209,7 +209,7 @@
 			<plugin>
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>
-				<version>0.8.12</version>
+				<version>0.8.16</version>
 				<executions>
 					<execution>
 						<goals>
@@ -236,7 +236,7 @@
 									<limits>
 										<limit>
 											<counter>LINE</counter>
-											<minimum>0.65</minimum>
+											<minimum>0.8</minimum>
 										</limit>
 									</limits>
 								</rule>

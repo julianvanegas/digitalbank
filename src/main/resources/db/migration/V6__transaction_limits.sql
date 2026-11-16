@@ -5,7 +5,7 @@
 -- transferencias no tienen cupo de cantidad ni tope por operación, solo el acumulado diario. Un tipo de movimiento sin
 -- filas (la consignación) no tiene topes definidos.
 --
--- El segundo factor no es una columna: toda operación monetaria lo exige (ADR-0004). Los topes aplican solo a los
+-- El segundo factor no es una columna: toda operación monetaria lo exige. Los topes aplican solo a los
 -- clientes; un administrador que opera en su nombre no los consume ni los respeta, pero sus movimientos sí cuentan en
 -- el acumulado de la cuenta.
 --

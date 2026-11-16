@@ -16,7 +16,7 @@ import java.util.function.Predicate;
  * Consulta de los topes transaccionales vigentes, de solo lectura. Cualquier usuario autenticado puede conocerlos;
  * hacerlos cumplir es de {@link TransactionLimitService}.
  *
- * <p>Segundo factor: toda operación monetaria lo exige (ADR-0004), por lo que no es un dato configurable y la respuesta
+ * <p>Segundo factor: toda operación monetaria lo exige, por lo que no es un dato configurable y la respuesta
  * siempre lo informa.
  */
 @Service

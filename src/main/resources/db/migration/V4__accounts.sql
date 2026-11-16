@@ -42,7 +42,7 @@ CREATE TABLE accounts (
     id             UUID PRIMARY KEY,
     -- Exactamente 12 dígitos. El UNIQUE es la garantía real de que no se repite.
     account_number CHAR(12) NOT NULL UNIQUE,
-    -- Llave visible de la cuenta (CA01): arroba + dos letras del primer nombre + tres dígitos del documento + un
+    -- Llave visible de la cuenta: arroba + dos letras del primer nombre + tres dígitos del documento + un
     -- consecutivo. El UUID sigue siendo la clave primaria y la que referencian las claves foráneas; esta llave es
     -- el identificador que ve el usuario. El consecutivo no es la posición de la cuenta dentro del cliente: es el
     -- primer número libre para ese prefijo. Dos clientes que coincidan en nombre y documento continúan la misma

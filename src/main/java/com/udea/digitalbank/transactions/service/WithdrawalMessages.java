@@ -5,7 +5,7 @@ import com.udea.digitalbank.shared.utils.AccountNumbers;
 import java.math.BigDecimal;
 
 /**
- * Textos que el flujo de retiro (HU19) muestra al ordenante y al titular: el correo del código y los rechazos. Viven
+ * Textos que el flujo de retiro muestra al ordenante y al titular: el correo del código y los rechazos. Viven
  * aparte del servicio, como {@link TransferMessages} en las transferencias, para que el caso de uso no cambie cuando
  * cambia la redacción. Los textos neutros (el aviso de un empleado, el estado de una cuenta) se toman de
  * {@link TransferMessages} en vez de repetirlos.
@@ -34,15 +34,15 @@ final class WithdrawalMessages {
         return "No se puede retirar de la cuenta: " + TransferMessages.accountStatus(status);
     }
 
-    /** Rechazo de un retiro mayor que el saldo (CA02). */
+    /** Rechazo de un retiro mayor que el saldo. */
     static final String INSUFFICIENT_FUNDS = "Saldo insuficiente para realizar el retiro";
 
-    /** Código incorrecto con intentos disponibles (CA04): el retiro sigue pendiente. */
+    /** Código incorrecto con intentos disponibles: el retiro sigue pendiente. */
     static String wrongCode(int remainingAttempts) {
         return "Código incorrecto. " + TransferMessages.remainingAttempts(remainingAttempts);
     }
 
-    /** Último intento fallido (CA04): el retiro se cancela. */
+    /** Último intento fallido: el retiro se cancela. */
     static final String EXHAUSTED_ATTEMPTS =
             "Superaste el número de intentos: el retiro fue cancelado. Inicia uno nuevo";
 

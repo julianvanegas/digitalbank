@@ -79,7 +79,7 @@ public interface AccountApi {
     AccountView applyDeposit(UUID receiverAccountId, BigDecimal amount);
 
     /**
-     * Debita un monto de una cuenta por un retiro (HU19). Bloquea la fila, exige que la cuenta esté {@code ACTIVE} y
+     * Debita un monto de una cuenta por un retiro. Bloquea la fila, exige que la cuenta esté {@code ACTIVE} y
      * que tenga saldo, y entonces resta el monto. Participa en la transacción del llamante.
      *
      * <p><b>Transaccionalidad.</b> Como {@link #applyTransfer}, un rechazo no deja nada a medias ni marca la

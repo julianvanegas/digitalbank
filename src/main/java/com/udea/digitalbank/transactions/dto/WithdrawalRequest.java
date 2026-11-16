@@ -12,7 +12,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import com.udea.digitalbank.shared.config.OpenApiExamples;
 
 /**
- * Solicitud para iniciar un retiro (HU19). El ordenante no viaja en el cuerpo: se toma del token de autenticación.
+ * Solicitud para iniciar un retiro. El ordenante no viaja en el cuerpo: se toma del token de autenticación.
  * Las validaciones del monto son las mismas que las de {@link TransferRequest} y {@link DepositRequest}.
  */
 @Data

@@ -146,10 +146,10 @@ public class Account {
      * bloqueada se debe desbloquear primero, para que cerrarla no sirva para esquivar un bloqueo. Deja el estado
      * y la fecha de cierre a la vez, porque la base exige las dos cosas juntas.
      * <p>
-     * HU17 CA03 (saldo negativo o valores pendientes de pago) no es alcanzable en este modelo: el CHECK
+     * El cierre con saldo negativo o valores pendientes de pago no es alcanzable en este modelo: el CHECK
      * ck_accounts_balance de la migración V4 y los invariantes de {@link #debit} y {@link #credit} impiden un saldo
      * negativo, y no existen deudas, sobregiros ni pagos pendientes; las transferencias PENDING no retienen fondos.
-     * Como la comparación del saldo es {@code != 0}, un saldo negativo igual se rechazaría, con el mensaje de CA02.
+     * Como la comparación del saldo es {@code != 0}, un saldo negativo igual se rechazaría, con el mismo mensaje del saldo pendiente.
      */
     public void close(AccountStatus closedStatus, LocalDateTime closedAt) {
         if (is(AccountStatusEnum.CLOSED)) {
