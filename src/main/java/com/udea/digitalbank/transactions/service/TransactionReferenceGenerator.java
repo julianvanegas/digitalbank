@@ -53,8 +53,8 @@ class TransactionReferenceGenerator {
     }
 
     /**
-     * Arma la referencia de un retiro (HU19). Todavía no la llama nadie: existe antes que el flujo de retiro, que la
-     * usará al registrar la transacción, igual que la transferencia y el depósito usan las suyas.
+     * Arma la referencia de un retiro (HU19). La usa {@code WithdrawalInitiationService} al registrar la transacción,
+     * igual que la transferencia y el depósito usan las suyas.
      *
      * @param transactionId identificador de la transacción
      * @param createdAt     instante de creación; aporta la fecha de la referencia

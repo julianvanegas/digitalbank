@@ -1,6 +1,7 @@
 package com.udea.digitalbank.transactions.controller;
 
 import com.udea.digitalbank.shared.config.OpenAPIConfig;
+import com.udea.digitalbank.shared.config.OpenApiExamples;
 import com.udea.digitalbank.shared.security.Actor;
 import com.udea.digitalbank.shared.security.CurrentActor;
 import com.udea.digitalbank.transactions.dto.ConfirmWithdrawalRequest;
@@ -98,7 +99,7 @@ public class WithdrawalController {
     public ResponseEntity<TransactionResponse> confirm(
             @CurrentActor Actor actor,
             @Parameter(description = "Referencia (comprobante) del retiro",
-                    example = "RET-20261017-7Xk2Pq9RmZ4tNvB8cHdWeA") @PathVariable String reference,
+                    example = OpenApiExamples.WITHDRAWAL_REFERENCE) @PathVariable String reference,
             @Valid @RequestBody ConfirmWithdrawalRequest request) {
         return ResponseEntity.ok(confirmationService.confirm(actor, reference, request.getCode()));
     }

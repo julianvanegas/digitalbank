@@ -151,8 +151,8 @@ public class Transaction implements Persistable<UUID> {
 
     /**
      * Crea un retiro (HU19) en estado {@code PENDING}, a la espera de que el segundo factor lo autorice. Tiene cuenta de
-     * origen y no de destino, como exige {@code ck_transactions_sides}: el dinero sale del banco. Todavía no la llama
-     * nadie: existe antes que el flujo de retiro, que la usará al iniciar el retiro.
+     * origen y no de destino, como exige {@code ck_transactions_sides}: el dinero sale del banco. La usa
+     * {@code WithdrawalInitiationService} al iniciar el retiro.
      *
      * @param id               identificador de la transacción; lo aporta quien la crea porque la referencia se
      *                         calcula a partir de él antes de guardarla

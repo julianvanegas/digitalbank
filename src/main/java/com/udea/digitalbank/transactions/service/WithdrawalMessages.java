@@ -35,9 +35,7 @@ final class WithdrawalMessages {
     }
 
     /** Rechazo de un retiro mayor que el saldo (CA02). */
-    static String insufficientFunds() {
-        return "Saldo insuficiente para realizar el retiro";
-    }
+    static final String INSUFFICIENT_FUNDS = "Saldo insuficiente para realizar el retiro";
 
     /** Código incorrecto con intentos disponibles (CA04): el retiro sigue pendiente. */
     static String wrongCode(int remainingAttempts) {
@@ -45,14 +43,11 @@ final class WithdrawalMessages {
     }
 
     /** Último intento fallido (CA04): el retiro se cancela. */
-    static String exhaustedAttempts() {
-        return "Superaste el número de intentos: el retiro fue cancelado. Inicia uno nuevo";
-    }
+    static final String EXHAUSTED_ATTEMPTS =
+            "Superaste el número de intentos: el retiro fue cancelado. Inicia uno nuevo";
 
     /** Código vencido o inexistente: el retiro se cancela. */
-    static String expiredCode() {
-        return "El código expiró: el retiro fue cancelado. Inicia el proceso de nuevo";
-    }
+    static final String EXPIRED_CODE = "El código expiró: el retiro fue cancelado. Inicia el proceso de nuevo";
 
     /** Una referencia que no es de un retiro enviada a la confirmación de retiros. */
     static String notAWithdrawal(String reference) {

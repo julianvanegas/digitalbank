@@ -27,7 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * Segundo paso del retiro (HU19): verifica el código de segundo factor y, solo entonces, debita la cuenta. El primer
  * paso es {@link WithdrawalInitiationService}. Sigue el flujo de {@link TransferConfirmationService}, para un movimiento
- * de un solo lado. Todavía no hay endpoint: por ahora nadie llama a este servicio.
+ * de un solo lado. Lo expone {@code WithdrawalController}.
  *
  * <p><b>Qué se registra.</b> Pasan a {@code REJECTED} los retiros que se cancelan en este paso: código agotado o
  * vencido, o inválido porque el saldo, el estado de la cuenta o los topes han cambiado desde el primer paso.
@@ -79,7 +79,7 @@ public class WithdrawalConfirmationService {
      * <p><b>Transaccionalidad.</b> Usa {@code noRollbackFor = BusinessException.class} para que el rechazo del retiro y
      * el contador de intentos fallidos se persistan aunque el método termine lanzando la excepción que recibe el
      * ordenante. El {@code noRollbackFor} de {@code applyWithdrawal} solo evita que ese método marque la transacción;
-     * sin el de aquí, al relanzar la excepción se revertiría todo y se perdería el registro del retiro rechazado.
+     * sin el de aquí, al relanzar la excepción se revertiría la transacción completa y se perdería el registro del retiro rechazado.
      *
      * @param actor     usuario autenticado; debe ser el ordenante del retiro. Si es administrador, el código que
      *                  ingresa es el que recibió el titular de la cuenta
@@ -150,12 +150,12 @@ public class WithdrawalConfirmationService {
     // Último intento fallido: se cancela el retiro
     private TooManyRequestsException exhaustedAttempts(Transaction transaction) {
         pendingTransfers.reject(transaction);
-        return new TooManyRequestsException(WithdrawalMessages.exhaustedAttempts(), 0);
+        return new TooManyRequestsException(WithdrawalMessages.EXHAUSTED_ATTEMPTS, 0);
     }
 
     // Código vencido o inexistente: se cancela el retiro
     private TransactionCodeExpiredException expiredCode(Transaction transaction) {
         pendingTransfers.reject(transaction);
-        return new TransactionCodeExpiredException(WithdrawalMessages.expiredCode());
+        return new TransactionCodeExpiredException(WithdrawalMessages.EXPIRED_CODE);
     }
 }

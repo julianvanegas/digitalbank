@@ -43,6 +43,7 @@ import static com.udea.digitalbank.transactions.TransactionFixtures.type;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -81,6 +82,7 @@ class WithdrawalConfirmationTransactionHuTest {
 
             @Override
             public void flush() {
+                // Sin efecto: este gestor no escribe en ninguna base, solo anota commit/rollback
             }
         }
 
@@ -132,11 +134,11 @@ class WithdrawalConfirmationTransactionHuTest {
     @EnableTransactionManagement
     static class Config {
 
-        static final TransactionRepository TRANSACTION_REPOSITORY = Mockito.mock(TransactionRepository.class);
-        static final TransactionCatalog CATALOG = Mockito.mock(TransactionCatalog.class);
-        static final TransactionLimitService LIMIT_SERVICE = Mockito.mock(TransactionLimitService.class);
-        static final AccountApi ACCOUNT_API = Mockito.mock(AccountApi.class);
-        static final VerificationApi VERIFICATION_API = Mockito.mock(VerificationApi.class);
+        static final TransactionRepository TRANSACTION_REPOSITORY = mock(TransactionRepository.class);
+        static final TransactionCatalog CATALOG = mock(TransactionCatalog.class);
+        static final TransactionLimitService LIMIT_SERVICE = mock(TransactionLimitService.class);
+        static final AccountApi ACCOUNT_API = mock(AccountApi.class);
+        static final VerificationApi VERIFICATION_API = mock(VerificationApi.class);
 
         @Bean
         RecordingTransactionManager transactionManager() {
@@ -192,14 +194,15 @@ class WithdrawalConfirmationTransactionHuTest {
 
     @Test
     @DisplayName("HU19 CA02 - Si al confirmar el saldo ya no alcanza, el REJECTED se confirma en la base aunque se lance la excepción")
-    void elRechazoPorSaldoSeConfirma() {
+    void deberiaConfirmarElRechazoPorSaldo() {
         // Arrange
         when(verificationApi.verifyTransactionCode(userId, CODE)).thenReturn(CodeCheckResult.valid());
         when(accountApi.applyWithdrawal(account.id(), AMOUNT))
                 .thenThrow(new InsufficientFundsException("Fondos insuficientes en la cuenta"));
 
         // Act
-        assertThatThrownBy(() -> service.confirm(new Actor(userId, false), REFERENCE, CODE))
+        Actor actor = new Actor(userId, false);
+        assertThatThrownBy(() -> service.confirm(actor, REFERENCE, CODE))
                 .isInstanceOf(InsufficientFundsException.class);
 
         // Assert: una sola transacción, confirmada, y en ella el retiro guardado como REJECTED
@@ -210,12 +213,13 @@ class WithdrawalConfirmationTransactionHuTest {
 
     @Test
     @DisplayName("HU19 CA04 - Con un código equivocado la transacción se confirma, así que el intento fallido queda registrado")
-    void elIntentoFallidoSeConfirma() {
+    void deberiaConfirmarElIntentoFallido() {
         // Arrange
         when(verificationApi.verifyTransactionCode(userId, CODE)).thenReturn(CodeCheckResult.wrong(2));
 
         // Act
-        assertThatThrownBy(() -> service.confirm(new Actor(userId, false), REFERENCE, CODE))
+        Actor actor = new Actor(userId, false);
+        assertThatThrownBy(() -> service.confirm(actor, REFERENCE, CODE))
                 .isInstanceOf(InvalidTransactionCodeException.class);
 
         // Assert: el contador de intentos que auth guarda al verificar participa de esta transacción
@@ -225,14 +229,15 @@ class WithdrawalConfirmationTransactionHuTest {
     // Control: el gestor distingue los dos resultados. Un error que no es de negocio sí revierte, y con él el REJECTED
     @Test
     @DisplayName("HU19 - Control: un error que no es de negocio sí revierte la transacción")
-    void unErrorDeProgramacionRevierte() {
+    void deberiaRevertirUnErrorQueNoEsDeNegocio() {
         // Arrange
         when(verificationApi.verifyTransactionCode(userId, CODE)).thenReturn(CodeCheckResult.valid());
         when(accountApi.applyWithdrawal(account.id(), AMOUNT))
                 .thenThrow(new IllegalArgumentException("El monto de un movimiento debe ser positivo"));
 
         // Act
-        assertThatThrownBy(() -> service.confirm(new Actor(userId, false), REFERENCE, CODE))
+        Actor actor = new Actor(userId, false);
+        assertThatThrownBy(() -> service.confirm(actor, REFERENCE, CODE))
                 .isInstanceOf(IllegalArgumentException.class);
 
         // Assert

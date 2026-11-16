@@ -102,7 +102,7 @@ public class TransferConfirmationService {
                 .filter(t -> t.isOrderedBy(actor.userId()))
                 .orElseThrow(() -> new TransactionNotFoundException("Transacción no encontrada: " + reference));
 
-        // Antes que nada que dependa del tipo: el comprobante de una transacción completada y, sobre todo, la
+        // Antes que nada que dependa del tipo: el comprobante de una transacción completada y, en especial, la
         // verificación del código, que gastaría un intento del cliente por mandar la referencia equivocada
         if (!transaction.getType().is(TransactionTypeEnum.TRANSFER)) {
             throw new InvalidRequestException("La referencia " + reference

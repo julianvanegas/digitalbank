@@ -158,7 +158,8 @@ class TransferConfirmationTypeGuardHuTest {
         when(transactionRepository.findByReferenceForUpdate(DEPOSIT_REFERENCE)).thenReturn(Optional.of(deposit));
 
         // Act + Assert
-        assertThatThrownBy(() -> service.confirm(new Actor(adminId, true), DEPOSIT_REFERENCE, "123456"))
+        Actor adminActor = new Actor(adminId, true);
+        assertThatThrownBy(() -> service.confirm(adminActor, DEPOSIT_REFERENCE, "123456"))
                 .isInstanceOf(InvalidRequestException.class);
         verifyNoInteractions(verificationApi, accountApi);
     }

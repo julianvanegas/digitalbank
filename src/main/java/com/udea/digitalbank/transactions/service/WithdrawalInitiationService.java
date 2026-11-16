@@ -24,8 +24,7 @@ import java.util.UUID;
 /**
  * Primer paso del retiro (HU19): valida la operación y la deja {@code PENDING} mientras el segundo factor la autoriza.
  * Sigue el flujo de {@link TransferInitiationService}, para un movimiento de un solo lado: el dinero sale de la cuenta
- * y no llega a ninguna otra. El segundo paso, la confirmación, todavía no existe, y tampoco el endpoint: por ahora nadie
- * llama a este servicio.
+ * y no llega a ninguna otra. El segundo paso es {@link WithdrawalConfirmationService}.
  *
  * <p><b>Qué se registra.</b> Las validaciones de este paso fallan sin dejar fila: un retiro imposible no llega a ser
  * una transacción.
@@ -77,7 +76,7 @@ public class WithdrawalInitiationService {
      *
      * <p>Las validaciones se hacen en este orden: cuenta (del ordenante si es cliente, de cualquier cliente si es
      * administrador) y activa; saldo suficiente (CA02); topes (CA03, solo si el ordenante es cliente). La comprobación
-     * del saldo y de los topes permite fallar rápido, pero la definitiva ocurrirá al confirmar.
+     * del saldo y de los topes permite fallar rápido, pero la definitiva ocurre al confirmar.
      *
      * <p>Si el titular ya tenía otra transacción {@code PENDING} (un retiro o una transferencia), esa se rechaza: solo
      * hay un código vigente por titular y el nuevo reemplaza al anterior.
@@ -129,7 +128,7 @@ public class WithdrawalInitiationService {
 
     private static void requireFunds(AccountView account, BigDecimal amount) {
         if (account.balance().compareTo(amount) < 0) {
-            throw new InsufficientFundsException(WithdrawalMessages.insufficientFunds());
+            throw new InsufficientFundsException(WithdrawalMessages.INSUFFICIENT_FUNDS);
         }
     }
 
