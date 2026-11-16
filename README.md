@@ -44,7 +44,7 @@ DigitalBank es una API stateless para gestionar clientes, cuentas y transaccione
 | `customer` | Alta, consulta y actualización del perfil del cliente; consulta por documento. |
 | `employee` | Gestión de empleados. |
 | `accounts` | Apertura de cuentas, consulta de saldos, bloqueo, desbloqueo y cierre. |
-| `transactions` | Transferencias en dos pasos: iniciar y confirmar con segundo factor. |
+| `transactions` | Transferencias y retiros en dos pasos (iniciar y confirmar con segundo factor), depósitos, consulta de transacciones por referencia y consulta de topes transaccionales. |
 
 ## Tecnologías
 
