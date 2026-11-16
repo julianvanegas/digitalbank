@@ -1,5 +1,5 @@
 ---
-status: proposed
+status: accepted
 date: 2026-11-15
 decision-makers: [Julian Vanegas López]
 consulted: Equipo de Backend
@@ -17,7 +17,7 @@ Java 25 es una versión de soporte a largo plazo (LTS) y Spring Boot 4.0.x la so
 ## Factores de decisión
 
 - **Un único Java en todos los entornos**: local, CI y producción deben ejecutar la misma versión.
-- **Soporte a largo plazo**: elegir una LTS evita una nueva migración a corto plazo.
+- **Soporte a largo plazo**: una LTS ofrece un periodo de mantenimiento prolongado.
 - **Compatibilidad de las herramientas de build**: JaCoCo, Lombok y MapStruct deben funcionar con el bytecode de la versión elegida.
 - **Cambio mínimo**: no reescribir código de negocio para adoptar la nueva versión.
 
@@ -38,9 +38,9 @@ Esta decisión **modifica únicamente las versiones de Java y de las dependencia
 
 ## Alternativas consideradas
 
-- **Quedarse en Java 21 y fijar JDK 21 en el entorno local.** Es válido y no exige cambios, pero deja pendiente una migración que habrá que hacer de todos modos y aplaza las mejoras de la plataforma.
+- **Quedarse en Java 21 y fijar JDK 21 en el entorno local.** Es válido y no exige cambios, pero no aprovecha las mejoras de la plataforma.
 - **Compilar con `release 21` y ejecutar en 25.** Es la situación previa: funciona, pero obliga a mantener dos versiones y no prueba en local lo que se despliega.
-- **Pasar a una versión no LTS posterior.** Descartada: el ciclo de soporte es de seis meses y obligaría a migrar de nuevo pronto.
+- **Pasar a una versión no LTS posterior.** Descartada: el ciclo de soporte es de seis meses.
 
 ## Consecuencias
 
@@ -53,11 +53,9 @@ Esta decisión **modifica únicamente las versiones de Java y de las dependencia
 **Se paga**
 
 - Quien desarrolle necesita instalar JDK 25.
-- Lombok emite en JDK 24 o superior un aviso de `sun.misc.Unsafe` durante la compilación. Es ruido, no un fallo, y desaparecerá cuando Lombok deje de usar esa API.
-- Mockito puede avisar de la carga dinámica de agentes durante los tests; se resolvería declarándolo como agente en el `argLine`.
-- Spring Boot 4.1 es una versión menor: puede cambiar valores por defecto o deprecar propiedades. Se comprobó que la aplicación arranca contra PostgreSQL 18, aplica las 6 migraciones de Flyway, publica Swagger y responde login y alta de cliente; no se recorrieron los flujos con código por correo (verificación, 2FA, transferencias).
-- Hay que verificar que `eclipse-temurin:25-jre-alpine` está disponible en el registro de imágenes usado por el pipeline.
-
+- Lombok emite en JDK 24 o superior un aviso de `sun.misc.Unsafe` durante la compilación. Es ruido, no un fallo.
+- Mockito puede avisar de la carga dinámica de agentes durante los tests.
+- Spring Boot 4.1 es una versión menor. Se comprobó que la aplicación arranca contra PostgreSQL 18, aplica las 6 migraciones de Flyway, publica Swagger y responde login y alta de cliente; no se recorrieron los flujos con código por correo (verificación, 2FA, transferencias).
 ## Evidencia en el repositorio
 
 | Archivo | Qué refleja |
