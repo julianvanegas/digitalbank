@@ -10,7 +10,7 @@ import java.util.UUID;
 
 /**
  * Arma la referencia de una transacción, que es su comprobante: {PREFIJO}-AAAAMMDD-{UUID en base58}, por ejemplo
- * TRF-20261017-7Xk2Pq9RmZ4tNvB8cHdWeA. El prefijo indica el tipo: TRF para transferencias, DEP para depósitos y RET
+ * TRF-AAAAMMDD-7Xk2Pq9RmZ4tNvB8cHdWeA. El prefijo indica el tipo: TRF para transferencias, DEP para depósitos y RET
  * para retiros (en español, porque la referencia es lo que ve el cliente). La parte final es el UUID completo de la
  * transacción escrito en 22
  * caracteres, así que la referencia lleva a su fila y es única por construcción: dos UUID distintos nunca dan el
@@ -53,7 +53,7 @@ class TransactionReferenceGenerator {
     }
 
     /**
-     * Arma la referencia de un retiro (HU19). La usa {@code WithdrawalInitiationService} al registrar la transacción,
+     * Arma la referencia de un retiro. La usa {@code WithdrawalInitiationService} al registrar la transacción,
      * igual que la transferencia y el depósito usan las suyas.
      *
      * @param transactionId identificador de la transacción

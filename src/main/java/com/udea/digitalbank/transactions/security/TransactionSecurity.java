@@ -30,7 +30,7 @@ public class TransactionSecurity implements SecurityModule {
                 RoleRoute.post(BASE + "/transfers", Roles.CUSTOMER, Roles.ADMIN),
                 RoleRoute.post(BASE + "/*/confirm", Roles.CUSTOMER, Roles.ADMIN),
                 RoleRoute.post(BASE + "/deposits", Roles.ADMIN),
-                // Retiro (HU19): lo inicia el cliente o un administrador en su nombre, como la transferencia. Se
+                // Retiro: lo inicia el cliente o un administrador en su nombre, como la transferencia. Se
                 // confirma por /*/confirm, la misma ruta de la transferencia
                 RoleRoute.post(BASE + "/withdrawals", Roles.CUSTOMER, Roles.ADMIN),
                 RoleRoute.get(BASE + "/limits", Roles.CUSTOMER, Roles.ADMIN),

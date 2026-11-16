@@ -11,7 +11,7 @@ import com.udea.digitalbank.transactions.repository.TransactionRepository;
 import org.springframework.stereotype.Component;
 
 /**
- * Cómo se completa un retiro (HU19) al confirmarlo: revalida los topes (si le aplican al ordenante) y debita la cuenta
+ * Cómo se completa un retiro al confirmarlo: revalida los topes (si le aplican al ordenante) y debita la cuenta
  * con su fila bloqueada. Es un movimiento de un solo lado: no hay cuenta de destino ni correo de comprobante. El primer
  * paso es {@link WithdrawalInitiationService}.
  */

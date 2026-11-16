@@ -40,7 +40,7 @@ import java.util.List;
  * <p><b>Concurrencia.</b> El saldo, el estado de las cuentas y los topes se vuelven a validar al confirmar, con las
  * filas bloqueadas, porque pueden cambiar entre los dos pasos.
  *
- * <p><b>Cliente y administrador.</b> Confirma quien ordenó la operación (ADR-0005). El código es del titular de la
+ * <p><b>Cliente y administrador.</b> Confirma quien ordenó la operación. El código es del titular de la
  * cuenta de origen: si confirma un administrador, ingresa el que recibió el titular. Los topes solo se revalidan para
  * clientes.
  */
