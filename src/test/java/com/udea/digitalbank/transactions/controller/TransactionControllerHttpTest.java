@@ -42,8 +42,7 @@ import static org.mockito.Mockito.when;
 
 /**
  * Pruebas de contrato HTTP (AAA) de {@link TransactionController}: qué código y qué mensaje recibe el cliente de la
- * API al iniciar una transferencia (HU20) y al confirmarla con el código 2FA (HU21). Los códigos son los que fija el
- * ADR-0004 del backend.
+ * API al iniciar una transferencia (HU20) y al confirmarla con el código 2FA (HU21).
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("HU20 / HU21 - Contrato HTTP de transferencias")
