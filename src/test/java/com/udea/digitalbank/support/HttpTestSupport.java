@@ -28,8 +28,8 @@ public final class HttpTestSupport {
     private HttpTestSupport() {
     }
 
-    public static MockMvc mockMvc(Object controller) {
-        return MockMvcBuilders.standaloneSetup(controller)
+    public static MockMvc mockMvc(Object... controllers) {
+        return MockMvcBuilders.standaloneSetup(controllers)
                 .setControllerAdvice(new GlobalExceptionHandler(Clock.systemDefaultZone()))
                 .setCustomArgumentResolvers(new ActorArgumentResolver())
                 .build();

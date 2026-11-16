@@ -22,9 +22,8 @@ import com.udea.digitalbank.transactions.security.TransactionSecurity;
 import com.udea.digitalbank.transactions.service.DepositService;
 import com.udea.digitalbank.transactions.service.TransactionLimitQueryService;
 import com.udea.digitalbank.transactions.service.TransactionQueryService;
-import com.udea.digitalbank.transactions.service.TransferConfirmationService;
+import com.udea.digitalbank.transactions.service.TransactionConfirmationService;
 import com.udea.digitalbank.transactions.service.TransferInitiationService;
-import com.udea.digitalbank.transactions.service.WithdrawalConfirmationService;
 import com.udea.digitalbank.transactions.service.WithdrawalInitiationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -151,13 +150,11 @@ class ApiAuthorizationTest {
     @MockitoBean
     private TransferInitiationService transferInitiationService;
     @MockitoBean
-    private TransferConfirmationService transferConfirmationService;
+    private TransactionConfirmationService transactionConfirmationService;
     @MockitoBean
     private DepositService depositService;
     @MockitoBean
     private WithdrawalInitiationService withdrawalInitiationService;
-    @MockitoBean
-    private WithdrawalConfirmationService withdrawalConfirmationService;
     @MockitoBean
     private TransactionQueryService transactionQueryService;
     @MockitoBean
@@ -229,10 +226,11 @@ class ApiAuthorizationTest {
                 new Endpoint("GET", "/api/v1/transactions/TRF-20261017-7Xk2Pq9RmZ4tNvB8cHdWeA", "", Access.CUSTOMER_OR_ADMIN),
                 new Endpoint("POST", "/api/v1/transactions/deposits",
                         "{\"receiverAccountNumber\":\"" + NUMBER + "\",\"amount\":10.00}", Access.ADMIN_ONLY),
-                // HU19: el retiro, como la transferencia, lo inician y confirman el cliente o el admin en su nombre
+                // HU19: el retiro, como la transferencia, lo inician y confirman el cliente o el admin en su nombre;
+                // se confirma por la misma ruta que la transferencia, con la referencia RET-
                 new Endpoint("POST", "/api/v1/transactions/withdrawals",
                         "{\"accountNumber\":\"" + NUMBER + "\",\"amount\":10.00}", Access.CUSTOMER_OR_ADMIN),
-                new Endpoint("POST", "/api/v1/transactions/withdrawals/RET-20261017-7Xk2Pq9RmZ4tNvB8cHdWeA/confirm",
+                new Endpoint("POST", "/api/v1/transactions/RET-20261017-7Xk2Pq9RmZ4tNvB8cHdWeA/confirm",
                         "{\"code\":\"123456\"}", Access.CUSTOMER_OR_ADMIN),
                 // ---- documentación y salud
                 new Endpoint("GET", "/actuator/health", "", Access.PUBLIC),

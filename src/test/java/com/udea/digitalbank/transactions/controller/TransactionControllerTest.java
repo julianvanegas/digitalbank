@@ -1,11 +1,11 @@
 package com.udea.digitalbank.transactions.controller;
 
 import com.udea.digitalbank.shared.security.Actor;
-import com.udea.digitalbank.transactions.dto.ConfirmTransferRequest;
+import com.udea.digitalbank.transactions.dto.ConfirmTransactionRequest;
 import com.udea.digitalbank.transactions.dto.TransactionResponse;
 import com.udea.digitalbank.transactions.dto.TransferRequest;
 import com.udea.digitalbank.transactions.service.TransactionQueryService;
-import com.udea.digitalbank.transactions.service.TransferConfirmationService;
+import com.udea.digitalbank.transactions.service.TransactionConfirmationService;
 import com.udea.digitalbank.transactions.service.TransferInitiationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -39,7 +39,7 @@ class TransactionControllerTest {
     @Mock
     private TransferInitiationService initiationService;
     @Mock
-    private TransferConfirmationService confirmationService;
+    private TransactionConfirmationService confirmationService;
     @Mock
     private TransactionQueryService queryService;
 
@@ -75,7 +75,7 @@ class TransactionControllerTest {
     @DisplayName("HU21 CA01 - confirm - responde 200 y pasa el actor, la referencia y el código al servicio")
     void confirm_deberiaDelegarActorReferenciaYCodigo() {
         // Arrange
-        ConfirmTransferRequest request = new ConfirmTransferRequest();
+        ConfirmTransactionRequest request = new ConfirmTransactionRequest();
         request.setCode("123456");
         TransactionResponse expected = new TransactionResponse();
         when(confirmationService.confirm(customer, REFERENCE, "123456")).thenReturn(expected);

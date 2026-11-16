@@ -48,9 +48,4 @@ final class WithdrawalMessages {
 
     /** Código vencido o inexistente: el retiro se cancela. */
     static final String EXPIRED_CODE = "El código expiró: el retiro fue cancelado. Inicia el proceso de nuevo";
-
-    /** Una referencia que no es de un retiro enviada a la confirmación de retiros. */
-    static String notAWithdrawal(String reference) {
-        return "La referencia " + reference + " no es de un retiro: aquí solo se confirman retiros";
-    }
 }
