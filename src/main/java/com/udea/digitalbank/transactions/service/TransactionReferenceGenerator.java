@@ -10,7 +10,9 @@ import java.util.UUID;
 
 /**
  * Arma la referencia de una transacción, que es su comprobante: {PREFIJO}-AAAAMMDD-{UUID en base58}, por ejemplo
- * TRF-20261017-7Xk2Pq9RmZ4tNvB8cHdWeA. El prefijo indica el tipo: TRF para transferencias y DEP para depósitos. La parte final es el UUID completo de la transacción escrito en 22
+ * TRF-20261017-7Xk2Pq9RmZ4tNvB8cHdWeA. El prefijo indica el tipo: TRF para transferencias, DEP para depósitos y RET
+ * para retiros (en español, porque la referencia es lo que ve el cliente). La parte final es el UUID completo de la
+ * transacción escrito en 22
  * caracteres, así que la referencia lleva a su fila y es única por construcción: dos UUID distintos nunca dan el
  * mismo texto, y no se sortea ni se consulta si ya existe. La fecha es la de creación de la transacción.
  * <p>
@@ -23,6 +25,7 @@ class TransactionReferenceGenerator {
 
     private static final String TRANSFER_PREFIX = "TRF-";
     private static final String DEPOSIT_PREFIX = "DEP-";
+    private static final String WITHDRAWAL_PREFIX = "RET-";
     static final String ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
     static final int CODE_LENGTH = 22;
     private static final BigInteger BASE = BigInteger.valueOf(ALPHABET.length());
@@ -47,6 +50,18 @@ class TransactionReferenceGenerator {
      */
     String forDeposit(UUID transactionId, LocalDateTime createdAt) {
         return build(DEPOSIT_PREFIX, transactionId, createdAt);
+    }
+
+    /**
+     * Arma la referencia de un retiro (HU19). La usa {@code WithdrawalInitiationService} al registrar la transacción,
+     * igual que la transferencia y el depósito usan las suyas.
+     *
+     * @param transactionId identificador de la transacción
+     * @param createdAt     instante de creación; aporta la fecha de la referencia
+     * @return la referencia, de 35 caracteres
+     */
+    String forWithdrawal(UUID transactionId, LocalDateTime createdAt) {
+        return build(WITHDRAWAL_PREFIX, transactionId, createdAt);
     }
 
     private static String build(String prefix, UUID transactionId, LocalDateTime createdAt) {

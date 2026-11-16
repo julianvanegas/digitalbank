@@ -13,7 +13,8 @@ import java.util.UUID;
 
 /**
  * Movimiento de dinero entre cuentas (transferencia, depósito o retiro). La creación está disponible para
- * transferencias, mediante {@link #transfer}, y para depósitos, mediante {@link #deposit}.
+ * transferencias, mediante {@link #transfer}, para depósitos, mediante {@link #deposit}, y para retiros, mediante
+ * {@link #withdrawal}.
  *
  * <p>Las cuentas se referencian por id y no con {@code @ManyToOne}: así {@code transactions} no depende de las
  * entidades de {@code accounts} y los módulos siguen desacoplados.
@@ -149,6 +150,41 @@ public class Transaction implements Persistable<UUID> {
     }
 
     /**
+     * Crea un retiro (HU19) en estado {@code PENDING}, a la espera de que el segundo factor lo autorice. Tiene cuenta de
+     * origen y no de destino, como exige {@code ck_transactions_sides}: el dinero sale del banco. La usa
+     * {@code WithdrawalInitiationService} al iniciar el retiro.
+     *
+     * @param id               identificador de la transacción; lo aporta quien la crea porque la referencia se
+     *                         calcula a partir de él antes de guardarla
+     * @param userOriginatorId usuario que ordena el retiro
+     * @param senderAccountId  cuenta de la que sale el dinero
+     * @param amount           monto positivo, con la escala de la columna ({@code NUMERIC(19,2)})
+     * @param reference        comprobante de la operación
+     * @param withdrawalType   fila {@code WITHDRAWAL} del catálogo de tipos
+     * @param pendingStatus    fila {@code PENDING} del catálogo de estados
+     * @param createdAt        instante de creación
+     * @return la transacción, aún sin guardar
+     * @throws IllegalArgumentException si {@code withdrawalType} no es {@code WITHDRAWAL} o {@code pendingStatus} no
+     *                                  es {@code PENDING}
+     */
+    public static Transaction withdrawal(UUID id, UUID userOriginatorId, UUID senderAccountId, BigDecimal amount,
+                                         String reference, TransactionType withdrawalType,
+                                         TransactionStatus pendingStatus, LocalDateTime createdAt) {
+        requireType(withdrawalType, TransactionTypeEnum.WITHDRAWAL);
+        requireStatus(pendingStatus, TransactionStatusEnum.PENDING);
+        Transaction transaction = new Transaction();
+        transaction.id = id;
+        transaction.userOriginatorId = userOriginatorId;
+        transaction.senderAccountId = senderAccountId;
+        transaction.amount = amount;
+        transaction.reference = reference;
+        transaction.type = withdrawalType;
+        transaction.status = pendingStatus;
+        transaction.createdAt = createdAt;
+        return transaction;
+    }
+
+    /**
      * Informa a Spring Data si la fila aún no existe. Con el id asignado de antemano no puede deducirlo del propio
      * id; con esta marca {@code save} hace un {@code INSERT} directo, sin el {@code SELECT} previo de un {@code merge}.
      */
@@ -184,7 +220,8 @@ public class Transaction implements Persistable<UUID> {
      */
     public void requireConfirmable() {
         if (!is(TransactionStatusEnum.PENDING)) {
-            throw new TransactionNotPendingException("La transferencia " + reference + " ya no se puede confirmar: "
+            // Neutro: lo usan la confirmación de transferencias y la de retiros
+            throw new TransactionNotPendingException("La transacción " + reference + " ya no se puede confirmar: "
                     + describeStatus() + ". Inicia una nueva");
         }
     }

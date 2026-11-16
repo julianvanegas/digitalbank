@@ -116,6 +116,27 @@ public class AccountApiService implements AccountApi {
         return accountMapper.toView(accountRepository.save(receiver));
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * <p>Es la operación de los retiros de HU19. La usa {@code WithdrawalConfirmationService} al confirmar el retiro,
+     * igual que la transferencia usa {@link #applyTransfer}.
+     *
+     * <p>Se declara {@code noRollbackFor = BusinessException.class}, como {@link #applyTransfer} y no como
+     * {@link #applyDeposit}, porque el rechazo (saldo insuficiente, cuenta no activa o inexistente) es un resultado
+     * esperado que el llamante atrapa para registrar el retiro como {@code REJECTED}. Sin esa opción, la excepción
+     * marcaría la transacción del llamante como "solo revertir" y ese registro se perdería. Un monto no positivo sí la
+     * marca, porque es un error de programación y no un rechazo.
+     */
+    @Override
+    @Transactional(noRollbackFor = BusinessException.class)
+    public AccountView applyWithdrawal(UUID senderAccountId, BigDecimal amount) {
+        Account sender = require(accountRepository.findAllByIdForUpdate(List.of(senderAccountId)).stream()
+                .collect(Collectors.toMap(Account::getId, Function.identity())), senderAccountId);
+        sender.debit(amount);
+        return accountMapper.toView(accountRepository.save(sender));
+    }
+
     // Cuenta de las bloqueadas, o AccountNotFoundException si la consulta no la devuelve
     private static Account require(Map<UUID, Account> accounts, UUID accountId) {
         Account account = accounts.get(accountId);

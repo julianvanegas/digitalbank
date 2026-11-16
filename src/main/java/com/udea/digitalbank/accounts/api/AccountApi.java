@@ -77,4 +77,22 @@ public interface AccountApi {
      * @throws IllegalArgumentException si el monto no es positivo
      */
     AccountView applyDeposit(UUID receiverAccountId, BigDecimal amount);
+
+    /**
+     * Debita un monto de una cuenta por un retiro (HU19). Bloquea la fila, exige que la cuenta esté {@code ACTIVE} y
+     * que tenga saldo, y entonces resta el monto. Participa en la transacción del llamante.
+     *
+     * <p><b>Transaccionalidad.</b> Como {@link #applyTransfer}, un rechazo no deja nada a medias ni marca la
+     * transacción del llamante para revertir; así este puede atrapar la excepción y registrar el retiro como
+     * rechazado.
+     *
+     * @param senderAccountId cuenta de la que sale el dinero
+     * @param amount          monto positivo
+     * @return la vista de la cuenta con el saldo ya actualizado
+     * @throws com.udea.digitalbank.shared.exception.accounts.AccountNotFoundException  si la cuenta no existe
+     * @throws com.udea.digitalbank.shared.exception.accounts.AccountNotActiveException si la cuenta no está activa
+     * @throws com.udea.digitalbank.shared.exception.accounts.InsufficientFundsException si el saldo no alcanza
+     * @throws IllegalArgumentException si el monto no es positivo
+     */
+    AccountView applyWithdrawal(UUID senderAccountId, BigDecimal amount);
 }
