@@ -4,6 +4,8 @@ import com.udea.digitalbank.transactions.domain.Transaction;
 import com.udea.digitalbank.transactions.domain.TransactionStatus;
 import com.udea.digitalbank.transactions.domain.TransactionType;
 import jakarta.persistence.LockModeType;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
@@ -69,6 +71,30 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
     long countCompletedFromAccount(@Param("accountId") UUID accountId, @Param("type") TransactionType type,
                                    @Param("completed") TransactionStatus completed,
                                    @Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
+
+    /**
+     * Movimientos ya completados que entraron o salieron de la cuenta en el intervalo {@code [from, to)}, del más
+     * reciente al más antiguo. El desempate por id mantiene estable el orden entre páginas cuando dos movimientos
+     * comparten instante. Las transacciones pendientes, rechazadas o revertidas no movieron dinero y no se incluyen.
+     * El orden va en la consulta: quien llama no lo elige.
+     */
+    @Query(value = """
+            select t from Transaction t
+            where (t.senderAccountId = :accountId or t.receiverAccountId = :accountId)
+              and t.status = :completed
+              and t.createdAt >= :from and t.createdAt < :to
+            order by t.createdAt desc, t.id desc
+            """,
+            countQuery = """
+            select count(t) from Transaction t
+            where (t.senderAccountId = :accountId or t.receiverAccountId = :accountId)
+              and t.status = :completed
+              and t.createdAt >= :from and t.createdAt < :to
+            """)
+    Page<Transaction> findCompletedOfAccount(@Param("accountId") UUID accountId,
+                                             @Param("completed") TransactionStatus completed,
+                                             @Param("from") LocalDateTime from, @Param("to") LocalDateTime to,
+                                             Pageable pageable);
 
     /**
      * Rechaza, en una sola sentencia, las transacciones {@code PENDING} creadas antes de {@code cutoff}. El
