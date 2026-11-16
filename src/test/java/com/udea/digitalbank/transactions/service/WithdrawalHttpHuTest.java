@@ -1,5 +1,6 @@
 package com.udea.digitalbank.transactions.service;
 
+import org.springframework.context.ApplicationEventPublisher;
 import com.udea.digitalbank.accounts.api.AccountApi;
 import com.udea.digitalbank.accounts.api.AccountStatusEnum;
 import com.udea.digitalbank.accounts.api.AccountView;
@@ -58,7 +59,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /**
- * Contrato HTTP del retiro (HU19): POST /withdrawals y POST /withdrawals/{referencia}/confirm, y el comprobante por
+ * Contrato HTTP del retiro (HU19): POST /withdrawals y POST /{referencia}/confirm con la referencia de un retiro, y el comprobante por
  * GET /{referencia}. Vive en transactions.service y no en transactions.controller porque usa el controller con los
  * servicios REALES detrás, y TransferParties, PendingTransfers, TransactionAccess y el generador de
  * referencias son de paquete. Con los servicios simulados, la referencia, los mensajes y el "no se guarda nada" los
@@ -103,9 +104,13 @@ class WithdrawalHttpHuTest {
         WithdrawalInitiationService initiation = new WithdrawalInitiationService(transactionRepository, catalog,
                 responses, new TransactionReferenceGenerator(), parties, pendingTransfers, limitService, accountApi,
                 verificationApi, clock);
-        WithdrawalConfirmationService confirmation = new WithdrawalConfirmationService(transactionRepository, catalog,
-                responses, parties, pendingTransfers, limitService, accountApi, verificationApi);
-        mockMvc = HttpTestSupport.mockMvc(new WithdrawalController(initiation, confirmation));
+        TransactionConfirmationService confirmation = ConfirmationServices.of(transactionRepository, catalog,
+                responses, parties, pendingTransfers, limitService, accountApi, verificationApi,
+                mock(ApplicationEventPublisher.class));
+        // La confirmación del retiro es la de las transferencias: POST /{referencia}/confirm, en TransactionController
+        mockMvc = HttpTestSupport.mockMvc(new WithdrawalController(initiation),
+                new TransactionController(mock(TransferInitiationService.class), confirmation,
+                        mock(TransactionQueryService.class)));
 
         lenient().when(catalog.status(any())).thenAnswer(i -> status(i.getArgument(0)));
         lenient().when(catalog.type(any())).thenAnswer(i -> type(i.getArgument(0)));
@@ -264,7 +269,7 @@ class WithdrawalHttpHuTest {
     }
 
     @Nested
-    @DisplayName("HU19 - POST /transactions/withdrawals/{referencia}/confirm")
+    @DisplayName("HU19 - POST /transactions/{referencia}/confirm con la referencia de un retiro")
     class Confirm {
 
         private static final String REFERENCE = "RET-20261017-7Xk2Pq9RmZ4tNvB8cHdWeA";
@@ -281,7 +286,7 @@ class WithdrawalHttpHuTest {
 
             // Act
             MockHttpServletResponse response = perform(mockMvc,
-                    post(BASE + "/withdrawals/" + REFERENCE + "/confirm", "{\"code\":\"" + CODE + "\"}"));
+                    post(BASE + "/" + REFERENCE + "/confirm", "{\"code\":\"" + CODE + "\"}"));
 
             // Assert
             assertThat(response.getStatus()).isEqualTo(200);
@@ -299,7 +304,7 @@ class WithdrawalHttpHuTest {
 
             // Act
             MockHttpServletResponse response = perform(mockMvc,
-                    post(BASE + "/withdrawals/" + REFERENCE + "/confirm", "{\"code\":\"" + CODE + "\"}"));
+                    post(BASE + "/" + REFERENCE + "/confirm", "{\"code\":\"" + CODE + "\"}"));
 
             // Assert
             assertThat(response.getStatus()).isEqualTo(400);
@@ -316,7 +321,7 @@ class WithdrawalHttpHuTest {
 
             // Act
             MockHttpServletResponse response = perform(mockMvc,
-                    post(BASE + "/withdrawals/" + REFERENCE + "/confirm", "{\"code\":\"12ab\"}"));
+                    post(BASE + "/" + REFERENCE + "/confirm", "{\"code\":\"12ab\"}"));
 
             // Assert
             assertThat(response.getStatus()).isEqualTo(400);
@@ -344,7 +349,7 @@ class WithdrawalHttpHuTest {
             TransactionQueryService queryService = new TransactionQueryService(transactionRepository, responses,
                     new TransactionAccess(accountApi));
             receiptMvc = HttpTestSupport.mockMvc(new TransactionController(mock(TransferInitiationService.class),
-                    mock(TransferConfirmationService.class), queryService));
+                    mock(TransactionConfirmationService.class), queryService));
 
             // Un retiro que inició un administrador sobre la cuenta del titular y ya se completó
             Transaction withdrawal = Transaction.withdrawal(UUID.randomUUID(), adminId, account.id(),

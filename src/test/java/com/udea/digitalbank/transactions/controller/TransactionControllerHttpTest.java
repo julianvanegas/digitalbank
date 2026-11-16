@@ -11,7 +11,7 @@ import com.udea.digitalbank.support.HttpTestSupport;
 import com.udea.digitalbank.transactions.dto.TransactionResponse;
 import com.udea.digitalbank.transactions.dto.TransferRequest;
 import com.udea.digitalbank.transactions.service.TransactionQueryService;
-import com.udea.digitalbank.transactions.service.TransferConfirmationService;
+import com.udea.digitalbank.transactions.service.TransactionConfirmationService;
 import com.udea.digitalbank.transactions.service.TransferInitiationService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -58,7 +58,7 @@ class TransactionControllerHttpTest {
     @Mock
     private TransferInitiationService initiationService;
     @Mock
-    private TransferConfirmationService confirmationService;
+    private TransactionConfirmationService confirmationService;
     @Mock
     private TransactionQueryService queryService;
 

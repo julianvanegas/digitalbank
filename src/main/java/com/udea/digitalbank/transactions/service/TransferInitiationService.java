@@ -25,7 +25,7 @@ import java.util.UUID;
 
 /**
  * Primer paso de la transferencia entre cuentas del banco: valida la operación y la deja {@code PENDING} mientras el
- * segundo factor la autoriza. El segundo paso es {@link TransferConfirmationService}.
+ * segundo factor la autoriza. El segundo paso es {@link TransactionConfirmationService}.
  *
  * <p><b>Qué se registra.</b> Las validaciones de este paso fallan sin dejar fila: una transferencia imposible no llega
  * a ser una transacción.

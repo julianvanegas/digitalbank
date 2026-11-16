@@ -35,6 +35,18 @@ final class TransferMessages {
         return attempts == 1 ? "Te queda 1 intento" : "Te quedan " + attempts + " intentos";
     }
 
+    /** Código incorrecto con intentos disponibles: la transferencia sigue pendiente. */
+    static String wrongCode(int remainingAttempts) {
+        return "Código incorrecto. " + remainingAttempts(remainingAttempts);
+    }
+
+    /** Último intento fallido: la transferencia se cancela. */
+    static final String EXHAUSTED_ATTEMPTS =
+            "Superaste el número de intentos: la transferencia fue cancelada. Inicia una nueva";
+
+    /** Código vencido o inexistente: la transferencia se cancela. */
+    static final String EXPIRED_CODE = "El código expiró: la transferencia fue cancelada. Inicia el proceso de nuevo";
+
     /** Describe un estado de cuenta en palabras, para mostrarlo al ordenante. */
     static String accountStatus(String status) {
         return switch (status) {

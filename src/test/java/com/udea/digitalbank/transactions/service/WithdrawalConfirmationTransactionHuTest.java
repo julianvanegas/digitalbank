@@ -1,5 +1,6 @@
 package com.udea.digitalbank.transactions.service;
 
+import org.springframework.context.ApplicationEventPublisher;
 import com.udea.digitalbank.accounts.api.AccountApi;
 import com.udea.digitalbank.accounts.api.AccountStatusEnum;
 import com.udea.digitalbank.accounts.api.AccountView;
@@ -48,7 +49,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * Prueba que el {@code noRollbackFor = BusinessException.class} de {@link WithdrawalConfirmationService#confirm} sirve:
+ * Prueba que el {@code noRollbackFor = BusinessException.class} de {@link TransactionConfirmationService#confirm} sirve:
  * que un rechazo esperado se <b>confirma</b> en la base en vez de revertirse, y con él el retiro {@code REJECTED} y el
  * intento fallido del código.
  * <p>
@@ -58,7 +59,7 @@ import static org.mockito.Mockito.when;
  * Sin base de datos: lo que se prueba es la decisión de confirmar o revertir, no la escritura.
  */
 @SpringJUnitConfig(WithdrawalConfirmationTransactionHuTest.Config.class)
-@DisplayName("HU19 - WithdrawalConfirmationService - un rechazo se confirma, no se revierte")
+@DisplayName("HU19 - TransactionConfirmationService (retiros) - un rechazo se confirma, no se revierte")
 class WithdrawalConfirmationTransactionHuTest {
 
     private static final String REFERENCE = "RET-20261017-7Xk2Pq9RmZ4tNvB8cHdWeA";
@@ -146,18 +147,19 @@ class WithdrawalConfirmationTransactionHuTest {
         }
 
         @Bean
-        WithdrawalConfirmationService withdrawalConfirmationService() {
-            return new WithdrawalConfirmationService(TRANSACTION_REPOSITORY, CATALOG,
-                    new TransactionResponses(Mappers.getMapper(TransactionMapper.class), ACCOUNT_API),
+        TransactionConfirmationService transactionConfirmationService() {
+            TransactionResponses responses =
+                    new TransactionResponses(Mappers.getMapper(TransactionMapper.class), ACCOUNT_API);
+            return ConfirmationServices.of(TRANSACTION_REPOSITORY, CATALOG, responses,
                     new TransferParties(ACCOUNT_API, LIMIT_SERVICE),
                     new PendingTransfers(TRANSACTION_REPOSITORY, CATALOG, ACCOUNT_API, VERIFICATION_API,
                             Clock.systemDefaultZone()),
-                    LIMIT_SERVICE, ACCOUNT_API, VERIFICATION_API);
+                    LIMIT_SERVICE, ACCOUNT_API, VERIFICATION_API, mock(ApplicationEventPublisher.class));
         }
     }
 
     @Autowired
-    private WithdrawalConfirmationService service;
+    private TransactionConfirmationService service;
     @Autowired
     private PlatformTransactionManager transactionManager;
 

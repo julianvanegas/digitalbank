@@ -24,7 +24,7 @@ import java.util.UUID;
 /**
  * Primer paso del retiro (HU19): valida la operación y la deja {@code PENDING} mientras el segundo factor la autoriza.
  * Sigue el flujo de {@link TransferInitiationService}, para un movimiento de un solo lado: el dinero sale de la cuenta
- * y no llega a ninguna otra. El segundo paso es {@link WithdrawalConfirmationService}.
+ * y no llega a ninguna otra. El segundo paso es {@link TransactionConfirmationService}.
  *
  * <p><b>Qué se registra.</b> Las validaciones de este paso fallan sin dejar fila: un retiro imposible no llega a ser
  * una transacción.

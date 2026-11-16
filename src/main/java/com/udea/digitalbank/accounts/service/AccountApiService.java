@@ -119,7 +119,7 @@ public class AccountApiService implements AccountApi {
     /**
      * {@inheritDoc}
      *
-     * <p>Es la operación de los retiros de HU19. La usa {@code WithdrawalConfirmationService} al confirmar el retiro,
+     * <p>Es la operación de los retiros de HU19. La usa {@code WithdrawalConfirmable} al confirmar el retiro,
      * igual que la transferencia usa {@link #applyTransfer}.
      *
      * <p>Se declara {@code noRollbackFor = BusinessException.class}, como {@link #applyTransfer} y no como

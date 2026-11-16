@@ -2,11 +2,11 @@ package com.udea.digitalbank.transactions.controller;
 
 import com.udea.digitalbank.shared.security.Actor;
 import com.udea.digitalbank.shared.security.CurrentActor;
-import com.udea.digitalbank.transactions.dto.ConfirmTransferRequest;
+import com.udea.digitalbank.transactions.dto.ConfirmTransactionRequest;
 import com.udea.digitalbank.transactions.dto.TransactionResponse;
 import com.udea.digitalbank.transactions.dto.TransferRequest;
+import com.udea.digitalbank.transactions.service.TransactionConfirmationService;
 import com.udea.digitalbank.transactions.service.TransactionQueryService;
-import com.udea.digitalbank.transactions.service.TransferConfirmationService;
 import com.udea.digitalbank.transactions.service.TransferInitiationService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -34,11 +34,11 @@ import com.udea.digitalbank.shared.config.OpenApiExamples;
 public class TransactionController {
 
     private final TransferInitiationService initiationService;
-    private final TransferConfirmationService confirmationService;
+    private final TransactionConfirmationService confirmationService;
     private final TransactionQueryService queryService;
 
     public TransactionController(TransferInitiationService initiationService,
-                                 TransferConfirmationService confirmationService,
+                                 TransactionConfirmationService confirmationService,
                                  TransactionQueryService queryService) {
         this.initiationService = initiationService;
         this.confirmationService = confirmationService;
@@ -74,36 +74,38 @@ public class TransactionController {
     }
 
     /**
-     * Confirma una transferencia con su código ({@code POST /api/v1/transactions/{reference}/confirm}): con el código
-     * correcto mueve el dinero y devuelve el comprobante.
+     * Confirma una transferencia o un retiro con su código ({@code POST /api/v1/transactions/{reference}/confirm}): con
+     * el código correcto mueve el dinero y devuelve el comprobante. La referencia (la {@code TRF-…} de una transferencia
+     * o la {@code RET-…} de un retiro) dice qué se confirma.
      *
-     * <p>Respuestas de error: 400 si el código es incorrecto (la transferencia sigue pendiente y se informan los
-     * intentos restantes); 409 si el código ha vencido y 429 si se han agotado los intentos (en ambos casos la
-     * transferencia queda cancelada y se debe iniciar una nueva).
+     * <p>Respuestas de error: 400 si el código es incorrecto (la transacción sigue pendiente y se informan los
+     * intentos restantes) o si la referencia es de un tipo que no se confirma con código; 409 si el código ha vencido
+     * y 429 si se han agotado los intentos (en ambos casos la transacción queda cancelada y se debe iniciar una nueva).
      *
      * <p>Si la inició un administrador, la confirma él con el código que recibió el titular de la cuenta de origen.
      *
      * @param actor     usuario autenticado; debe ser el ordenante
-     * @param reference comprobante de la transferencia
+     * @param reference comprobante de la transferencia o del retiro
      * @param request   código de 6 dígitos recibido por correo
-     * @return 200 con el comprobante de la transferencia completada
+     * @return 200 con el comprobante de la transacción completada
      */
-    @Operation(summary = "Confirmar una transferencia")
-    @ApiResponse(responseCode = "200", description = "Transferencia completada")
+    @Operation(summary = "Confirmar una transferencia o un retiro")
+    @ApiResponse(responseCode = "200", description = "Transacción completada; el dinero ya se movió")
     @ApiResponse(responseCode = "400",
-            description = "Solicitud inválida, o código incorrecto (la transferencia sigue pendiente)")
+            description = "Solicitud inválida, código incorrecto (la transacción sigue pendiente), o la referencia "
+                + "no es de una transferencia ni de un retiro")
     @ApiResponse(responseCode = "403", description = "Sin permiso, o una de las cuentas ya no está activa")
-    @ApiResponse(responseCode = "404", description = "Transferencia no encontrada")
+    @ApiResponse(responseCode = "404", description = "Transacción no encontrada")
     @ApiResponse(responseCode = "409",
-            description = "Código vencido, transferencia que ya no está pendiente, fondos insuficientes, o un tope "
+            description = "Código vencido, transacción que ya no está pendiente, fondos insuficientes, o un tope "
                 + "diario superado (solo clientes)")
-    @ApiResponse(responseCode = "429", description = "Intentos agotados: la transferencia queda cancelada")
+    @ApiResponse(responseCode = "429", description = "Intentos agotados: la transacción queda cancelada")
     @PostMapping("/{reference}/confirm")
     public ResponseEntity<TransactionResponse> confirm(
             @CurrentActor Actor actor,
-            @Parameter(description = "Referencia (comprobante) de la transferencia",
+            @Parameter(description = "Referencia (comprobante) de la transferencia o del retiro",
                     example = OpenApiExamples.REFERENCE) @PathVariable String reference,
-            @Valid @RequestBody ConfirmTransferRequest request) {
+            @Valid @RequestBody ConfirmTransactionRequest request) {
         return ResponseEntity.ok(confirmationService.confirm(actor, reference, request.getCode()));
     }
 
