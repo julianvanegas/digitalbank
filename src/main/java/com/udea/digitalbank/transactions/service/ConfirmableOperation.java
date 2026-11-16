@@ -11,9 +11,9 @@ import com.udea.digitalbank.transactions.dto.TransactionResponse;
 
 /**
  * Lo que cambia de un tipo de transacción en el segundo paso, cuando se confirma con el código de segundo factor: cómo
- * se mueve el dinero y qué textos se le muestran al ordenante. Todo lo demás (buscar la transacción, comprobar al
- * ordenante, verificar el código, rechazar al agotar los intentos o al vencer el código) es igual para todos y vive en
- * {@link TransactionConfirmationService}.
+ * se mueve el dinero y qué textos se le muestran al ordenante. El resto (buscar la transacción, comprobar al
+ * ordenante, verificar el código, rechazar al agotar los intentos o al vencer el código) es igual para todos los tipos
+ * y vive en {@link TransactionConfirmationService}.
  *
  * <p>Para que un tipo nuevo se confirme por {@code POST /api/v1/transactions/{reference}/confirm} basta con un
  * componente que implemente esta interfaz: el servicio recibe todos y elige por el tipo de la transacción.

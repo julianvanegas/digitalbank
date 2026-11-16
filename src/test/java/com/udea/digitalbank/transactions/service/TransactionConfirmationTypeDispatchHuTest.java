@@ -47,8 +47,8 @@ import static org.mockito.Mockito.when;
 /**
  * Pruebas unitarias (AAA) del despacho por tipo en {@link TransactionConfirmationService#confirm}: la misma ruta
  * confirma transferencias y retiros, cada uno con su operación; un tipo sin operación (el depósito, que se hace en un
- * paso) se rechaza antes de verificar el código. Sustituye a la guarda de tipo de la ADR-0006 original, que existía
- * porque cada tipo tenía su propia ruta. Se monta con TransferParties y PendingTransfers reales sobre los mocks.
+ * paso) se rechaza antes de verificar el código, sin gastar un intento del cliente (ADR-0006). Se monta con
+ * TransferParties y PendingTransfers reales sobre los mocks.
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("HU19 - La confirmación elige la operación por el tipo de la transacción")
@@ -174,10 +174,11 @@ class TransactionConfirmationTypeDispatchHuTest {
     void deberiaRechazarUnDeposito() {
         // Arrange
         UUID adminId = UUID.randomUUID();
+        Actor admin = new Actor(adminId, true);
         deposit(adminId);
 
         // Act + Assert
-        assertThatThrownBy(() -> service.confirm(new Actor(adminId, true), DEPOSIT_REFERENCE, CODE))
+        assertThatThrownBy(() -> service.confirm(admin, DEPOSIT_REFERENCE, CODE))
                 .isInstanceOf(InvalidRequestException.class)
                 .hasMessageContaining(DEPOSIT_REFERENCE)
                 .hasMessageContaining("no se confirma con código");
