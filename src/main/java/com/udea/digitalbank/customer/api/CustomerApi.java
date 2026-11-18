@@ -30,4 +30,11 @@ public interface CustomerApi {
 
     /** Lanza CustomerNotFoundException si no existe o CustomerNotActiveException si no está ACTIVE. */
     CustomerView requireActiveCustomer(UUID customerId);
+
+    /**
+     * Inactiva al cliente porque ya no tiene ninguna cuenta abierta: pasa su usuario de ACTIVE a INACTIVE y le
+     * cierra la sesión. Si el usuario no está ACTIVE, no cambia nada. Participa en la transacción del llamante.
+     * Lanza CustomerNotFoundException si el cliente no existe.
+     */
+    void markInactive(UUID customerId);
 }
