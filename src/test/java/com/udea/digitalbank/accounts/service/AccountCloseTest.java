@@ -20,6 +20,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mapstruct.factory.Mappers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
@@ -32,6 +34,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import java.math.BigDecimal;
 import java.time.Clock;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -55,12 +58,13 @@ import static org.mockito.Mockito.when;
  * Pruebas unitarias (AAA) de {@link AccountLifecycleService#closeAccount} para HU17 por el camino del titular
  * ("Como cliente titular de la cuenta"). Las de AccountLifecycleServiceTest cubren las mismas reglas, pero el rechazo
  * por saldo y el de cuenta bloqueada pasan por un administrador. AccountLookup y el mapper son reales sobre los mocks.
- * Incluye el contrato HTTP del cierre, con el servicio real (ver el comentario del @Nested CloseHttp).
+ * Incluye el contrato HTTP del cierre, con el servicio real (ver el comentario del @Nested CloseHttp), y la HU09 CA04
+ * (inactividad por cuentas cerradas): el cierre es el momento en que el sistema evalúa el estado del cliente.
  * HU17 CA03 no tiene prueba: no es alcanzable en este modelo (ver el Javadoc de Account.close).
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("HU17 - Cerrar cuenta")
-class AccountCloseHuTest {
+class AccountCloseTest {
 
     @Mock
     private AccountRepository accountRepository;
@@ -92,8 +96,73 @@ class AccountCloseHuTest {
         Account account = buildAccount(status);
         ReflectionTestUtils.setField(account, "customerId", customerId);
         ReflectionTestUtils.setField(account, "balance", new BigDecimal(balance));
-        when(accountRepository.findByAccountNumberForUpdate(ACCOUNT_NUMBER)).thenReturn(Optional.of(account));
+        stubOwnerAccounts(account);
         return account;
+    }
+
+    // Las cuentas del titular tal como las devuelve la consulta con bloqueo; la primera es la que se cierra
+    private void stubOwnerAccounts(Account... accounts) {
+        when(accountRepository.findCustomerIdByAccountNumber(ACCOUNT_NUMBER)).thenReturn(Optional.of(customerId));
+        when(accountRepository.findByCustomerIdForUpdate(customerId)).thenReturn(List.of(accounts));
+    }
+
+    private Account otherAccount(AccountStatusEnum status) {
+        Account account = buildAccount(status);
+        ReflectionTestUtils.setField(account, "customerId", customerId);
+        ReflectionTestUtils.setField(account, "accountNumber", "100000000002");
+        ReflectionTestUtils.setField(account, "balance", BigDecimal.ZERO);
+        return account;
+    }
+
+    @Test
+    @DisplayName("HU09 CA04 - Al cerrar su última cuenta abierta, todas quedan cerradas y el cliente pasa a INACTIVE")
+    void deberiaInactivarAlClienteAlCerrarSuUltimaCuenta() {
+        // Arrange: la otra cuenta del cliente ya estaba cerrada
+        Account account = buildAccount(AccountStatusEnum.ACTIVE);
+        ReflectionTestUtils.setField(account, "customerId", customerId);
+        ReflectionTestUtils.setField(account, "balance", BigDecimal.ZERO);
+        stubOwnerAccounts(account, otherAccount(AccountStatusEnum.CLOSED));
+        when(accountCatalog.status(AccountStatusEnum.CLOSED)).thenReturn(status(AccountStatusEnum.CLOSED));
+        when(accountRepository.save(account)).thenReturn(account);
+
+        // Act
+        lifecycleService.closeAccount(owner, ACCOUNT_NUMBER);
+
+        // Assert
+        assertThat(account.is(AccountStatusEnum.CLOSED)).isTrue();
+        verify(customerApi).markInactive(customerId);
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = AccountStatusEnum.class, names = {"ACTIVE", "INACTIVE", "BLOCKED"})
+    @DisplayName("HU09 CA04 - Si le queda otra cuenta sin cerrar (activa, inactiva o bloqueada), el cliente sigue igual")
+    void noDeberiaInactivarAlClienteSiLeQuedaOtraCuenta(AccountStatusEnum other) {
+        // Arrange
+        Account account = buildAccount(AccountStatusEnum.ACTIVE);
+        ReflectionTestUtils.setField(account, "customerId", customerId);
+        ReflectionTestUtils.setField(account, "balance", BigDecimal.ZERO);
+        stubOwnerAccounts(account, otherAccount(other));
+        when(accountCatalog.status(AccountStatusEnum.CLOSED)).thenReturn(status(AccountStatusEnum.CLOSED));
+        when(accountRepository.save(account)).thenReturn(account);
+
+        // Act
+        lifecycleService.closeAccount(owner, ACCOUNT_NUMBER);
+
+        // Assert
+        assertThat(account.is(AccountStatusEnum.CLOSED)).isTrue();
+        verify(customerApi, never()).markInactive(any());
+    }
+
+    @Test
+    @DisplayName("HU09 CA04 - Si el cierre se rechaza, la cuenta sigue abierta y el cliente no se inactiva")
+    void noDeberiaInactivarAlClienteSiElCierreSeRechaza() {
+        // Arrange: es su única cuenta, pero tiene saldo
+        ownedAccount(AccountStatusEnum.ACTIVE, "5.00");
+
+        // Act & Assert
+        assertThatThrownBy(() -> lifecycleService.closeAccount(owner, ACCOUNT_NUMBER))
+                .isInstanceOf(AccountNotClosableException.class);
+        verify(customerApi, never()).markInactive(any());
     }
 
     @Test
@@ -127,6 +196,9 @@ class AccountCloseHuTest {
         assertThat(event.getValue().customerId()).isEqualTo(customerId);
         assertThat(event.getValue().accountNumber()).isEqualTo(ACCOUNT_NUMBER);
         assertThat(event.getValue().reason()).isEqualTo(AccountLifecycleService.CLOSED_BY_CUSTOMER);
+
+        // Assert: era su única cuenta, así que el cliente queda inactivo (HU09 CA04)
+        verify(customerApi).markInactive(customerId);
     }
 
     @Test
@@ -245,11 +317,9 @@ class AccountCloseHuTest {
         @DisplayName("HU17 - Cuenta inexistente o de otro cliente: 404 con el mismo mensaje y sin cerrar nada")
         void deberiaResponder404InexistenteOAjena() throws Exception {
             // Arrange: el mismo número, primero sin cuenta y luego con una cuenta de otro cliente
-            Account foreign = buildAccount(AccountStatusEnum.ACTIVE);
-            ReflectionTestUtils.setField(foreign, "balance", new BigDecimal("0.00"));
-            when(accountRepository.findByAccountNumberForUpdate(ACCOUNT_NUMBER))
+            when(accountRepository.findCustomerIdByAccountNumber(ACCOUNT_NUMBER))
                     .thenReturn(Optional.empty())
-                    .thenReturn(Optional.of(foreign));
+                    .thenReturn(Optional.of(UUID.randomUUID()));
 
             // Act
             MockHttpServletResponse missing = perform(mockMvc, MockMvcRequestBuilders.patch(CLOSE));
@@ -260,8 +330,9 @@ class AccountCloseHuTest {
             assertThat(notMine.getStatus()).isEqualTo(404);
             assertThat(body(missing)).contains("Cuenta no encontrada: " + ACCOUNT_NUMBER);
             assertThat(body(notMine)).contains("Cuenta no encontrada: " + ACCOUNT_NUMBER);
-            assertThat(foreign.is(AccountStatusEnum.ACTIVE)).isTrue();
+            verify(accountRepository, never()).findByCustomerIdForUpdate(any());
             verify(accountRepository, never()).save(any());
+            verify(customerApi, never()).markInactive(any());
             verifyNoInteractions(accountActionRepository, eventPublisher);
         }
     }
