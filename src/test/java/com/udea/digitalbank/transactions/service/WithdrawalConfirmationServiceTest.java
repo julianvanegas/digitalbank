@@ -51,11 +51,11 @@ import static org.mockito.Mockito.when;
  * Pruebas unitarias (AAA) de {@link TransactionConfirmationService} con un retiro, el segundo paso del retiro de HU19. Se monta como
  * TransferConfirmationServiceTest: TransferParties y PendingTransfers reales sobre los mocks. Que el rechazo se
  * confirme en la base gracias al noRollbackFor no se puede ver con mocks: lo prueba
- * WithdrawalConfirmationTransactionHuTest con el proxy transaccional de Spring.
+ * WithdrawalConfirmationTransactionTest con el proxy transaccional de Spring.
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("HU19 - TransactionConfirmationService (retiros) - confirmación del retiro")
-class WithdrawalConfirmationServiceHuTest {
+class WithdrawalConfirmationServiceTest {
 
     private static final String WITHDRAWAL_REFERENCE = "RET-20261017-7Xk2Pq9RmZ4tNvB8cHdWeA";
     private static final String NUMBER = "100000000001";

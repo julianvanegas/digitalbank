@@ -58,9 +58,9 @@ import static org.mockito.Mockito.when;
  * colaboradores simulados y un gestor de transacciones que solo anota si cada transacción se confirmó o se revirtió.
  * Sin base de datos: lo que se prueba es la decisión de confirmar o revertir, no la escritura.
  */
-@SpringJUnitConfig(WithdrawalConfirmationTransactionHuTest.Config.class)
+@SpringJUnitConfig(WithdrawalConfirmationTransactionTest.Config.class)
 @DisplayName("HU19 - TransactionConfirmationService (retiros) - un rechazo se confirma, no se revierte")
-class WithdrawalConfirmationTransactionHuTest {
+class WithdrawalConfirmationTransactionTest {
 
     private static final String REFERENCE = "RET-20261017-7Xk2Pq9RmZ4tNvB8cHdWeA";
     private static final String CODE = "123456";

@@ -130,4 +130,4 @@ Sigue la convención de tres letras de `TRF-` y `DEP-`. Se eligió `RET-` (retir
 | `transactions/service/TransactionReferenceGenerator.java` (`forWithdrawal`) | El prefijo `RET-`. |
 | `transactions/dto/WithdrawalRequest.java` | El monto: positivo y con máximo dos decimales, como en la transferencia. |
 | `transactions/security/TransactionSecurity.java` | Cliente y administrador en `/withdrawals` y en la confirmación común. |
-| `transactions/service/TransactionConfirmationTypeDispatchHuTest.java` | El despacho por tipo, los textos de cada uno y el rechazo del depósito. |
+| `transactions/service/TransactionConfirmationTypeDispatchTest.java` | El despacho por tipo, los textos de cada uno y el rechazo del depósito. |

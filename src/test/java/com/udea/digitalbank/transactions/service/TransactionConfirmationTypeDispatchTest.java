@@ -52,7 +52,7 @@ import static org.mockito.Mockito.when;
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("HU19 - La confirmación elige la operación por el tipo de la transacción")
-class TransactionConfirmationTypeDispatchHuTest {
+class TransactionConfirmationTypeDispatchTest {
 
     private static final String WITHDRAWAL_REFERENCE = "RET-20261017-7Xk2Pq9RmZ4tNvB8cHdWeA";
     private static final String DEPOSIT_REFERENCE = "DEP-20261017-7Xk2Pq9RmZ4tNvB8cHdWeA";

@@ -100,6 +100,21 @@ public class UserStatusService {
         }
     }
 
+    /**
+     * Pasa a INACTIVE a un usuario ACTIVE y cierra su sesión. Es una regla del negocio y no una petición de un
+     * administrador, así que no pasa por {@link UserStatusTransitions}. Igual que {@link #markInactiveCustomers}, solo
+     * mueve a quien está ACTIVE: un usuario bloqueado o ya inactivo se queda como está.
+     */
+    @Transactional
+    public void markInactive(UUID userId) {
+        List<UUID> ids = List.of(userId);
+        int moved = userRepository.moveStatus(ids, catalogs.status(UserStatusEnum.ACTIVE),
+                catalogs.status(UserStatusEnum.INACTIVE), LocalDateTime.now(clock));
+        if (moved > 0) {
+            sessionService.revokeAll(ids);
+        }
+    }
+
     private void applyStatus(User user, UserStatusEnum statusEnum) {
         UserStatus target = catalogs.status(statusEnum);
         if (!user.getStatus().getCode().equals(target.getCode())) {

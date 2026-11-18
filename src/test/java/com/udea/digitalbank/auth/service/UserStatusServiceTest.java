@@ -346,4 +346,43 @@ class UserStatusServiceTest {
         }
     }
 
+    @Nested
+    @DisplayName("HU09 CA04 - markInactive - inactividad por cuentas cerradas")
+    class MarkInactive {
+
+        @Test
+        @DisplayName("HU09 CA04 - Un usuario ACTIVE pasa a INACTIVE y se le cierra la sesión")
+        void deberiaInactivarYRevocarLaSesion() {
+            // Arrange
+            UUID userId = UUID.randomUUID();
+            UserStatus active = buildStatus(UserStatusEnum.ACTIVE);
+            UserStatus inactive = buildStatus(UserStatusEnum.INACTIVE);
+            when(catalogs.status(UserStatusEnum.ACTIVE)).thenReturn(active);
+            when(catalogs.status(UserStatusEnum.INACTIVE)).thenReturn(inactive);
+            when(userRepository.moveStatus(eq(List.of(userId)), eq(active), eq(inactive), any(LocalDateTime.class)))
+                    .thenReturn(1);
+
+            // Act
+            userStatusService.markInactive(userId);
+
+            // Assert
+            verify(sessionService).revokeAll(List.of(userId));
+        }
+
+        @Test
+        @DisplayName("HU09 CA04 - Un usuario que no está ACTIVE (bloqueado o ya inactivo) no cambia y conserva su sesión")
+        void noDeberiaTocarAUnUsuarioQueNoEstaActivo() {
+            // Arrange: el UPDATE solo mueve a quien sigue ACTIVE, así que no mueve a nadie
+            UUID userId = UUID.randomUUID();
+            when(catalogs.status(UserStatusEnum.ACTIVE)).thenReturn(buildStatus(UserStatusEnum.ACTIVE));
+            when(catalogs.status(UserStatusEnum.INACTIVE)).thenReturn(buildStatus(UserStatusEnum.INACTIVE));
+            when(userRepository.moveStatus(any(), any(), any(), any())).thenReturn(0);
+
+            // Act
+            userStatusService.markInactive(userId);
+
+            // Assert
+            verifyNoInteractions(sessionService);
+        }
+    }
 }

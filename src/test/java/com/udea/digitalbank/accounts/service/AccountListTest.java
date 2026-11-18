@@ -48,7 +48,7 @@ import static org.mockito.Mockito.when;
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("HU11 - Consultar cuentas del cliente")
-class AccountListHuTest {
+class AccountListTest {
 
     @Mock
     private AccountRepository accountRepository;

@@ -38,7 +38,7 @@ import static org.mockito.Mockito.when;
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("HU19 - applyWithdrawal - débito de un retiro")
-class AccountWithdrawalHuTest {
+class AccountWithdrawalTest {
 
     @Mock
     private AccountRepository accountRepository;

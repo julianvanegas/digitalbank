@@ -5,6 +5,7 @@ import com.udea.digitalbank.accounts.repository.AccountRepository;
 import com.udea.digitalbank.shared.exception.accounts.AccountNotFoundException;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -46,9 +47,27 @@ class AccountLookup {
         return requireOwner(byNumber(accountNumber), accountNumber, customerId);
     }
 
-    // Igual que byNumberOwnedBy, pero con la fila bloqueada: para cambiar el estado de la cuenta del titular
-    Account byNumberOwnedByForUpdate(String accountNumber, UUID customerId) {
-        return requireOwner(byNumberForUpdate(accountNumber), accountNumber, customerId);
+    // Titular de la cuenta sin cargar la entidad, para bloquear después todas sus cuentas
+    UUID ownerOf(String accountNumber) {
+        return accountRepository.findCustomerIdByAccountNumber(accountNumber)
+                .orElseThrow(() -> new AccountNotFoundException(NOT_FOUND + accountNumber));
+    }
+
+    // Igual que ownerOf, pero una cuenta de otro cliente responde igual que una inexistente
+    UUID ownerOf(String accountNumber, UUID customerId) {
+        UUID owner = ownerOf(accountNumber);
+        if (!owner.equals(customerId)) {
+            throw new AccountNotFoundException(NOT_FOUND + accountNumber);
+        }
+        return owner;
+    }
+
+    // La cuenta con ese número entre las del titular ya bloqueadas
+    static Account byNumberIn(List<Account> accounts, String accountNumber) {
+        return accounts.stream()
+                .filter(account -> account.getAccountNumber().equals(accountNumber))
+                .findFirst()
+                .orElseThrow(() -> new AccountNotFoundException(NOT_FOUND + accountNumber));
     }
 
     private static Account requireOwner(Account account, String accountNumber, UUID customerId) {
