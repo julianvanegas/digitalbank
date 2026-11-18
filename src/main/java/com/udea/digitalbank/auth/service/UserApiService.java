@@ -78,6 +78,12 @@ public class UserApiService implements UserApi {
     }
 
     @Override
+    @Transactional
+    public void markInactive(UUID userId) {
+        userStatusService.markInactive(userId);
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public UserView getUser(UUID userId) {
         return userRepository.findById(userId)
