@@ -53,7 +53,7 @@ import static org.mockito.Mockito.when;
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("HU19 - WithdrawalInitiationService - inicio del retiro")
-class WithdrawalInitiationServiceHuTest {
+class WithdrawalInitiationServiceTest {
 
     private static final int CODE_TTL_MINUTES = 3;
     private static final String NUMBER = "100000000001";

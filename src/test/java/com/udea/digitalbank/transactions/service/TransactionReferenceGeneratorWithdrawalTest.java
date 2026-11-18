@@ -16,7 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * y la codificación del UUID son comunes a los tres tipos y ya están probados allí.
  */
 @DisplayName("HU19 - Referencia del comprobante de un retiro")
-class TransactionReferenceGeneratorHuTest {
+class TransactionReferenceGeneratorWithdrawalTest {
 
     private static final LocalDateTime CREATED_AT = LocalDateTime.of(2026, 10, 17, 3, 15);
     private static final String CODE_REGEX = "[1-9A-HJ-NP-Za-km-z]{22}";

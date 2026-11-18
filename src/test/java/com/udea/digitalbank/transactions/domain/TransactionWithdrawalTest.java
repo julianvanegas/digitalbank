@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * TransactionTest: nace con los datos recibidos y exige el tipo y el estado del catálogo que le corresponden.
  */
 @DisplayName("HU19 - Transaction.withdrawal")
-class TransactionWithdrawalHuTest {
+class TransactionWithdrawalTest {
 
     private static final String REFERENCE = "RET-20261017-7Xk2Pq9RmZ4tNvB8cHdWeA";
 

@@ -69,7 +69,7 @@ import static org.mockito.Mockito.when;
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("HU19 - Contrato HTTP del retiro")
-class WithdrawalHttpHuTest {
+class WithdrawalHttpTest {
 
     private static final String BASE = "/api/v1/transactions";
     private static final String NUMBER = "100000000001";

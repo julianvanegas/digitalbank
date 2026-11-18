@@ -34,7 +34,7 @@ import static org.mockito.Mockito.when;
  * Pruebas de contrato HTTP (AAA) de GET /api/v1/accounts, el listado del cliente autenticado (HU11): qué código y qué
  * cuerpo recibe, y que la consulta no deja pedir las cuentas de otro cliente. El 401 sin token ya lo cubre
  * ApiAuthorizationTest. Aquí el servicio está simulado: que el cliente solo vea las cuentas ACTIVE y BLOCKED se
- * prueba con el servicio real en AccountListHuTest, también por HTTP.
+ * prueba con el servicio real en AccountListTest, también por HTTP.
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("HU11 - Contrato HTTP de GET /accounts")
