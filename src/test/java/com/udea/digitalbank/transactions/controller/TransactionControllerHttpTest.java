@@ -11,7 +11,8 @@ import com.udea.digitalbank.support.HttpTestSupport;
 import com.udea.digitalbank.transactions.dto.TransactionResponse;
 import com.udea.digitalbank.transactions.dto.TransferRequest;
 import com.udea.digitalbank.transactions.service.TransactionQueryService;
-import com.udea.digitalbank.transactions.service.TransferService;
+import com.udea.digitalbank.transactions.service.TransactionConfirmationService;
+import com.udea.digitalbank.transactions.service.TransferInitiationService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -41,8 +42,7 @@ import static org.mockito.Mockito.when;
 
 /**
  * Pruebas de contrato HTTP (AAA) de {@link TransactionController}: qué código y qué mensaje recibe el cliente de la
- * API al iniciar una transferencia (HU20) y al confirmarla con el código 2FA (HU21). Los códigos son los que fija el
- * ADR-0004 del backend.
+ * API al iniciar una transferencia (HU20) y al confirmarla con el código 2FA (HU21).
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("HU20 / HU21 - Contrato HTTP de transferencias")
@@ -55,7 +55,9 @@ class TransactionControllerHttpTest {
     private static final String RECEIVER = "200000000002";
 
     @Mock
-    private TransferService transferService;
+    private TransferInitiationService initiationService;
+    @Mock
+    private TransactionConfirmationService confirmationService;
     @Mock
     private TransactionQueryService queryService;
 
@@ -64,7 +66,7 @@ class TransactionControllerHttpTest {
 
     @BeforeEach
     void setUp() {
-        mockMvc = HttpTestSupport.mockMvc(new TransactionController(transferService, queryService));
+        mockMvc = HttpTestSupport.mockMvc(new TransactionController(initiationService, confirmationService, queryService));
         authenticate(userId, false);
     }
 
@@ -90,11 +92,11 @@ class TransactionControllerHttpTest {
     }
 
     private void initiateThrows(RuntimeException error) {
-        when(transferService.initiate(eq(new Actor(userId, false)), any(TransferRequest.class))).thenThrow(error);
+        when(initiationService.initiate(eq(new Actor(userId, false)), any(TransferRequest.class))).thenThrow(error);
     }
 
     private void confirmThrows(String code, RuntimeException error) {
-        when(transferService.confirm(new Actor(userId, false), REFERENCE, code)).thenThrow(error);
+        when(confirmationService.confirm(new Actor(userId, false), REFERENCE, code)).thenThrow(error);
     }
 
     @Nested
@@ -105,7 +107,7 @@ class TransactionControllerHttpTest {
         @DisplayName("HU20 CA01 - Transferencia válida: 201 en estado PENDING con su referencia")
         void deberiaDejarLaTransferenciaPendiente() throws Exception {
             // Arrange
-            when(transferService.initiate(eq(new Actor(userId, false)), any(TransferRequest.class)))
+            when(initiationService.initiate(eq(new Actor(userId, false)), any(TransferRequest.class)))
                     .thenReturn(transaction("PENDING"));
 
             // Act
@@ -173,7 +175,7 @@ class TransactionControllerHttpTest {
             // Assert
             assertThat(response.getStatus()).isEqualTo(400);
             assertThat(body(response)).contains("amount");
-            verifyNoInteractions(transferService);
+            verifyNoInteractions(initiationService, confirmationService);
         }
 
         @Test
@@ -186,7 +188,7 @@ class TransactionControllerHttpTest {
             // Assert
             assertThat(response.getStatus()).isEqualTo(400);
             assertThat(body(response)).contains("receiverAccountNumber");
-            verifyNoInteractions(transferService);
+            verifyNoInteractions(initiationService, confirmationService);
         }
     }
 
@@ -198,7 +200,7 @@ class TransactionControllerHttpTest {
         @DisplayName("HU21 CA01 - Código correcto: 200 con la transferencia COMPLETED")
         void deberiaCompletarLaTransferencia() throws Exception {
             // Arrange
-            when(transferService.confirm(new Actor(userId, false), REFERENCE, "123456"))
+            when(confirmationService.confirm(new Actor(userId, false), REFERENCE, "123456"))
                     .thenReturn(transaction("COMPLETED"));
 
             // Act
@@ -263,7 +265,7 @@ class TransactionControllerHttpTest {
 
             // Assert
             assertThat(response.getStatus()).isEqualTo(400);
-            verifyNoInteractions(transferService);
+            verifyNoInteractions(initiationService, confirmationService);
         }
     }
 }

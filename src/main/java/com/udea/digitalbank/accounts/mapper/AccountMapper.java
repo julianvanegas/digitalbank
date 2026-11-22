@@ -21,5 +21,6 @@ public interface AccountMapper {
 
     /** Vista para otros módulos (AccountApi): sin las marcas de tiempo ni la posición en el cupo. */
     @Mapping(target = "status", source = "status.code")
+    @Mapping(target = "accountType", source = "accountType.code")
     AccountView toView(Account account);
 }

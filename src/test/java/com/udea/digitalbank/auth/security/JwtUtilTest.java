@@ -5,7 +5,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.util.Date;
+import java.time.Instant;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -53,7 +53,8 @@ class JwtUtilTest {
         @Test
         @DisplayName("Transversal - Un secreto de menos de 32 bytes impide que la app arranque, con un mensaje claro")
         void deberiaRechazarUnSecretoCorto() {
-            assertThatThrownBy(() -> withSecret("a".repeat(31)).init())
+            JwtUtil util = withSecret("a".repeat(31));
+            assertThatThrownBy(util::init)
                     .isInstanceOf(IllegalStateException.class)
                     .hasMessageContaining("jwt.secret")
                     .hasMessageContaining("32")
@@ -63,8 +64,10 @@ class JwtUtilTest {
         @Test
         @DisplayName("Transversal - Un secreto ausente o vacío también se rechaza")
         void deberiaRechazarUnSecretoAusenteOVacio() {
-            assertThatThrownBy(() -> withSecret(null).init()).isInstanceOf(IllegalStateException.class);
-            assertThatThrownBy(() -> withSecret("").init()).isInstanceOf(IllegalStateException.class);
+            JwtUtil nullSecretUtil = withSecret(null);
+            JwtUtil emptySecretUtil = withSecret("");
+            assertThatThrownBy(nullSecretUtil::init).isInstanceOf(IllegalStateException.class);
+            assertThatThrownBy(emptySecretUtil::init).isInstanceOf(IllegalStateException.class);
         }
 
         @Test
@@ -73,10 +76,10 @@ class JwtUtilTest {
             JwtUtil util = withSecret("a".repeat(32));
             util.init();
 
-            Date now = new Date();
+            Instant now = Instant.now();
             UUID userId = UUID.randomUUID();
             String token = util.generateToken(userId, "ADMIN", UUID.randomUUID().toString(), now,
-                    new Date(now.getTime() + 60_000));
+                    now.plusSeconds(60));
 
             assertThat(util.tryParse(token)).isPresent();
         }
@@ -91,7 +94,7 @@ class JwtUtilTest {
             util.init();
 
             assertThat(util.tryParse(util.generateToken(UUID.randomUUID(), "CUSTOMER",
-                    UUID.randomUUID().toString(), new Date(), new Date(System.currentTimeMillis() + 60_000)))).isPresent();
+                    UUID.randomUUID().toString(), Instant.now(), Instant.now().plusSeconds(60)))).isPresent();
         }
     }
 
@@ -103,8 +106,8 @@ class JwtUtilTest {
         @DisplayName("HU04 CA05 - Un token recién generado se puede parsear y contiene el subject, el rol y el jti correctos")
         void deberiaGenerarUnTokenQueSePuedeParsearCorrectamente() {
             // Arrange
-            Date issuedAt = new Date();
-            Date expiresAt = new Date(issuedAt.getTime() + 900_000L);
+            Instant issuedAt = Instant.now();
+            Instant expiresAt = issuedAt.plusSeconds(900);
             UUID userId = UUID.randomUUID();
 
             // Act
@@ -138,8 +141,8 @@ class JwtUtilTest {
         @DisplayName("HU04 CA05 - Un token recién emitido y vigente es válido")
         void deberiaSerValidoUnTokenVigente() {
             // Arrange
-            Date issuedAt = new Date();
-            Date expiresAt = new Date(issuedAt.getTime() + 900_000L);
+            Instant issuedAt = Instant.now();
+            Instant expiresAt = issuedAt.plusSeconds(900);
             String token = jwtUtil.generateToken(UUID.randomUUID(), "CUSTOMER", "jti-1", issuedAt, expiresAt);
 
             // Act & Assert
@@ -150,8 +153,8 @@ class JwtUtilTest {
         @DisplayName("HU02 CA08 / HU04 CA03 - Un token con fecha de expiración en el pasado no es válido")
         void noDeberiaSerValidoUnTokenExpirado() {
             // Arrange: se genera ya vencido (con 1 minuto de vencido)
-            Date issuedAt = new Date(System.currentTimeMillis() - 120_000L);
-            Date expiresAt = new Date(System.currentTimeMillis() - 60_000L);
+            Instant issuedAt = Instant.now().minusSeconds(120);
+            Instant expiresAt = Instant.now().minusSeconds(60);
             String token = jwtUtil.generateToken(UUID.randomUUID(), "CUSTOMER", "jti-1", issuedAt, expiresAt);
 
             // Act & Assert
@@ -166,8 +169,8 @@ class JwtUtilTest {
             setField(otraInstancia, "secret", "otra-clave-completamente-distinta-de-32-caracteres");
             setField(otraInstancia, "expirationMs", 900_000L);
             otraInstancia.init();
-            Date issuedAt = new Date();
-            Date expiresAt = new Date(issuedAt.getTime() + 900_000L);
+            Instant issuedAt = Instant.now();
+            Instant expiresAt = issuedAt.plusSeconds(900);
             String tokenFalsificado = otraInstancia.generateToken(UUID.randomUUID(), "CUSTOMER", "jti-1", issuedAt, expiresAt);
 
             // Act & Assert

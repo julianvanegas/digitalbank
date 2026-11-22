@@ -67,9 +67,13 @@ public class AccountController {
         return ResponseEntity.status(HttpStatus.CREATED).body(openingService.open(actor, customerId, accountType));
     }
 
-    /** Sin paginar: un cliente tiene como máximo tres cuentas abiertas. */
+    /**
+     * Las cuentas ACTIVE y BLOCKED del cliente autenticado; las INACTIVE y CLOSED se consultan por su número. Sin
+     * paginar: el índice único parcial de la base limita a tres las cuentas no cerradas, así que la lista nunca pasa
+     * de tres.
+     */
     @Operation(summary = "Listar mis cuentas")
-    @ApiResponse(responseCode = "200", description = "Cuentas del cliente autenticado")
+    @ApiResponse(responseCode = "200", description = "Cuentas del cliente autenticado (las activas y bloqueadas)")
     @ApiResponse(responseCode = "404", description = "No existe un perfil de cliente para el usuario")
     @GetMapping
     public ResponseEntity<List<AccountResponse>> myAccounts(@CurrentActor Actor actor) {
@@ -93,9 +97,9 @@ public class AccountController {
     }
 
     /**
-     * Solo administradores: cuentas de un cliente a partir de su documento, en cualquier estado.
-     * Sin paginar: un cliente tiene como máximo tres cuentas abiertas. Tipo y número juntos, como el UNIQUE de
-     * customers.
+     * Solo administradores: cuentas de un cliente a partir de su documento, en cualquier estado, también las
+     * cerradas. Sin paginar, aunque la lista puede pasar de tres: las no cerradas son como máximo tres, pero cerrar una
+     * cuenta libera su cupo y las cerradas no tienen tope. Tipo y número juntos, como el UNIQUE de customers.
      */
     @Operation(summary = "Listar las cuentas de un cliente")
     @ApiResponse(responseCode = "200", description = "Cuentas del cliente")

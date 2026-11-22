@@ -48,7 +48,7 @@ public class AuthSecurity implements SecurityModule {
     }
 
     @Override
-    public void customize(HttpSecurity http) throws Exception {
+    public void customize(HttpSecurity http) {
         http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
     }

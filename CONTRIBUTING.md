@@ -17,7 +17,7 @@ Si el cambio es grande o toca la arquitectura, abre primero un issue para discut
 
 ## Preparar el entorno
 
-Sigue las secciones [Requisitos previos](README.md#requisitos-previos), [Configuración](README.md#configuración) y [Ejecución local](README.md#ejecución-local) del README. Necesitas JDK 21, PostgreSQL y las variables definidas en `.env.example`. No incluyas el archivo `.env` en los commits.
+Sigue las secciones [Requisitos previos](README.md#requisitos-previos), [Configuración](README.md#configuración) y [Ejecución local](README.md#ejecución-local) del README. Necesitas JDK 25, PostgreSQL y las variables definidas en `.env.example`. No incluyas el archivo `.env` en los commits.
 
 ## Ramas
 
@@ -86,7 +86,7 @@ Escribe mensajes breves, en español, en modo imperativo y que expliquen el *qu�
 ## Pruebas
 
 - Todo cambio de comportamiento debe incluir pruebas automatizadas en `src/test/java`, en el mismo paquete que la clase probada.
-- `./mvnw verify` debe pasar. La cobertura de líneas mínima es del 65%, y SonarCloud analiza cada PR.
+- `./mvnw verify` debe pasar. La cobertura de líneas mínima es del 80%, y SonarCloud analiza cada PR.
 - Si corriges un error, añade una prueba que falle sin la corrección.
 - No dependas de credenciales, servicios externos o datos personales reales en las pruebas.
 

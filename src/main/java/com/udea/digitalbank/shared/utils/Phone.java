@@ -17,7 +17,7 @@ import java.lang.annotation.Target;
  * Es texto y no número porque conserva el "+". Un valor nulo es válido: se combina con {@code @NotBlank}
  * donde el teléfono sea obligatorio.
  */
-@Pattern(regexp = "^\\+[1-9][0-9]{6,14}$")
+@Pattern(regexp = "^\\+[1-9]\\d{6,14}$")
 @ReportAsSingleViolation
 @Target({ElementType.FIELD, ElementType.PARAMETER})
 @Retention(RetentionPolicy.RUNTIME)

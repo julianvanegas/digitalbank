@@ -15,6 +15,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -29,13 +30,15 @@ public class AuthService {
     private final UserStatusService userStatusService;
     // Hash con el costo del codificador configurado, contra el que se compara cuando el correo no existe
     private final String unknownUserHash;
+    private final Clock clock;
 
     public AuthService(UserRepository userRepository,
                        SessionService sessionService,
                        PasswordEncoder passwordEncoder,
                        VerificationService verificationService,
                        VerificationDispatcher verificationDispatcher,
-                       UserStatusService userStatusService) {
+                       UserStatusService userStatusService,
+                       Clock clock) {
         this.userRepository = userRepository;
         this.sessionService = sessionService;
         this.passwordEncoder = passwordEncoder;
@@ -43,6 +46,7 @@ public class AuthService {
         this.verificationDispatcher = verificationDispatcher;
         this.userStatusService = userStatusService;
         this.unknownUserHash = passwordEncoder.encode(UUID.randomUUID().toString());
+        this.clock = clock;
     }
 
     /**
@@ -68,7 +72,9 @@ public class AuthService {
 
         // El estado se revela solo con la contraseña correcta
         switch (UserStatusEnum.valueOf(user.getStatus().getCode())) {
-            case ACTIVE -> { }
+            case ACTIVE -> {
+                // Sin restricciones: puede iniciar sesión
+            }
             case BLOCKED -> throw new UserNotEnabledException(
                     "El usuario está bloqueado, contacta a un administrador");
             case PENDING_VERIFICATION -> throw new UserNotEnabledException(
@@ -98,7 +104,7 @@ public class AuthService {
             throw new UserNotEnabledException("El usuario no está habilitado para iniciar sesión");
         }
 
-        user.setLastLoginAt(LocalDateTime.now());
+        user.setLastLoginAt(LocalDateTime.now(clock));
         userRepository.save(user);
 
         // Sesión única: abrir la nueva invalida el token anterior

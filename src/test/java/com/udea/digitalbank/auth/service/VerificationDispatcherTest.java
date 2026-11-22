@@ -77,10 +77,12 @@ class VerificationDispatcherTest {
 
             // Assert
             verify(emailService).send(
-                    eq("cliente@example.com"),
-                    eq("Confirma tu transacción"),
-                    eq("Vas a transferir 10.00 a la cuenta terminada en 0002\n\n"
-                            + "Tu código es: 123456. Expira en 3 minutos."));
+                    "cliente@example.com",
+                    "Confirma tu transacción",
+                    """
+                    Vas a transferir 10.00 a la cuenta terminada en 0002
+
+                    Tu código es: 123456. Expira en 3 minutos.""");
         }
 
         @Test

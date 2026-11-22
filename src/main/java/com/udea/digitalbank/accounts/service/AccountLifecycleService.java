@@ -16,7 +16,9 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -37,6 +39,7 @@ public class AccountLifecycleService {
     private final AccountLookup accountLookup;
     private final AccountCatalog accountCatalog;
     private final ApplicationEventPublisher eventPublisher;
+    private final Clock clock;
 
     public AccountLifecycleService(AccountRepository accountRepository,
                                    AccountActionRepository accountActionRepository,
@@ -44,7 +47,8 @@ public class AccountLifecycleService {
                                    AccountMapper accountMapper,
                                    AccountLookup accountLookup,
                                    AccountCatalog accountCatalog,
-                                   ApplicationEventPublisher eventPublisher) {
+                                   ApplicationEventPublisher eventPublisher,
+                                   Clock clock) {
         this.accountRepository = accountRepository;
         this.accountActionRepository = accountActionRepository;
         this.customerApi = customerApi;
@@ -52,6 +56,7 @@ public class AccountLifecycleService {
         this.accountLookup = accountLookup;
         this.accountCatalog = accountCatalog;
         this.eventPublisher = eventPublisher;
+        this.clock = clock;
     }
 
     /**
@@ -119,32 +124,41 @@ public class AccountLifecycleService {
 
     /**
      * Cierre de una cuenta. Un cliente cierra las suyas (una ajena responde igual que una inexistente); un
-     * administrador, cualquiera, sin pasar por customerApi. Queda registrado quién la cierra: el motivo dice si fue
-     * el cliente o un administrador. Las reglas están en {@link #close(Account, String, UUID)}.
+     * administrador, cualquiera. Queda registrado quién la cierra: el motivo dice si fue el cliente o un
+     * administrador. Las reglas están en {@link #close(UUID, String, String, UUID)}.
      */
     @Transactional
     public AccountResponse closeAccount(Actor actor, String accountNumber) {
         if (actor.admin()) {
-            return close(accountLookup.byNumberForUpdate(accountNumber), CLOSED_BY_ADMIN, actor.userId());
+            return close(accountLookup.ownerOf(accountNumber), accountNumber, CLOSED_BY_ADMIN, actor.userId());
         }
         CustomerView customer = customerApi.getCustomerByUserId(actor.userId());
-        return close(accountLookup.byNumberOwnedByForUpdate(accountNumber, customer.id()),
+        return close(accountLookup.ownerOf(accountNumber, customer.id()), accountNumber,
                 CLOSED_BY_CUSTOMER, actor.userId());
     }
 
     /**
      * Deja la cuenta en CLOSED con su fecha de cierre (la base exige las dos cosas a la vez), registra la acción
-     * CLOSED con quién la hizo y avisa al titular. La fila llega bloqueada, así que dos cierres simultáneos se
-     * turnan y el segundo ya la ve cerrada.
+     * CLOSED con quién la hizo y avisa al titular. Antes bloquea todas las cuentas del titular, en orden de id: dos
+     * cierres simultáneos del mismo cliente se turnan, y el segundo ya ve el cierre del primero.
      * <p>
      * Solo se cierra una cuenta ACTIVE o INACTIVE y con saldo cero: con dinero se debe retirar antes, y una
      * bloqueada se debe desbloquear primero, para que cerrarla no sirva para esquivar un bloqueo.
+     * <p>
+     * Si era la última cuenta abierta del cliente, el cliente pasa a INACTIVE en la misma transacción y se le
+     * cierra la sesión. Las cuentas bloqueadas o inactivas cuentan como abiertas.
      */
-    private AccountResponse close(Account account, String reason, UUID actingUserId) {
-        account.close(accountCatalog.status(AccountStatusEnum.CLOSED), LocalDateTime.now());
+    private AccountResponse close(UUID ownerId, String accountNumber, String reason, UUID actingUserId) {
+        List<Account> ownerAccounts = accountRepository.findByCustomerIdForUpdate(ownerId);
+        Account account = AccountLookup.byNumberIn(ownerAccounts, accountNumber);
+
+        account.close(accountCatalog.status(AccountStatusEnum.CLOSED), LocalDateTime.now(clock));
         accountActionRepository.save(AccountAction.closed(account.getId(), reason, actingUserId));
 
         Account closed = accountRepository.save(account);
+        if (ownerAccounts.stream().allMatch(a -> a.is(AccountStatusEnum.CLOSED))) {
+            customerApi.markInactive(ownerId);
+        }
         // Igual que el bloqueo: el aviso al titular sale tras confirmarse la transacción
         eventPublisher.publishEvent(new AccountActionEvent(
                 closed.getCustomerId(), closed.getAccountNumber(), AccountActionType.CLOSED, reason));

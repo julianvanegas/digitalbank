@@ -24,6 +24,9 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -41,7 +44,7 @@ class CustomerApiServiceTest {
     @BeforeEach
     void setUp() {
         customerApiService = new CustomerApiService(customerRepository,
-                new CustomerLookup(customerRepository, userApi), Mappers.getMapper(CustomerMapper.class));
+                new CustomerLookup(customerRepository, userApi), Mappers.getMapper(CustomerMapper.class), userApi);
     }
 
     private final UUID customerId = UUID.randomUUID();
@@ -170,5 +173,25 @@ class CustomerApiServiceTest {
 
         assertThatThrownBy(() -> customerApiService.requireActiveCustomer(customerId))
                 .isInstanceOf(CustomerNotActiveException.class);
+    }
+
+    @Test
+    @DisplayName("HU09 CA04 - markInactive - inactiva al usuario del cliente")
+    void markInactive_inactivatesTheCustomerUser() {
+        when(customerRepository.findById(customerId)).thenReturn(Optional.of(buildCustomer()));
+
+        customerApiService.markInactive(customerId);
+
+        verify(userApi).markInactive(userId);
+    }
+
+    @Test
+    @DisplayName("HU09 CA04 - markInactive - cliente inexistente: CustomerNotFoundException")
+    void markInactive_notFound() {
+        when(customerRepository.findById(customerId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> customerApiService.markInactive(customerId))
+                .isInstanceOf(CustomerNotFoundException.class);
+        verify(userApi, never()).markInactive(any());
     }
 }

@@ -47,7 +47,7 @@ public class OpenAPIConfig {
                         new Tag().name(TAG_EMPLOYEES).description("Alta, perfil y administración de empleados."),
                         new Tag().name(TAG_ACCOUNTS).description("Apertura, consulta y ciclo de vida de las cuentas."),
                         new Tag().name(TAG_TRANSACTIONS).description(
-                                "Transferencias entre cuentas con segundo factor y consulta de comprobantes.")))
+                                "Transferencias entre cuentas con segundo factor, consignaciones y consulta de comprobantes.")))
                 // Permite pegar el JWT en "Authorize" de Swagger UI para probar los endpoints protegidos
                 .components(new Components().addSecuritySchemes(BEARER, new SecurityScheme()
                         .type(SecurityScheme.Type.HTTP)

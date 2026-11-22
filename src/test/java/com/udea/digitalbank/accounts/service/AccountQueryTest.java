@@ -37,7 +37,7 @@ import static org.mockito.Mockito.when;
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("HU12 / HU13 - Consultas de saldo y detalle")
-class AccountQueryHuTest {
+class AccountQueryTest {
 
     @Mock
     private AccountRepository accountRepository;

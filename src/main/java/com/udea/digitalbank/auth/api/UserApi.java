@@ -26,6 +26,13 @@ public interface UserApi {
      */
     void changeStatus(UUID userId, UserStatusEnum statusEnum);
 
+    /**
+     * Inactivación por una regla del negocio (por ejemplo, el cliente cerró su última cuenta), no por un
+     * administrador. Pasa el usuario de ACTIVE a INACTIVE y cierra su sesión; si no está ACTIVE (bloqueado o ya
+     * inactivo) no cambia nada. Participa en la transacción del llamante.
+     */
+    void markInactive(UUID userId);
+
     UserView getUser(UUID userId);
 
     List<UserView> getUsers(Collection<UUID> userIds);

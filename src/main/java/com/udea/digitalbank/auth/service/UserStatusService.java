@@ -10,6 +10,7 @@ import com.udea.digitalbank.shared.exception.auth.UserNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -25,13 +26,16 @@ public class UserStatusService {
     private final UserRepository userRepository;
     private final SessionService sessionService;
     private final Catalogs catalogs;
+    private final Clock clock;
 
     public UserStatusService(UserRepository userRepository,
                              SessionService sessionService,
-                             Catalogs catalogs) {
+                             Catalogs catalogs,
+                             Clock clock) {
         this.userRepository = userRepository;
         this.sessionService = sessionService;
         this.catalogs = catalogs;
+        this.clock = clock;
     }
 
     /**
@@ -80,7 +84,7 @@ public class UserStatusService {
      */
     @Transactional
     public void markInactiveCustomers() {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(clock);
         List<UUID> ids = userRepository.findIdleIds(
                 RoleEnum.CUSTOMER.name(), UserStatusEnum.ACTIVE.name(), now.minusMonths(INACTIVITY_MONTHS));
         if (ids.isEmpty()) {
@@ -96,11 +100,26 @@ public class UserStatusService {
         }
     }
 
+    /**
+     * Pasa a INACTIVE a un usuario ACTIVE y cierra su sesión. Es una regla del negocio y no una petición de un
+     * administrador, así que no pasa por {@link UserStatusTransitions}. Igual que {@link #markInactiveCustomers}, solo
+     * mueve a quien está ACTIVE: un usuario bloqueado o ya inactivo se queda como está.
+     */
+    @Transactional
+    public void markInactive(UUID userId) {
+        List<UUID> ids = List.of(userId);
+        int moved = userRepository.moveStatus(ids, catalogs.status(UserStatusEnum.ACTIVE),
+                catalogs.status(UserStatusEnum.INACTIVE), LocalDateTime.now(clock));
+        if (moved > 0) {
+            sessionService.revokeAll(ids);
+        }
+    }
+
     private void applyStatus(User user, UserStatusEnum statusEnum) {
         UserStatus target = catalogs.status(statusEnum);
         if (!user.getStatus().getCode().equals(target.getCode())) {
             user.setStatus(target);
-            user.setStatusChangedAt(LocalDateTime.now());
+            user.setStatusChangedAt(LocalDateTime.now(clock));
         }
         if (statusEnum == UserStatusEnum.ACTIVE) {
             user.setFailedAttempts((short) 0);

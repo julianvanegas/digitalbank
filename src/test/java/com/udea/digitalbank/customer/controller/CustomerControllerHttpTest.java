@@ -278,7 +278,7 @@ class CustomerControllerHttpTest {
             // Arrange
             doThrow(new InvalidStatusTransitionException(
                     "No se puede cambiar el estado de un usuario de BLOCKED a INACTIVE"))
-                    .when(customerService).changeStatus(eq((short) 1), eq("1032456123"), eq(UserStatusEnum.INACTIVE));
+                    .when(customerService).changeStatus((short) 1, "1032456123", UserStatusEnum.INACTIVE);
 
             // Act
             MockHttpServletResponse response = perform(mockMvc, patch(PATH, body("INACTIVE")));
