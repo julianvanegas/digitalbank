@@ -54,12 +54,12 @@ class TransactionRequestsValidationTest {
     @Test
     @DisplayName("HU21 CA02 - El código de confirmación son 6 dígitos")
     void deberiaValidarElFormatoDelCodigo() {
-        ConfirmTransferRequest valid = new ConfirmTransferRequest();
+        ConfirmTransactionRequest valid = new ConfirmTransactionRequest();
         valid.setCode("012345");
         assertThat(validator.validate(valid)).isEmpty();
 
         for (String bad : new String[]{null, "", "12345", "1234567", "12345a"}) {
-            ConfirmTransferRequest invalid = new ConfirmTransferRequest();
+            ConfirmTransactionRequest invalid = new ConfirmTransactionRequest();
             invalid.setCode(bad);
             assertThat(validator.validate(invalid)).as("código '%s'", bad).isNotEmpty();
         }

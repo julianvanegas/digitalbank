@@ -10,6 +10,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -22,7 +23,7 @@ import static org.mockito.Mockito.when;
 class TransactionScheduledJobsTest {
 
     @Mock
-    private TransferService transferService;
+    private PendingTransfers pendingTransfers;
 
     @InjectMocks
     private TransactionScheduledJobs jobs;
@@ -31,14 +32,14 @@ class TransactionScheduledJobsTest {
     @DisplayName("HU21 CA04 - Cancela las transferencias pendientes vencidas, haya o no alguna")
     void deberiaCancelarLasTransferenciasVencidas() {
         // Arrange
-        when(transferService.rejectExpiredPending()).thenReturn(2, 0);
+        when(pendingTransfers.rejectExpired()).thenReturn(2, 0);
 
         // Act + Assert
         assertThatCode(() -> {
             jobs.rejectExpiredPending();
             jobs.rejectExpiredPending();
         }).doesNotThrowAnyException();
-        verify(transferService, org.mockito.Mockito.times(2)).rejectExpiredPending();
+        verify(pendingTransfers, times(2)).rejectExpired();
     }
 
     @Test

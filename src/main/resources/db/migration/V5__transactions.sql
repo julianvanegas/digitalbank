@@ -1,5 +1,5 @@
 -- Módulo transactions: movimientos de dinero entre cuentas. Depende de accounts (cuentas) y de auth (usuarios y
--- verificaciones), como fija la dirección de dependencias de las ADR 0002 y 0004.
+-- verificaciones), como fija la dirección de dependencias entre módulos.
 
 -- ============ PROPÓSITO DE VERIFICACIÓN ============
 -- Segundo factor de las transacciones monetarias: el código vale 3 minutos y se cancela al tercer fallo. Va en el

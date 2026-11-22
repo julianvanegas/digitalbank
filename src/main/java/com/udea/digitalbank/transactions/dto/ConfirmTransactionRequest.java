@@ -6,13 +6,16 @@ import lombok.Data;
 import io.swagger.v3.oas.annotations.media.Schema;
 import com.udea.digitalbank.shared.config.OpenApiExamples;
 
-/** Cuerpo de la confirmación de una transferencia: el código de segundo factor que recibe el ordenante. */
+/**
+ * Cuerpo de la confirmación de una transferencia o de un retiro: el código de segundo factor del titular de la cuenta
+ * de origen. Es el mismo para los dos tipos; la referencia de la ruta dice cuál se confirma.
+ */
 @Data
-public class ConfirmTransferRequest {
+public class ConfirmTransactionRequest {
 
     /**
-     * Código de 6 dígitos enviado por correo. Un código con formato inválido se rechaza en la validación y no consume
-     * uno de los intentos del código vigente.
+     * Código de 6 dígitos enviado por correo al titular de la cuenta de origen. Un código con formato inválido se
+     * rechaza en la validación y no consume uno de los intentos del código vigente.
      */
     @Schema(example = OpenApiExamples.CODE)
     @NotBlank(message = "El código es obligatorio")

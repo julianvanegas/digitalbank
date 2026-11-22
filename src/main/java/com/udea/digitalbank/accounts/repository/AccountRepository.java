@@ -46,6 +46,23 @@ public interface AccountRepository extends JpaRepository<Account, UUID> {
     @Query("select a from Account a where a.id in :ids order by a.id")
     List<Account> findAllByIdForUpdate(@Param("ids") Collection<UUID> ids);
 
+    /**
+     * Titular de la cuenta, sin cargar la entidad. El cierre lo necesita antes de bloquear las cuentas del cliente:
+     * una entidad leída sin bloqueo quedaría en caché con un estado que otra transacción puede cambiar mientras se
+     * espera el bloqueo.
+     */
+    @Query("select a.customerId from Account a where a.accountNumber = :accountNumber")
+    Optional<UUID> findCustomerIdByAccountNumber(@Param("accountNumber") String accountNumber);
+
+    /**
+     * Todas las cuentas del cliente, cerradas incluidas, con las filas bloqueadas y ordenadas por id. Dos cierres
+     * simultáneos de cuentas del mismo cliente se turnan, y el segundo ve el cierre del primero: así, el que cierra
+     * la última cuenta lo sabe, aunque los dos cierres lleguen a la vez.
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select a from Account a where a.customerId = :customerId order by a.id")
+    List<Account> findByCustomerIdForUpdate(@Param("customerId") UUID customerId);
+
     // Un cliente tiene como máximo tres cuentas, así que la lista completa sirve tanto para
     // consultarlas como para decidir si queda cupo, sin una consulta de conteo aparte
     List<Account> findByCustomerIdOrderByCreatedAt(UUID customerId);

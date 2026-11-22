@@ -18,6 +18,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
@@ -61,7 +62,8 @@ class VerificationServiceTest {
         // Constructor explícito (en vez de @InjectMocks) para poder fijar resendIntervalSeconds,
         // que @InjectMocks dejaría en 0 al no tener un mock que inyectar en ese parámetro primitivo.
         verificationService = new VerificationService(
-                challengeRepository, userRepository, catalogs, codeHasher, RESEND_INTERVAL_SECONDS);
+                challengeRepository, userRepository, catalogs, codeHasher, RESEND_INTERVAL_SECONDS,
+                Clock.systemDefaultZone());
     }
 
     private static ChallengePurpose buildPurpose(short id, String code, int ttlMinutes, int maxAttempts) {

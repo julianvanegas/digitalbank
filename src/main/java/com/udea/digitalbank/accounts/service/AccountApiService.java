@@ -61,7 +61,7 @@ public class AccountApiService implements AccountApi {
     @Override
     @Transactional(readOnly = true)
     public AccountView requireActiveAccount(UUID accountId) {
-        AccountView view = getAccount(accountId);
+        AccountView view = accountMapper.toView(accountLookup.byId(accountId));
         if (!view.isActive()) {
             throw new AccountNotActiveException("La cuenta no está activa: " + accountId);
         }
@@ -73,6 +73,12 @@ public class AccountApiService implements AccountApi {
     public AccountView requireOwnedAccount(UUID userId, String accountNumber) {
         CustomerView customer = customerApi.getCustomerByUserId(userId);
         return accountMapper.toView(accountLookup.byNumberOwnedBy(accountNumber, customer.id()));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public UUID getOwnerUserId(UUID accountId) {
+        return customerApi.getCustomer(accountLookup.byId(accountId).getCustomerId()).userId();
     }
 
     /**
@@ -99,6 +105,36 @@ public class AccountApiService implements AccountApi {
         sender.debit(amount);
         receiver.credit(amount);
         accountRepository.saveAll(List.of(sender, receiver));
+    }
+
+    @Override
+    @Transactional
+    public AccountView applyDeposit(UUID receiverAccountId, BigDecimal amount) {
+        Account receiver = require(accountRepository.findAllByIdForUpdate(List.of(receiverAccountId)).stream()
+                .collect(Collectors.toMap(Account::getId, Function.identity())), receiverAccountId);
+        receiver.credit(amount);
+        return accountMapper.toView(accountRepository.save(receiver));
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * <p>Es la operación de los retiros. La usa {@code WithdrawalConfirmable} al confirmar el retiro,
+     * igual que la transferencia usa {@link #applyTransfer}.
+     *
+     * <p>Se declara {@code noRollbackFor = BusinessException.class}, como {@link #applyTransfer} y no como
+     * {@link #applyDeposit}, porque el rechazo (saldo insuficiente, cuenta no activa o inexistente) es un resultado
+     * esperado que el llamante atrapa para registrar el retiro como {@code REJECTED}. Sin esa opción, la excepción
+     * marcaría la transacción del llamante como "solo revertir" y ese registro se perdería. Un monto no positivo sí la
+     * marca, porque es un error de programación y no un rechazo.
+     */
+    @Override
+    @Transactional(noRollbackFor = BusinessException.class)
+    public AccountView applyWithdrawal(UUID senderAccountId, BigDecimal amount) {
+        Account sender = require(accountRepository.findAllByIdForUpdate(List.of(senderAccountId)).stream()
+                .collect(Collectors.toMap(Account::getId, Function.identity())), senderAccountId);
+        sender.debit(amount);
+        return accountMapper.toView(accountRepository.save(sender));
     }
 
     // Cuenta de las bloqueadas, o AccountNotFoundException si la consulta no la devuelve

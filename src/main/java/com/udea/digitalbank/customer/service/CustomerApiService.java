@@ -1,5 +1,6 @@
 package com.udea.digitalbank.customer.service;
 
+import com.udea.digitalbank.auth.api.UserApi;
 import com.udea.digitalbank.auth.api.UserStatusEnum;
 import com.udea.digitalbank.auth.api.UserView;
 import com.udea.digitalbank.customer.api.CustomerApi;
@@ -22,13 +23,16 @@ public class CustomerApiService implements CustomerApi {
     private final CustomerRepository customerRepository;
     private final CustomerLookup customerLookup;
     private final CustomerMapper customerMapper;
+    private final UserApi userApi;
 
     public CustomerApiService(CustomerRepository customerRepository,
                               CustomerLookup customerLookup,
-                              CustomerMapper customerMapper) {
+                              CustomerMapper customerMapper,
+                              UserApi userApi) {
         this.customerRepository = customerRepository;
         this.customerLookup = customerLookup;
         this.customerMapper = customerMapper;
+        this.userApi = userApi;
     }
 
     @Override
@@ -60,11 +64,17 @@ public class CustomerApiService implements CustomerApi {
     @Override
     @Transactional(readOnly = true)
     public CustomerView requireActiveCustomer(UUID customerId) {
-        CustomerView view = getCustomer(customerId);
+        CustomerView view = toView(customerLookup.byId(customerId));
         if (!UserStatusEnum.ACTIVE.name().equals(view.status())) {
             throw new CustomerNotActiveException("El cliente no está activo: " + customerId);
         }
         return view;
+    }
+
+    @Override
+    @Transactional
+    public void markInactive(UUID customerId) {
+        userApi.markInactive(customerLookup.byId(customerId).getUserId());
     }
 
     private CustomerView toView(Customer customer) {

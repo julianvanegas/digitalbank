@@ -8,7 +8,8 @@ import java.util.UUID;
  * quien lo procesa no tenga que consultarlos de nuevo. Se atiende después de confirmarse la transacción de base de
  * datos.
  *
- * @param userId                ordenante, destinatario del comprobante
+ * @param userId                titular de la cuenta de origen, destinatario del comprobante (es el ordenante, salvo
+ *                              que la transferencia la haya ordenado un administrador)
  * @param reference             comprobante de la transferencia
  * @param senderAccountNumber   número de la cuenta de origen
  * @param receiverAccountNumber número de la cuenta de destino

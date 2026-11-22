@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.Date;
 import java.util.Optional;
 import java.util.UUID;
@@ -49,15 +50,16 @@ public class JwtUtil {
     /**
      * El {@code jti} sirve para invalidar sesiones anteriores (ver {@code AuthService.verifyTwoFactor}). Las fechas
      * {@code issuedAt} y {@code expiresAt} vienen de fuera para que el token y la fila de {@code auth_session}
-     * coincidan.
+     * coincidan. Se reciben como {@link Instant}; la conversión a {@link Date} es necesaria porque el constructor de
+     * tokens de la librería JWT solo acepta ese tipo.
      */
-    public String generateToken(UUID userId, String role, String jti, Date issuedAt, Date expiresAt) {
+    public String generateToken(UUID userId, String role, String jti, Instant issuedAt, Instant expiresAt) {
         return Jwts.builder()
                 .subject(String.valueOf(userId))
                 .claim("role", role)
                 .id(jti)
-                .issuedAt(issuedAt)
-                .expiration(expiresAt)
+                .issuedAt(Date.from(issuedAt))
+                .expiration(Date.from(expiresAt))
                 .signWith(signingKey())
                 .compact();
     }

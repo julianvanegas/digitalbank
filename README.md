@@ -44,21 +44,21 @@ DigitalBank es una API stateless para gestionar clientes, cuentas y transaccione
 | `customer` | Alta, consulta y actualización del perfil del cliente; consulta por documento. |
 | `employee` | Gestión de empleados. |
 | `accounts` | Apertura de cuentas, consulta de saldos, bloqueo, desbloqueo y cierre. |
-| `transactions` | Transferencias en dos pasos: iniciar y confirmar con segundo factor. |
+| `transactions` | Transferencias y retiros en dos pasos (iniciar y confirmar con segundo factor), depósitos, consulta de transacciones por referencia y consulta de topes transaccionales. |
 
 ## Tecnologías
 
-[![Java 21](https://img.shields.io/badge/Java-21-ED8B00?logo=openjdk&logoColor=white)](https://www.oracle.com/java/technologies/javase/jdk21-archive-downloads.html)
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.0.8-6DB33F?logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
+[![Java 25](https://img.shields.io/badge/Java-25-ED8B00?logo=openjdk&logoColor=white)](https://www.oracle.com/java/technologies/javase/jdk25-archive-downloads.html)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.1.2-6DB33F?logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
 
-- Java 21 y Spring Boot 4.0.8 con Web MVC, Data JPA, Security, Validation, Actuator y Flyway.
+- Java 25 y Spring Boot 4.1.2 con Web MVC, Data JPA, Security, Validation, Actuator y Flyway.
 - PostgreSQL como sistema gestor de base de datos, con migraciones versionadas mediante Flyway.
 - JSON Web Tokens (JWT) con JJWT 0.13.0 para autenticación y autorización.
 - MapStruct 1.6.3 y Lombok para el mapeo entre entidades y DTOs y la reducción de código repetitivo.
-- springdoc-openapi 3.1.1 para generar la especificación OpenAPI y publicar Swagger UI.
-- Resend Java 4.26.0 para el envío de notificaciones por correo electrónico.
+- springdoc-openapi 3.2.0 para generar la especificación OpenAPI y publicar Swagger UI.
+- Resend Java 4.30.0 para el envío de notificaciones por correo electrónico.
 - JUnit y Spring Boot Test para pruebas automatizadas.
-- JaCoCo 0.8.12 para cobertura de código, con un umbral mínimo del 65%, y SonarCloud para análisis estático y calidad.
+- JaCoCo 0.8.16 para cobertura de código, con un umbral mínimo del 80%, y SonarCloud para análisis estático y calidad.
 - Maven Wrapper para la compilación reproducible.
 - Containerfile para empaquetar y ejecutar la aplicación dentro de contenedores según los estándares de la Open Container Initiative (OCI).
 
@@ -91,7 +91,7 @@ Las reglas de dependencia y el razonamiento detrás de cada decisión están doc
 ## Requisitos previos
 
 - Git para clonar el repositorio.
-- JDK 21 instalado y disponible en el `PATH`.
+- JDK 25 instalado y disponible en el `PATH`.
 - PostgreSQL 14 o superior, en ejecución y con permisos para crear la base de datos `bank`.
 - Una cuenta de [Resend](https://resend.com) y una API key válida para enviar notificaciones por correo.
 - Docker o Podman, únicamente si vas a construir y ejecutar la imagen del contenedor localmente.
@@ -184,7 +184,7 @@ Authorization: Bearer <token>
 ./mvnw verify
 ```
 
-Ejecuta las pruebas automatizadas, genera el reporte de cobertura en `target/site/jacoco/index.html` y falla si la cobertura de líneas es inferior al 65%. El mismo comando corre en el pipeline de CI, seguido del análisis de SonarCloud.
+Ejecuta las pruebas automatizadas, genera el reporte de cobertura en `target/site/jacoco/index.html` y falla si la cobertura de líneas es inferior al 80%. El mismo comando corre en el pipeline de CI, seguido del análisis de SonarCloud.
 
 Para ejecutar solo las pruebas:
 
@@ -194,7 +194,7 @@ Para ejecutar solo las pruebas:
 
 ## Despliegue mediante contenedor
 
-El [`Containerfile`](Containerfile) utiliza una construcción multi-etapa, que primero compila la aplicación con Maven y Java 21, y genera una imagen final ligera basada en JRE 21 Alpine. La aplicación se ejecuta con un usuario sin privilegios para reducir la superficie de ataque.
+El [`Containerfile`](Containerfile) utiliza una construcción multi-etapa, que primero compila la aplicación con Maven y Java 25, y genera una imagen final ligera basada en JRE 25 Alpine. La aplicación se ejecuta con un usuario sin privilegios para reducir la superficie de ataque.
 
 Con Podman (recomendado), ejecuta:
 

@@ -36,6 +36,16 @@ public interface AccountApi {
     AccountView requireOwnedAccount(UUID userId, String accountNumber);
 
     /**
+     * Usuario titular de la cuenta, es decir, el usuario del cliente dueño. Sirve para dirigirle al titular lo que
+     * le corresponde cuando otro usuario (un administrador) opera sobre su cuenta, como el código de verificación.
+     *
+     * @param accountId cuenta de la que se pide el titular
+     * @return id del usuario del cliente titular
+     * @throws com.udea.digitalbank.shared.exception.accounts.AccountNotFoundException si la cuenta no existe
+     */
+    UUID getOwnerUserId(UUID accountId);
+
+    /**
      * Mueve un monto de una cuenta a otra de forma atómica. Bloquea las dos filas en un orden fijo (por id), exige que
      * ambas estén {@code ACTIVE} y que la cuenta de origen tenga saldo, y entonces debita y acredita.
      *
@@ -54,4 +64,35 @@ public interface AccountApi {
      * @throws IllegalArgumentException si ambas cuentas son la misma o el monto no es positivo
      */
     void applyTransfer(UUID senderAccountId, UUID receiverAccountId, BigDecimal amount);
+
+    /**
+     * Acredita un monto a una cuenta por un depósito. Bloquea la fila, exige que la cuenta esté {@code ACTIVE} y
+     * entonces suma el monto al saldo. Participa en la transacción del llamante.
+     *
+     * @param receiverAccountId cuenta que recibe el dinero
+     * @param amount            monto positivo
+     * @return la vista de la cuenta con el saldo ya actualizado
+     * @throws com.udea.digitalbank.shared.exception.accounts.AccountNotFoundException  si la cuenta no existe
+     * @throws com.udea.digitalbank.shared.exception.accounts.AccountNotActiveException si la cuenta no está activa
+     * @throws IllegalArgumentException si el monto no es positivo
+     */
+    AccountView applyDeposit(UUID receiverAccountId, BigDecimal amount);
+
+    /**
+     * Debita un monto de una cuenta por un retiro. Bloquea la fila, exige que la cuenta esté {@code ACTIVE} y
+     * que tenga saldo, y entonces resta el monto. Participa en la transacción del llamante.
+     *
+     * <p><b>Transaccionalidad.</b> Como {@link #applyTransfer}, un rechazo no deja nada a medias ni marca la
+     * transacción del llamante para revertir; así este puede atrapar la excepción y registrar el retiro como
+     * rechazado.
+     *
+     * @param senderAccountId cuenta de la que sale el dinero
+     * @param amount          monto positivo
+     * @return la vista de la cuenta con el saldo ya actualizado
+     * @throws com.udea.digitalbank.shared.exception.accounts.AccountNotFoundException  si la cuenta no existe
+     * @throws com.udea.digitalbank.shared.exception.accounts.AccountNotActiveException si la cuenta no está activa
+     * @throws com.udea.digitalbank.shared.exception.accounts.InsufficientFundsException si el saldo no alcanza
+     * @throws IllegalArgumentException si el monto no es positivo
+     */
+    AccountView applyWithdrawal(UUID senderAccountId, BigDecimal amount);
 }
