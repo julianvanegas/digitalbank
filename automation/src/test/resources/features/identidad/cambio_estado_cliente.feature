@@ -21,6 +21,25 @@ Característica: HU08 Cambiar estado de un cliente
     Entonces recibe el rechazo con código 403
     Y el estado del cliente es "ACTIVE"
 
+  @CA03
+  Escenario: CA03 Cliente inexistente
+    Cuando el administrador cambia el estado de un cliente que no existe a "BLOCKED"
+    Entonces recibe el rechazo con código 404
+    Y ve un mensaje que contiene "Cliente no encontrado"
+
+  @CA04
+  Esquema del escenario: CA04 Estado no permitido
+    Dado que existe un cliente activo
+    Cuando el administrador cambia el estado del cliente a "<estado>"
+    Entonces recibe el rechazo con código <codigo>
+    Y ve un mensaje que contiene "<mensaje>"
+    Y el estado del cliente es "ACTIVE"
+
+    Ejemplos:
+      | estado         | codigo | mensaje                        | caso                              |
+      | SUSPENDED      | 400    | Solicitud mal formada          | estado que el banco no define     |
+      | PENDING_REVIEW | 409    | No se puede cambiar el estado  | transición que no se permite      |
+
   @CA05
   Escenario: CA05 El nuevo estado queda reflejado al consultar al cliente
     Dado que existe un cliente activo

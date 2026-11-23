@@ -7,6 +7,7 @@ import static org.hamcrest.Matchers.is;
 import co.edu.udea.certificacion.digitalbank.models.DatosCliente;
 import co.edu.udea.certificacion.digitalbank.questions.CodigoDeRespuesta;
 import co.edu.udea.certificacion.digitalbank.questions.ResultadoDelLogin;
+import co.edu.udea.certificacion.digitalbank.questions.MensajeDeError;
 import co.edu.udea.certificacion.digitalbank.tasks.AutenticarseConDobleFactor;
 import co.edu.udea.certificacion.digitalbank.tasks.ConsultarMiPerfil;
 import co.edu.udea.certificacion.digitalbank.tasks.IniciarSesion;
@@ -32,6 +33,18 @@ public class InicioSesionStepDefinitions {
         Actores.cliente().attemptsTo(IniciarSesion.con(datos.correo(), CONTRASENA_INCORRECTA));
     }
 
+    @Cuando("inicia sesión con un correo no registrado")
+    public void iniciaSesionConCorreoNoRegistrado() {
+        Actores.cliente().attemptsTo(
+                IniciarSesion.con(DatosCliente.valido().correo(), DatosCliente.CONTRASENA_VALIDA));
+    }
+
+    @Cuando("guarda el mensaje recibido")
+    public void guardaElMensajeRecibido() {
+        Actor cliente = Actores.cliente();
+        cliente.remember("mensajeAnterior", cliente.asksFor(MensajeDeError.delServidor()));
+    }
+
     @Cuando("se equivoca de contraseña {int} veces seguidas")
     public void seEquivocaDeContrasena(int veces) {
         DatosCliente datos = Actores.cliente().recall("cliente");
@@ -45,6 +58,13 @@ public class InicioSesionStepDefinitions {
         Actores.cliente().should(
                 seeThat(CodigoDeRespuesta.delServidor(), equalTo(200)),
                 seeThat(ResultadoDelLogin.solicitaSegundoFactor(), is(true)));
+    }
+
+    @Entonces("el mensaje recibido es el mismo que el anterior")
+    public void elMensajeEsElMismo() {
+        Actor cliente = Actores.cliente();
+        String anterior = cliente.recall("mensajeAnterior");
+        cliente.should(seeThat(MensajeDeError.delServidor(), equalTo(anterior)));
     }
 
     @Entonces("no puede iniciar sesión aunque use la contraseña correcta")

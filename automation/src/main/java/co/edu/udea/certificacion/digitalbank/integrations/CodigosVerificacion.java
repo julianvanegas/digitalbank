@@ -1,6 +1,7 @@
 package co.edu.udea.certificacion.digitalbank.integrations;
 
 import co.edu.udea.certificacion.digitalbank.utils.CodigoHmac;
+import co.edu.udea.certificacion.digitalbank.utils.EntornoQa;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -74,15 +75,15 @@ public final class CodigosVerificacion {
     }
 
     private static String requerida(String nombre) {
-        String valor = System.getenv(nombre);
-        if (valor == null || valor.isBlank()) {
-            throw new IllegalStateException("Falta la variable de entorno " + nombre);
-        }
-        return valor;
+    String valor = EntornoQa.valor(nombre);
+    if (valor == null || valor.isBlank()) {
+        throw new IllegalStateException("Falta la variable " + nombre + " (en el entorno o en el archivo .env)");
     }
+    return valor;
+}
 
     private static String conDefecto(String nombre, String defecto) {
-        String valor = System.getenv(nombre);
+        String valor = EntornoQa.valor(nombre);
         return valor == null || valor.isBlank() ? defecto : valor;
     }
 }
