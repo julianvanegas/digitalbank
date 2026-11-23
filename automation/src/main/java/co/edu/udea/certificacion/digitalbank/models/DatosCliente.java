@@ -34,6 +34,17 @@ public record DatosCliente(String nombres, String apellidos, int tipoDocumento, 
     }
 
     public String aJson() {
+        return Json.objeto(campos());
+    }
+
+    /** Igual que {@link #aJson()} pero sin uno de los campos; recibe el nombre del campo en el JSON (por ejemplo, "email"). */
+    public String aJsonSin(String campo) {
+        Map<String, Object> campos = campos();
+        campos.remove(campo);
+        return Json.objeto(campos);
+    }
+
+    private Map<String, Object> campos() {
         Map<String, Object> campos = new LinkedHashMap<>();
         campos.put("firstNames", nombres);
         campos.put("lastNames", apellidos);
@@ -42,6 +53,6 @@ public record DatosCliente(String nombres, String apellidos, int tipoDocumento, 
         campos.put("phone", telefono);
         campos.put("birthDate", fechaNacimiento.toString());
         campos.put("email", correo);
-        return Json.objeto(campos);
+        return campos;
     }
 }

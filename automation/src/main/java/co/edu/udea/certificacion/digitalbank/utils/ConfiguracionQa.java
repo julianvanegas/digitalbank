@@ -1,13 +1,13 @@
 package co.edu.udea.certificacion.digitalbank.utils;
 
-/** Configuración del ambiente de QA. Todo viene de variables de entorno, con valores por defecto para el ambiente local. */
+/** Configuración del ambiente de QA: variables de entorno o archivo .env, con valores por defecto para el ambiente local. */
 public final class ConfiguracionQa {
 
     private ConfiguracionQa() {
     }
 
     public static String urlBase() {
-        String url = System.getenv("API_BASE_URL");
+        String url = EntornoQa.valor("API_BASE_URL");
         if (url != null && !url.isBlank()) {
             return url;
         }
@@ -23,7 +23,7 @@ public final class ConfiguracionQa {
     }
 
     private static String conDefecto(String nombre, String defecto) {
-        String valor = System.getenv(nombre);
+        String valor = EntornoQa.valor(nombre);
         return valor == null || valor.isBlank() ? defecto : valor;
     }
 }

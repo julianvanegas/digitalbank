@@ -24,6 +24,12 @@ Característica: HU02 Iniciar sesión
     Entonces recibe el rechazo con código 401
     Y ve un mensaje que contiene "incorrectos"
 
+  @CA03
+  Escenario: CA03 Correo no registrado
+    Cuando inicia sesión con un correo no registrado
+    Entonces recibe el rechazo con código 401
+    Y ve un mensaje que contiene "incorrectos"
+
   @CA04
   Escenario: CA04 Credenciales válidas después de 3 intentos fallidos
     Dado que existe un cliente activo
@@ -52,6 +58,15 @@ Característica: HU02 Iniciar sesión
     Cuando inicia sesión nuevamente desde otro dispositivo
     Entonces la sesión anterior es rechazada
     Y la nueva sesión sigue vigente
+
+  @CA11
+  Escenario: CA11 El mensaje no revela si el correo existe
+    Dado que existe un cliente activo
+    Cuando inicia sesión con una contraseña incorrecta
+    Y guarda el mensaje recibido
+    Y inicia sesión con un correo no registrado
+    Entonces recibe el rechazo con código 401
+    Y el mensaje recibido es el mismo que el anterior
 
   @CA12
   Escenario: CA12 Cliente pendiente de revisión no puede iniciar sesión

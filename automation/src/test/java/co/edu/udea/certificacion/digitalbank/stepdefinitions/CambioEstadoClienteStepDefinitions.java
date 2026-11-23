@@ -5,8 +5,8 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
 import co.edu.udea.certificacion.digitalbank.models.DatosCliente;
-import co.edu.udea.certificacion.digitalbank.questions.CodigoDeRespuesta;
 import co.edu.udea.certificacion.digitalbank.questions.ResultadoDelLogin;
+import co.edu.udea.certificacion.digitalbank.questions.CodigoDeRespuesta;
 import co.edu.udea.certificacion.digitalbank.tasks.AutenticarseConDobleFactor;
 import co.edu.udea.certificacion.digitalbank.tasks.CambiarEstadoDelCliente;
 import co.edu.udea.certificacion.digitalbank.tasks.IniciarSesion;
@@ -21,6 +21,11 @@ public class CambioEstadoClienteStepDefinitions {
     public void administradorCambiaElEstado(String estado) {
         DatosCliente datos = Actores.cliente().recall("cliente");
         Actores.administrador().attemptsTo(CambiarEstadoDelCliente.a(estado, datos));
+    }
+
+    @Cuando("el administrador cambia el estado de un cliente que no existe a {string}")
+    public void administradorCambiaElEstadoDeUnClienteInexistente(String estado) {
+        Actores.administrador().attemptsTo(CambiarEstadoDelCliente.a(estado, DatosCliente.valido()));
     }
 
     @Cuando("un usuario sin rol de administrador intenta cambiar el estado del cliente a {string}")
@@ -43,7 +48,7 @@ public class CambioEstadoClienteStepDefinitions {
         DatosCliente datos = cliente.recall("cliente");
         cliente.attemptsTo(IniciarSesion.con(datos.correo(), DatosCliente.CONTRASENA_VALIDA));
         cliente.should(
-                seeThat(CodigoDeRespuesta.delServidor(), equalTo(200)),
-                seeThat(ResultadoDelLogin.solicitaSegundoFactor(), is(true)));
+        seeThat(CodigoDeRespuesta.delServidor(), equalTo(200)),
+        seeThat(ResultadoDelLogin.solicitaSegundoFactor(), is(true)));
     }
 }
