@@ -89,6 +89,11 @@ Escribe mensajes breves, en español, en modo imperativo y que expliquen el *qu�
 - `./mvnw verify` debe pasar. La cobertura de líneas mínima es del 80%, y SonarCloud analiza cada PR.
 - Si corriges un error, añade una prueba que falle sin la corrección.
 - No dependas de credenciales, servicios externos o datos personales reales en las pruebas.
+- Usa una prueba de integración (`*IT`) cuando lo que importa es cómo se comporta el código con la base real: consultas JPQL o SQL, migraciones, restricciones, bloqueos, transacciones y listeners `AFTER_COMMIT`. Extiende la base que corresponda en `src/test/java/.../support/integration`:
+  - `RepositoryTest` para un repositorio (`@DataJpaTest`, con rollback al terminar cada prueba).
+  - `IntegrationTest` para un flujo completo por HTTP. `BankApi` tiene los atajos (registro, login con 2FA, cuentas y movimientos), el correo está simulado para leer los códigos y `CLOCK` adelanta el tiempo.
+- Las pruebas de integración necesitan Docker o Podman en ejecución (ver [Pruebas y calidad](README.md#pruebas-y-calidad)).
+- Si el job **Automated tests** falla en el CI, descarga el artefacto `test-reports` de esa ejecución para ver qué prueba falló y por qué.
 
 ## Pull requests
 
