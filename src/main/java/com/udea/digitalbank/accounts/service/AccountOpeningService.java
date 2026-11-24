@@ -15,6 +15,8 @@ import com.udea.digitalbank.shared.security.Actor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -30,19 +32,22 @@ public class AccountOpeningService {
     private final AccountNumberGenerator accountNumberGenerator;
     private final AccountKeyGenerator accountKeyGenerator;
     private final AccountCatalog accountCatalog;
+    private final Clock clock;
 
     public AccountOpeningService(AccountRepository accountRepository,
                                  CustomerApi customerApi,
                                  AccountMapper accountMapper,
                                  AccountNumberGenerator accountNumberGenerator,
                                  AccountKeyGenerator accountKeyGenerator,
-                                 AccountCatalog accountCatalog) {
+                                 AccountCatalog accountCatalog,
+                                 Clock clock) {
         this.accountRepository = accountRepository;
         this.customerApi = customerApi;
         this.accountMapper = accountMapper;
         this.accountNumberGenerator = accountNumberGenerator;
         this.accountKeyGenerator = accountKeyGenerator;
         this.accountCatalog = accountCatalog;
+        this.clock = clock;
     }
 
     /**
@@ -87,7 +92,8 @@ public class AccountOpeningService {
                 accountKeyGenerator.build(customer.firstNames(), customer.documentNumber()),
                 index,
                 accountCatalog.type(requestedType == null ? AccountTypeEnum.SAVINGS : requestedType),
-                accountCatalog.status(AccountStatusEnum.ACTIVE));
+                accountCatalog.status(AccountStatusEnum.ACTIVE),
+                LocalDateTime.now(clock));
 
         return accountMapper.toResponse(accountRepository.save(account));
     }

@@ -9,7 +9,6 @@ import com.udea.digitalbank.shared.exception.accounts.AccountNotUnblockableExcep
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;
@@ -81,8 +80,9 @@ public class Account {
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal balance = INITIAL_BALANCE;
 
+    // La fija open() con el reloj de la aplicación, el mismo con el que close() fija closedAt: con @CreationTimestamp
+    // saldría de la hora de la JVM, y el CHECK closed_at >= created_at fallaría si el Clock inyectado no coincide
     @Column(nullable = false, updatable = false)
-    @CreationTimestamp
     private LocalDateTime createdAt;
 
     @Column(nullable = false)
@@ -100,11 +100,19 @@ public class Account {
     @Version
     private Long version;
 
-    /** Una cuenta nueva: activa y sin saldo, porque la apertura no exige depósito inicial. */
+    /**
+     * Una cuenta nueva: activa y sin saldo, porque la apertura no exige depósito inicial.
+     *
+     * @param openedAt instante de apertura, tomado del reloj de la aplicación
+     */
     public static Account open(UUID customerId, String accountNumber, String accountKey, short accountIndex,
-                               AccountType accountType, AccountStatus activeStatus) {
+                               AccountType accountType, AccountStatus activeStatus, LocalDateTime openedAt) {
         requireTarget(activeStatus, AccountStatusEnum.ACTIVE);
+        if (openedAt == null) {
+            throw new IllegalArgumentException("La fecha de apertura es obligatoria");
+        }
         Account account = new Account();
+        account.createdAt = openedAt;
         account.customerId = customerId;
         account.accountNumber = accountNumber;
         account.accountKey = accountKey;

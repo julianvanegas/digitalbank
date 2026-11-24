@@ -4,6 +4,7 @@ import com.udea.digitalbank.accounts.domain.Account;
 import com.udea.digitalbank.accounts.domain.AccountStatus;
 import com.udea.digitalbank.customer.domain.Customer;
 import com.udea.digitalbank.support.integration.RepositoryTest;
+import com.udea.digitalbank.support.integration.TestData;
 import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -109,7 +110,7 @@ class AccountRepositoryIT extends RepositoryTest {
         void closingReleasesIndex() {
             Customer customer = data.customer("ana@example.com");
             Account closed = data.account(customer, "100000000001", "@AN1231", (short) 1);
-            closed.close(em.find(AccountStatus.class, CLOSED), LocalDateTime.now().plusMinutes(1));
+            closed.close(em.find(AccountStatus.class, CLOSED), TestData.T0.plusMinutes(1));
             em.flush();
 
             Account reopened = data.account(customer, "100000000002", "@AN1232", (short) 1);

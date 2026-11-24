@@ -131,7 +131,7 @@ public final class TestData {
 
     public Account account(Customer customer, String accountNumber, String accountKey, short accountIndex) {
         Account account = Account.open(customer.getId(), accountNumber, accountKey, accountIndex,
-                em.find(AccountType.class, SAVINGS), em.find(AccountStatus.class, ACCOUNT_ACTIVE));
+                em.find(AccountType.class, SAVINGS), em.find(AccountStatus.class, ACCOUNT_ACTIVE), T0);
         return em.persistAndFlush(account);
     }
 
