@@ -8,6 +8,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.convention.TestBean;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -45,13 +46,20 @@ public abstract class IntegrationTest {
     @Autowired
     protected JdbcTemplate jdbc;
 
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    /** Cliente HTTP de la API con los atajos de los flujos (registro, login con 2FA, cuentas, movimientos). */
+    protected BankApi api;
+
     static Clock testClock() {
         return CLOCK;
     }
 
     @BeforeEach
-    void resetClock() {
+    void prepare() {
         CLOCK.reset();
+        api = new BankApi(mockMvc, emailService, jdbc, passwordEncoder, CLOCK);
     }
 
     @AfterEach

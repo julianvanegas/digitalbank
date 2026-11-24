@@ -27,7 +27,8 @@ import java.util.UUID;
  */
 public final class TestData {
 
-    public static final LocalDateTime T0 = MutableClock.START;
+    /** Instante de referencia de las pruebas de repositorios; los datos se fechan alrededor de él. */
+    public static final LocalDateTime T0 = LocalDateTime.of(2026, 11, 23, 10, 0);
 
     // Ids fijos de los catálogos (V1, V2, V4 y V5)
     public static final short CUSTOMER = 1;
