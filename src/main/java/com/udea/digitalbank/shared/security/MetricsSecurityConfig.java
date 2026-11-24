@@ -34,11 +34,10 @@ public class MetricsSecurityConfig {
     @Order(1)
     public SecurityFilterChain metricsFilterChain(HttpSecurity http,
                                                   @Value("${metrics.security.user}") String user,
-                                                  @Value("${metrics.security.password}") String password)
-            throws Exception {
+                                                  @Value("${metrics.security.password}") String password) {
+        // CSRF queda activo por defecto: la ruta solo atiende GET, que CSRF no bloquea, y sin sesión no hay nada que robar
         http
                 .securityMatcher(METRICS_PATH)
-                .csrf(csrf -> csrf.disable()) // solo lectura (GET), sin formularios ni sesión de navegador
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
                 .httpBasic(Customizer.withDefaults())
@@ -52,7 +51,7 @@ public class MetricsSecurityConfig {
         boolean passwordMatches = sameBytes(password, String.valueOf(authentication.getCredentials()));
 
         // Sin credenciales configuradas el endpoint queda cerrado, nunca abierto
-        if (user.isBlank() || password.isBlank() || !(userMatches & passwordMatches)) {
+        if (user.isBlank() || password.isBlank() || !(userMatches && passwordMatches)) {
             throw new BadCredentialsException("Credenciales de métricas inválidas");
         }
         return UsernamePasswordAuthenticationToken.authenticated(
