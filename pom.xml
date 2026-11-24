@@ -108,6 +108,22 @@
 			<scope>test</scope>
 		</dependency>
 
+		<!-- Pruebas de integración en PostgreSQL real en un contenedor (clases *IT ejecutadas con Failsafe) -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-testcontainers</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>testcontainers-postgresql</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>testcontainers-junit-jupiter</artifactId>
+			<scope>test</scope>
+		</dependency>
 
 		<!-- JWT: generar y validar tokens -->
 		<dependency>
@@ -206,6 +222,19 @@
 					</execution>
 				</executions>
 			</plugin>
+			<!-- Pruebas de integración (*IT) en la fase integration-test; mvn verify corre unitarias e integración -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-failsafe-plugin</artifactId>
+				<executions>
+					<execution>
+						<goals>
+							<goal>integration-test</goal>
+							<goal>verify</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
 			<plugin>
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>
@@ -216,9 +245,10 @@
 							<goal>prepare-agent</goal>
 						</goals>
 					</execution>
+					<!-- Tras las pruebas de integración el informe suma unitarias e integración -->
 					<execution>
 						<id>report</id>
-						<phase>test</phase>
+						<phase>post-integration-test</phase>
 						<goals>
 							<goal>report</goal>
 						</goals>
