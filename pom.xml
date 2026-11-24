@@ -7,14 +7,14 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>4.0.8</version>
+		<version>4.1.2</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.udea</groupId>
 	<artifactId>digitalbank</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
-	<name/>
-	<description/>
+	<version>1.0.0</version>
+	<name>Digital Bank</name>
+	<description>API stateless of a digital banking system</description>
 	<url/>
 	<licenses>
 		<license/>
@@ -29,13 +29,19 @@
 		<url/>
 	</scm>
 	<properties>
-		<java.version>21</java.version>
+		<java.version>25</java.version>
 		<sonar.organization>julianvanegas</sonar.organization>
 	</properties>
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-actuator</artifactId>
+		</dependency>
+		<!-- Métricas en formato Prometheus: Actuator las publica en /actuator/prometheus -->
+		<dependency>
+			<groupId>io.micrometer</groupId>
+			<artifactId>micrometer-registry-prometheus</artifactId>
+			<scope>runtime</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -48,7 +54,7 @@
 		<dependency>
 			<groupId>com.resend</groupId>
 			<artifactId>resend-java</artifactId>
-			<version>4.26.0</version>
+			<version>4.30.0</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -66,7 +72,6 @@
 			<groupId>org.flywaydb</groupId>
 			<artifactId>flyway-database-postgresql</artifactId>
 		</dependency>
-
 		<dependency>
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>
@@ -107,8 +112,22 @@
 			<artifactId>spring-boot-starter-webmvc-test</artifactId>
 			<scope>test</scope>
 		</dependency>
-
-
+		<!-- Pruebas de integración en PostgreSQL real en un contenedor (clases *IT ejecutadas con Failsafe) -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-testcontainers</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>testcontainers-postgresql</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>testcontainers-junit-jupiter</artifactId>
+			<scope>test</scope>
+		</dependency>
 		<!-- JWT: generar y validar tokens -->
 		<dependency>
 			<groupId>io.jsonwebtoken</groupId>
@@ -125,7 +144,6 @@
 			<artifactId>jjwt-jackson</artifactId>
 			<version>0.13.0</version>
 		</dependency>
-
 		<!-- MapStruct: mapeo Entity <-> DTO -->
 		<dependency>
 			<groupId>org.mapstruct</groupId>
@@ -137,22 +155,19 @@
 			<artifactId>mapstruct-processor</artifactId>
 			<version>1.6.3</version>
 		</dependency>
-		<!-- Lombok + MapStruct juntos, evita conflictos del compilador -->
+		<!-- Lombok y MapStruct juntos, evita conflictos del compilador -->
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok-mapstruct-binding</artifactId>
 			<version>0.2.0</version>
 		</dependency>
-
 		<!-- Documentación de API (Swagger UI) -->
 		<dependency>
 			<groupId>org.springdoc</groupId>
 			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-			<version>3.1.1</version>
+			<version>3.2.0</version>
 		</dependency>
-
 	</dependencies>
-
 	<build>
 		<finalName>digitalbank</finalName>
 		<plugins>
@@ -206,19 +221,33 @@
 					</execution>
 				</executions>
 			</plugin>
+			<!-- Pruebas de integración (*IT) en la fase integration-test; mvn verify corre unitarias e integración -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-failsafe-plugin</artifactId>
+				<executions>
+					<execution>
+						<goals>
+							<goal>integration-test</goal>
+							<goal>verify</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
 			<plugin>
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>
-				<version>0.8.12</version>
+				<version>0.8.16</version>
 				<executions>
 					<execution>
 						<goals>
 							<goal>prepare-agent</goal>
 						</goals>
 					</execution>
+					<!-- Tras las pruebas de integración el informe suma unitarias e integración -->
 					<execution>
 						<id>report</id>
-						<phase>test</phase>
+						<phase>post-integration-test</phase>
 						<goals>
 							<goal>report</goal>
 						</goals>
@@ -236,7 +265,7 @@
 									<limits>
 										<limit>
 											<counter>LINE</counter>
-											<minimum>0.65</minimum>
+											<minimum>0.8</minimum>
 										</limit>
 									</limits>
 								</rule>
@@ -247,5 +276,4 @@
 			</plugin>
 		</plugins>
 	</build>
-
 </project>

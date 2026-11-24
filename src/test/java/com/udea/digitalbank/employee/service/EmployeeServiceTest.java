@@ -240,9 +240,10 @@ class EmployeeServiceTest {
             UUID userId = UUID.randomUUID();
             Employee employee = employee(userId);
             when(employeeRepository.findById(employee.getId())).thenReturn(Optional.of(employee));
+            UUID employeeId = employee.getId();
 
             // Act + Assert
-            assertThatThrownBy(() -> employeeService.changeStatus(employee.getId(), UserStatusEnum.INACTIVE, userId))
+            assertThatThrownBy(() -> employeeService.changeStatus(employeeId, UserStatusEnum.INACTIVE, userId))
                     .isInstanceOf(OwnStatusChangeException.class);
             verify(userApi, never()).changeStatus(any(), any());
         }
@@ -300,10 +301,11 @@ class EmployeeServiceTest {
             when(employeeRepository.findById(blocked.getId())).thenReturn(Optional.of(blocked));
             when(userApi.getUser(activeUser)).thenReturn(user(activeUser, "ACTIVE"));
             when(userApi.getUser(blockedUser)).thenReturn(user(blockedUser, "BLOCKED"));
+            UUID blockedId = blocked.getId();
 
             // Act + Assert
             assertThat(employeeApiService.requireActiveEmployee(active.getId()).status()).isEqualTo("ACTIVE");
-            assertThatThrownBy(() -> employeeApiService.requireActiveEmployee(blocked.getId()))
+            assertThatThrownBy(() -> employeeApiService.requireActiveEmployee(blockedId))
                     .isInstanceOf(EmployeeNotActiveException.class);
         }
     }

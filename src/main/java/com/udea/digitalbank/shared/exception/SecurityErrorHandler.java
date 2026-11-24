@@ -12,6 +12,7 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.Clock;
 import java.time.LocalDateTime;
 
 /**
@@ -26,9 +27,11 @@ public class SecurityErrorHandler implements AuthenticationEntryPoint, AccessDen
     public static final String FORBIDDEN_MESSAGE = "No tienes permiso para realizar esta operación";
 
     private final ObjectMapper objectMapper;
+    private final Clock clock;
 
-    public SecurityErrorHandler(ObjectMapper objectMapper) {
+    public SecurityErrorHandler(ObjectMapper objectMapper, Clock clock) {
         this.objectMapper = objectMapper;
+        this.clock = clock;
     }
 
     /** Sin token, token inválido o expirado, o sesión revocada. */
@@ -49,6 +52,6 @@ public class SecurityErrorHandler implements AuthenticationEntryPoint, AccessDen
         response.setStatus(status);
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
-        objectMapper.writeValue(response.getOutputStream(), new ErrorResponse(status, message, LocalDateTime.now()));
+        objectMapper.writeValue(response.getOutputStream(), new ErrorResponse(status, message, LocalDateTime.now(clock)));
     }
 }

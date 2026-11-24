@@ -9,7 +9,6 @@ import com.udea.digitalbank.shared.exception.accounts.AccountNotUnblockableExcep
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;
@@ -81,8 +80,9 @@ public class Account {
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal balance = INITIAL_BALANCE;
 
+    // La fija open() con el reloj de la aplicación, el mismo con el que close() fija closedAt: con @CreationTimestamp
+    // saldría de la hora de la JVM, y el CHECK closed_at >= created_at fallaría si el Clock inyectado no coincide
     @Column(nullable = false, updatable = false)
-    @CreationTimestamp
     private LocalDateTime createdAt;
 
     @Column(nullable = false)
@@ -100,11 +100,19 @@ public class Account {
     @Version
     private Long version;
 
-    /** Una cuenta nueva: activa y sin saldo, porque la apertura no exige depósito inicial. */
+    /**
+     * Una cuenta nueva: activa y sin saldo, porque la apertura no exige depósito inicial.
+     *
+     * @param openedAt instante de apertura, tomado del reloj de la aplicación
+     */
     public static Account open(UUID customerId, String accountNumber, String accountKey, short accountIndex,
-                               AccountType accountType, AccountStatus activeStatus) {
+                               AccountType accountType, AccountStatus activeStatus, LocalDateTime openedAt) {
         requireTarget(activeStatus, AccountStatusEnum.ACTIVE);
+        if (openedAt == null) {
+            throw new IllegalArgumentException("La fecha de apertura es obligatoria");
+        }
         Account account = new Account();
+        account.createdAt = openedAt;
         account.customerId = customerId;
         account.accountNumber = accountNumber;
         account.accountKey = accountKey;
@@ -145,6 +153,11 @@ public class Account {
      * Cierre: solo una cuenta ACTIVE o INACTIVE y con saldo cero. Con dinero se debe retirar antes, y una
      * bloqueada se debe desbloquear primero, para que cerrarla no sirva para esquivar un bloqueo. Deja el estado
      * y la fecha de cierre a la vez, porque la base exige las dos cosas juntas.
+     * <p>
+     * El cierre con saldo negativo o valores pendientes de pago no es alcanzable en este modelo: el CHECK
+     * ck_accounts_balance de la migración V4 y los invariantes de {@link #debit} y {@link #credit} impiden un saldo
+     * negativo, y no existen deudas, sobregiros ni pagos pendientes; las transferencias PENDING no retienen fondos.
+     * Como la comparación del saldo es {@code != 0}, un saldo negativo igual se rechazaría, con el mismo mensaje del saldo pendiente.
      */
     public void close(AccountStatus closedStatus, LocalDateTime closedAt) {
         if (is(AccountStatusEnum.CLOSED)) {
@@ -156,7 +169,8 @@ public class Account {
         }
         if (balance.compareTo(BigDecimal.ZERO) != 0) {
             throw new AccountNotClosableException(
-                    "La cuenta " + accountNumber + " tiene saldo; debe estar en cero para poder cerrarla");
+                    "La cuenta " + accountNumber
+                            + " tiene saldo; debe retirar o transferir la totalidad de los fondos antes de cerrarla");
         }
         requireTarget(closedStatus, AccountStatusEnum.CLOSED);
         this.status = closedStatus;
@@ -179,7 +193,7 @@ public class Account {
     }
 
     /**
-     * Abona un monto al saldo por una transferencia. La cuenta debe estar {@code ACTIVE}. Quien la llama debe haber
+     * Abona un monto al saldo por una transferencia o un depósito. La cuenta debe estar {@code ACTIVE}. Quien la llama debe haber
      * leído la cuenta con bloqueo de escritura.
      *
      * @param amount monto positivo a abonar

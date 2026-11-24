@@ -93,6 +93,48 @@ class AccountApiServiceTest {
     }
 
     @Test
+    @DisplayName("Topes - getAccount - la vista informa el tipo de cuenta como código")
+    void getAccount_deberiaInformarElTipoDeCuenta() {
+        // Arrange
+        Account account = buildAccount(AccountStatusEnum.ACTIVE);
+        ReflectionTestUtils.setField(account, "accountType", AccountFixtures.type(com.udea.digitalbank.accounts.api.AccountTypeEnum.CHECKING));
+        when(accountRepository.findById(account.getId())).thenReturn(Optional.of(account));
+
+        // Act
+        AccountView view = accountApiService.getAccount(account.getId());
+
+        // Assert
+        assertThat(view.accountType()).isEqualTo("CHECKING");
+    }
+
+    @Test
+    @DisplayName("Admin en nombre del cliente - getOwnerUserId - entrega el usuario del cliente titular de la cuenta")
+    void getOwnerUserId_deberiaDevolverElUsuarioDelTitular() {
+        // Arrange
+        Account account = buildAccount(AccountStatusEnum.ACTIVE);
+        UUID holderUserId = UUID.randomUUID();
+        when(accountRepository.findById(account.getId())).thenReturn(Optional.of(account));
+        when(customerApi.getCustomer(CUSTOMER_ID)).thenReturn(new CustomerView(CUSTOMER_ID, holderUserId, "Ana",
+                "Gómez", "CC", "1000000001", "ana@example.com", "ACTIVE"));
+
+        // Act + Assert
+        assertThat(accountApiService.getOwnerUserId(account.getId())).isEqualTo(holderUserId);
+    }
+
+    @Test
+    @DisplayName("Admin en nombre del cliente - getOwnerUserId - lanza AccountNotFoundException si la cuenta no existe")
+    void getOwnerUserId_deberiaFallarSiLaCuentaNoExiste() {
+        // Arrange
+        UUID missing = UUID.randomUUID();
+        when(accountRepository.findById(missing)).thenReturn(Optional.empty());
+
+        // Act + Assert
+        assertThatThrownBy(() -> accountApiService.getOwnerUserId(missing))
+                .isInstanceOf(AccountNotFoundException.class);
+        verifyNoInteractions(customerApi);
+    }
+
+    @Test
     @DisplayName("Transversal - getAccount - lanza AccountNotFoundException si la cuenta no existe")
     void getAccount_deberiaFallarSiNoExiste() {
         // Arrange
@@ -175,9 +217,10 @@ class AccountApiServiceTest {
         // Arrange
         Account account = buildAccount(AccountStatusEnum.CLOSED);
         when(accountRepository.findById(account.getId())).thenReturn(Optional.of(account));
+        UUID accountId = account.getId();
 
         // Act + Assert
-        assertThatThrownBy(() -> accountApiService.requireActiveAccount(account.getId()))
+        assertThatThrownBy(() -> accountApiService.requireActiveAccount(accountId))
                 .isInstanceOf(AccountNotActiveException.class)
                 .hasMessageContaining("no está activa");
     }
@@ -188,9 +231,10 @@ class AccountApiServiceTest {
         // Arrange
         Account account = buildAccount(AccountStatusEnum.INACTIVE);
         when(accountRepository.findById(account.getId())).thenReturn(Optional.of(account));
+        UUID accountId = account.getId();
 
         // Act + Assert
-        assertThatThrownBy(() -> accountApiService.requireActiveAccount(account.getId()))
+        assertThatThrownBy(() -> accountApiService.requireActiveAccount(accountId))
                 .isInstanceOf(AccountNotActiveException.class);
     }
 
@@ -264,10 +308,12 @@ class AccountApiServiceTest {
         void deberiaRechazarSinMoverNada() {
             // Arrange
             lock(sender, receiver);
+            UUID senderId = sender.getId();
+            UUID receiverId = receiver.getId();
+            BigDecimal transferAmount = new BigDecimal("150.76");
 
             // Act + Assert
-            assertThatThrownBy(() -> accountApiService.applyTransfer(sender.getId(), receiver.getId(),
-                    new BigDecimal("150.76")))
+            assertThatThrownBy(() -> accountApiService.applyTransfer(senderId, receiverId, transferAmount))
                     .isInstanceOf(InsufficientFundsException.class);
             assertThat(sender.getBalance()).isEqualByComparingTo("150.75");
             assertThat(receiver.getBalance()).isEqualByComparingTo("150.75");
@@ -281,9 +327,11 @@ class AccountApiServiceTest {
             Account inactive = buildAccount(AccountStatusEnum.INACTIVE);
             when(accountRepository.findAllByIdForUpdate(List.of(sender.getId(), inactive.getId())))
                     .thenReturn(List.of(sender, inactive));
+            UUID senderId = sender.getId();
+            UUID inactiveId = inactive.getId();
 
             // Act + Assert
-            assertThatThrownBy(() -> accountApiService.applyTransfer(sender.getId(), inactive.getId(), BigDecimal.TEN))
+            assertThatThrownBy(() -> accountApiService.applyTransfer(senderId, inactiveId, BigDecimal.TEN))
                     .isInstanceOf(AccountNotActiveException.class);
             assertThat(sender.getBalance()).isEqualByComparingTo("150.75");
             assertThat(inactive.getBalance()).isEqualByComparingTo("150.75");
@@ -294,16 +342,19 @@ class AccountApiServiceTest {
         void deberiaFallarSiFaltaUnaCuenta() {
             // Arrange
             lock(sender);
+            UUID senderId = sender.getId();
+            UUID receiverId = receiver.getId();
 
             // Act + Assert
-            assertThatThrownBy(() -> accountApiService.applyTransfer(sender.getId(), receiver.getId(), BigDecimal.TEN))
+            assertThatThrownBy(() -> accountApiService.applyTransfer(senderId, receiverId, BigDecimal.TEN))
                     .isInstanceOf(AccountNotFoundException.class);
         }
 
         @Test
         @DisplayName("HU20 CA03 - Una transferencia de una cuenta a sí misma es un error de programación")
         void deberiaExigirDosCuentasDistintas() {
-            assertThatThrownBy(() -> accountApiService.applyTransfer(sender.getId(), sender.getId(), BigDecimal.TEN))
+            UUID senderId = sender.getId();
+            assertThatThrownBy(() -> accountApiService.applyTransfer(senderId, senderId, BigDecimal.TEN))
                     .isInstanceOf(IllegalArgumentException.class);
             verifyNoInteractions(accountRepository);
         }

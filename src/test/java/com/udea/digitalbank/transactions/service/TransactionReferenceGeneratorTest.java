@@ -40,8 +40,7 @@ class TransactionReferenceGeneratorTest {
     void deberiaTenerLaFormaDelComprobante() {
         String reference = generator.forTransfer(UUID.randomUUID(), CREATED_AT);
 
-        assertThat(reference).matches("TRF-20261017-" + CODE_REGEX);
-        assertThat(reference).hasSize(35);
+        assertThat(reference).matches("TRF-20261017-" + CODE_REGEX).hasSize(35);
         // Ningún guion ni símbolo dentro del código: solo los dos separadores del formato
         assertThat(reference.chars().filter(c -> c == '-').count()).isEqualTo(2);
     }

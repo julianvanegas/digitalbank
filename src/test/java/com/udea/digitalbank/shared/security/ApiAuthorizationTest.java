@@ -15,11 +15,17 @@ import com.udea.digitalbank.customer.security.CustomerSecurity;
 import com.udea.digitalbank.customer.service.CustomerService;
 import com.udea.digitalbank.employee.security.EmployeeSecurity;
 import com.udea.digitalbank.employee.service.EmployeeService;
+import com.udea.digitalbank.shared.config.ClockConfig;
 import com.udea.digitalbank.shared.exception.GlobalExceptionHandler;
 import com.udea.digitalbank.shared.exception.SecurityErrorHandler;
 import com.udea.digitalbank.transactions.security.TransactionSecurity;
+import com.udea.digitalbank.transactions.service.DepositService;
+import com.udea.digitalbank.transactions.service.TransactionHistoryService;
+import com.udea.digitalbank.transactions.service.TransactionLimitQueryService;
 import com.udea.digitalbank.transactions.service.TransactionQueryService;
-import com.udea.digitalbank.transactions.service.TransferService;
+import com.udea.digitalbank.transactions.service.TransactionConfirmationService;
+import com.udea.digitalbank.transactions.service.TransferInitiationService;
+import com.udea.digitalbank.transactions.service.WithdrawalInitiationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -40,8 +46,8 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
+import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -68,7 +74,7 @@ import static org.mockito.Mockito.when;
 @WebMvcTest
 @Import({SecurityConfig.class, AuthSecurity.class, CustomerSecurity.class, EmployeeSecurity.class,
         AccountSecurity.class, TransactionSecurity.class, ApiAuthorizationTest.UndeclaredEndpointController.class, JwtAuthenticationFilter.class,
-        JwtUtil.class, SecurityErrorHandler.class, GlobalExceptionHandler.class, ActorWebConfig.class})
+        JwtUtil.class, SecurityErrorHandler.class, GlobalExceptionHandler.class, ActorWebConfig.class, ClockConfig.class})
 @TestPropertySource(properties = {
         "cors.allowed-origins=http://localhost",
         "jwt.secret=test-only-secret-with-more-than-thirty-two-chars",
@@ -143,9 +149,19 @@ class ApiAuthorizationTest {
     @MockitoBean
     private AccountLifecycleService accountLifecycleService;
     @MockitoBean
-    private TransferService transferService;
+    private TransferInitiationService transferInitiationService;
+    @MockitoBean
+    private TransactionConfirmationService transactionConfirmationService;
+    @MockitoBean
+    private DepositService depositService;
+    @MockitoBean
+    private WithdrawalInitiationService withdrawalInitiationService;
     @MockitoBean
     private TransactionQueryService transactionQueryService;
+    @MockitoBean
+    private TransactionHistoryService transactionHistoryService;
+    @MockitoBean
+    private TransactionLimitQueryService transactionLimitQueryService;
     @MockitoBean
     private SessionService sessionService;
 
@@ -201,13 +217,27 @@ class ApiAuthorizationTest {
                 new Endpoint("PATCH", "/api/v1/accounts/" + NUMBER + "/unblock", "{\"reason\":\"Verificado\"}",
                         Access.ADMIN_ONLY),
                 new Endpoint("PATCH", "/api/v1/accounts/" + NUMBER + "/close", "", Access.CUSTOMER_OR_ADMIN),
-                // ---- transactions: transferir y confirmar son del cliente; el comprobante lo ve también el admin
+                // ---- transactions: transferir y confirmar son del cliente o del admin en su nombre; los topes y el comprobante, de ambos
                 new Endpoint("POST", "/api/v1/transactions/transfers",
                         "{\"senderAccountNumber\":\"" + NUMBER + "\",\"receiverAccountNumber\":\"210000000002\","
-                                + "\"amount\":10.00}", Access.CUSTOMER_ONLY),
+                                + "\"amount\":10.00}", Access.CUSTOMER_OR_ADMIN),
                 new Endpoint("POST", "/api/v1/transactions/TRF-20261017-7Xk2Pq9RmZ4tNvB8cHdWeA/confirm", "{\"code\":\"123456\"}",
-                        Access.CUSTOMER_ONLY),
+                        Access.CUSTOMER_OR_ADMIN),
+                // Historial de una cuenta: el cliente la suya y el admin cualquiera; eso lo decide el servicio
+                new Endpoint("GET", "/api/v1/transactions?accountNumber=" + NUMBER + "&from=2026-10-01&to=2026-10-31",
+                        "", Access.CUSTOMER_OR_ADMIN),
+                new Endpoint("GET", "/api/v1/transactions/limits", "", Access.CUSTOMER_OR_ADMIN),
+                new Endpoint("GET", "/api/v1/transactions/limits?type=WITHDRAWAL&accountType=SAVINGS", "",
+                        Access.CUSTOMER_OR_ADMIN),
                 new Endpoint("GET", "/api/v1/transactions/TRF-20261017-7Xk2Pq9RmZ4tNvB8cHdWeA", "", Access.CUSTOMER_OR_ADMIN),
+                new Endpoint("POST", "/api/v1/transactions/deposits",
+                        "{\"receiverAccountNumber\":\"" + NUMBER + "\",\"amount\":10.00}", Access.ADMIN_ONLY),
+                // HU19: el retiro, como la transferencia, lo inician y confirman el cliente o el admin en su nombre;
+                // se confirma por la misma ruta que la transferencia, con la referencia RET-
+                new Endpoint("POST", "/api/v1/transactions/withdrawals",
+                        "{\"accountNumber\":\"" + NUMBER + "\",\"amount\":10.00}", Access.CUSTOMER_OR_ADMIN),
+                new Endpoint("POST", "/api/v1/transactions/RET-20261017-7Xk2Pq9RmZ4tNvB8cHdWeA/confirm",
+                        "{\"code\":\"123456\"}", Access.CUSTOMER_OR_ADMIN),
                 // ---- documentación y salud
                 new Endpoint("GET", "/actuator/health", "", Access.PUBLIC),
                 // Sondas de liveness y readiness: las consultan los orquestadores, que no tienen token
@@ -227,8 +257,8 @@ class ApiAuthorizationTest {
     }
 
     private String bearer(String role) {
-        Date now = new Date();
-        Date expires = new Date(now.getTime() + 3_600_000);
+        Instant now = Instant.now();
+        Instant expires = now.plusSeconds(3_600);
         return "Bearer " + jwtUtil.generateToken(UUID.randomUUID(), role, UUID.randomUUID().toString(), now, expires);
     }
 

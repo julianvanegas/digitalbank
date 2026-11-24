@@ -24,6 +24,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.Clock;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
 
@@ -58,12 +61,15 @@ class AccountOpeningServiceTest {
     @Mock
     private AccountCatalog accountCatalog;
 
+    private static final LocalDateTime NOW = LocalDateTime.of(2026, 11, 23, 10, 0);
+    private static final Clock CLOCK = Clock.fixed(NOW.toInstant(ZoneOffset.UTC), ZoneOffset.UTC);
+
     private AccountOpeningService openingService;
 
     @BeforeEach
     void setUp() {
         openingService = new AccountOpeningService(accountRepository, customerApi,
-                Mappers.getMapper(AccountMapper.class), accountNumberGenerator, accountKeyGenerator, accountCatalog);
+                Mappers.getMapper(AccountMapper.class), accountNumberGenerator, accountKeyGenerator, accountCatalog, CLOCK);
     }
 
     @Nested
@@ -91,7 +97,8 @@ class AccountOpeningServiceTest {
                     "Cédula de ciudadanía", "1000000001", "ana@example.com", "ACTIVE");
             when(customerApi.getCustomerByUserId(customerUserId)).thenReturn(customer);
 
-            assertThatThrownBy(() -> openingService.open(customerActor, UUID.randomUUID(), null))
+            UUID unknownCustomerId = UUID.randomUUID();
+            assertThatThrownBy(() -> openingService.open(customerActor, unknownCustomerId, null))
                     .isInstanceOf(AccountOwnershipException.class);
             verify(accountRepository, never()).save(any());
         }
@@ -130,6 +137,20 @@ class AccountOpeningServiceTest {
             assertThat(captor.getValue().getAccountType().getCode()).isEqualTo("SAVINGS");
             assertThat(response.getAccountType()).isEqualTo("SAVINGS");
             assertThat(response.getAccountNumber()).hasSize(12);
+        }
+
+        @Test
+        @DisplayName("HU10 - La fecha de apertura sale del reloj de la aplicación, el mismo que fija la de cierre")
+        void deberiaTomarLaFechaDeAperturaDelReloj() {
+            // Arrange
+            stubOpening();
+            when(accountCatalog.type(AccountTypeEnum.SAVINGS)).thenReturn(type(AccountTypeEnum.SAVINGS));
+
+            // Act
+            AccountResponse response = openingService.open(new Actor(UUID.randomUUID(), true), customerId, null);
+
+            // Assert
+            assertThat(response.getCreatedAt()).isEqualTo(NOW);
         }
 
         @Test
@@ -188,9 +209,10 @@ class AccountOpeningServiceTest {
             // Arrange
             stubOpening(List.of(existing(AccountStatusEnum.ACTIVE, 1), existing(AccountStatusEnum.INACTIVE, 2),
                     existing(AccountStatusEnum.BLOCKED, 3)));
+            Actor actor = new Actor(UUID.randomUUID(), true);
 
             // Act & Assert
-            assertThatThrownBy(() -> openingService.open(new Actor(UUID.randomUUID(), true), customerId, null))
+            assertThatThrownBy(() -> openingService.open(actor, customerId, null))
                     .isInstanceOf(AccountLimitReachedException.class)
                     .hasMessageContaining("abiertas");
             verify(accountRepository, never()).save(any());

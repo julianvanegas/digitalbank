@@ -17,7 +17,7 @@ class AccountViewTest {
     @DisplayName("HU20 CA04 - isActive - solo una cuenta ACTIVE puede mover dinero")
     void isActive_soloEsVerdaderoParaActive(AccountStatusEnum status) {
         AccountView view = new AccountView(UUID.randomUUID(), "@AN1231", "123456789012", UUID.randomUUID(),
-                status.name(), BigDecimal.ZERO);
+                "SAVINGS", status.name(), BigDecimal.ZERO);
 
         assertThat(view.isActive()).isEqualTo(status == AccountStatusEnum.ACTIVE);
     }

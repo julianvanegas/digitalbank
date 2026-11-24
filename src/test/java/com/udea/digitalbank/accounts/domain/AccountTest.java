@@ -28,6 +28,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @DisplayName("Account")
 class AccountTest {
 
+    private static final LocalDateTime OPENED_AT = LocalDateTime.of(2026, 1, 15, 9, 30);
+
     private static AccountStatus status(AccountStatusEnum statusEnum) {
         AccountStatus status = new AccountStatus();
         ReflectionTestUtils.setField(status, "id", (short) (statusEnum.ordinal() + 1));
@@ -44,7 +46,7 @@ class AccountTest {
 
     private static Account account(AccountStatusEnum current, String balance) {
         Account account = Account.open(UUID.randomUUID(), "123456789012", "@AN1231", (short) 1, savings(),
-                status(AccountStatusEnum.ACTIVE));
+                status(AccountStatusEnum.ACTIVE), OPENED_AT);
         ReflectionTestUtils.setField(account, "status", status(current));
         ReflectionTestUtils.setField(account, "balance", new BigDecimal(balance));
         return account;
@@ -67,7 +69,7 @@ class AccountTest {
             UUID customerId = UUID.randomUUID();
 
             Account account = Account.open(customerId, "123456789012", "@AN1231", (short) 2, savings(),
-                    status(AccountStatusEnum.ACTIVE));
+                    status(AccountStatusEnum.ACTIVE), OPENED_AT);
 
             assertThat(account.is(AccountStatusEnum.ACTIVE)).isTrue();
             assertThat(account.getBalance()).isEqualTo(new BigDecimal("0.00"));
@@ -76,6 +78,18 @@ class AccountTest {
             assertThat(account.getAccountNumber()).isEqualTo("123456789012");
             assertThat(account.getAccountKey()).isEqualTo("@AN1231");
             assertThat(account.getAccountIndex()).isEqualTo((short) 2);
+            assertThat(account.getCreatedAt()).isEqualTo(OPENED_AT);
+        }
+
+        @Test
+        @DisplayName("HU10 - Rechaza abrirla sin fecha de apertura")
+        void deberiaRechazarAbrirlaSinFecha() {
+            UUID customerId = UUID.randomUUID();
+            AccountType savingsType = savings();
+            AccountStatus active = status(AccountStatusEnum.ACTIVE);
+
+            assertThatThrownBy(() -> Account.open(customerId, "123456789012", "@AN1231", (short) 1, savingsType,
+                    active, null)).isInstanceOf(IllegalArgumentException.class);
         }
 
         @Test
@@ -83,7 +97,9 @@ class AccountTest {
         void deberiaRechazarUnEstadoInicialQueNoSeaActive() {
             AccountStatus blocked = status(AccountStatusEnum.BLOCKED);
 
-            assertThatThrownBy(() -> Account.open(UUID.randomUUID(), "123456789012", "@AN1231", (short) 1, savings(), blocked))
+            UUID customerId = UUID.randomUUID();
+            AccountType savingsType = savings();
+            assertThatThrownBy(() -> Account.open(customerId, "123456789012", "@AN1231", (short) 1, savingsType, blocked, OPENED_AT))
                     .isInstanceOf(IllegalArgumentException.class);
         }
     }
@@ -108,7 +124,8 @@ class AccountTest {
         void deberiaRechazarUnaCuentaYaBloqueada() {
             Account account = account(AccountStatusEnum.BLOCKED, "0");
 
-            assertThatThrownBy(() -> account.block(status(AccountStatusEnum.BLOCKED)))
+            AccountStatus blockedStatus = status(AccountStatusEnum.BLOCKED);
+            assertThatThrownBy(() -> account.block(blockedStatus))
                     .isInstanceOf(AccountNotBlockableException.class)
                     .hasMessageContaining("ya está bloqueada");
         }
@@ -119,7 +136,8 @@ class AccountTest {
         void deberiaRechazarUnaCuentaQueNoEstaActiva(AccountStatusEnum current) {
             Account account = account(current, "0");
 
-            assertThatThrownBy(() -> account.block(status(AccountStatusEnum.BLOCKED)))
+            AccountStatus blockedStatus = status(AccountStatusEnum.BLOCKED);
+            assertThatThrownBy(() -> account.block(blockedStatus))
                     .isInstanceOf(AccountNotBlockableException.class)
                     .hasMessageContaining(current.name());
             assertThat(account.is(current)).isTrue();
@@ -130,7 +148,8 @@ class AccountTest {
         void deberiaRechazarUnEstadoDestinoEquivocado() {
             Account account = account(AccountStatusEnum.ACTIVE, "0");
 
-            assertThatThrownBy(() -> account.block(status(AccountStatusEnum.CLOSED)))
+            AccountStatus closedStatus = status(AccountStatusEnum.CLOSED);
+            assertThatThrownBy(() -> account.block(closedStatus))
                     .isInstanceOf(IllegalArgumentException.class);
             assertThat(account.is(AccountStatusEnum.ACTIVE)).isTrue();
         }
@@ -156,7 +175,8 @@ class AccountTest {
         void deberiaRechazarUnaCuentaQueNoEstaBloqueada(AccountStatusEnum current) {
             Account account = account(current, "0");
 
-            assertThatThrownBy(() -> account.unblock(status(AccountStatusEnum.ACTIVE)))
+            AccountStatus activeStatus = status(AccountStatusEnum.ACTIVE);
+            assertThatThrownBy(() -> account.unblock(activeStatus))
                     .isInstanceOf(AccountNotUnblockableException.class)
                     .hasMessageContaining(current.name());
             assertThat(account.is(current)).isTrue();
@@ -185,7 +205,9 @@ class AccountTest {
         void deberiaRechazarUnaCuentaConSaldo() {
             Account account = account(AccountStatusEnum.ACTIVE, "0.01");
 
-            assertThatThrownBy(() -> account.close(status(AccountStatusEnum.CLOSED), LocalDateTime.now()))
+            AccountStatus closedStatus = status(AccountStatusEnum.CLOSED);
+            LocalDateTime now = LocalDateTime.now();
+            assertThatThrownBy(() -> account.close(closedStatus, now))
                     .isInstanceOf(AccountNotClosableException.class)
                     .hasMessageContaining("saldo");
             assertThat(account.is(AccountStatusEnum.ACTIVE)).isTrue();
@@ -197,7 +219,9 @@ class AccountTest {
         void deberiaRechazarUnaCuentaBloqueada() {
             Account account = account(AccountStatusEnum.BLOCKED, "0");
 
-            assertThatThrownBy(() -> account.close(status(AccountStatusEnum.CLOSED), LocalDateTime.now()))
+            AccountStatus closedStatus = status(AccountStatusEnum.CLOSED);
+            LocalDateTime now = LocalDateTime.now();
+            assertThatThrownBy(() -> account.close(closedStatus, now))
                     .isInstanceOf(AccountNotClosableException.class)
                     .hasMessageContaining("bloqueada");
         }
@@ -209,7 +233,9 @@ class AccountTest {
             LocalDateTime first = LocalDateTime.now().minusDays(1);
             account.close(status(AccountStatusEnum.CLOSED), first);
 
-            assertThatThrownBy(() -> account.close(status(AccountStatusEnum.CLOSED), LocalDateTime.now()))
+            AccountStatus closedStatus = status(AccountStatusEnum.CLOSED);
+            LocalDateTime now = LocalDateTime.now();
+            assertThatThrownBy(() -> account.close(closedStatus, now))
                     .isInstanceOf(AccountNotClosableException.class)
                     .hasMessageContaining("ya está cerrada");
             assertThat(account.getClosedAt()).isEqualTo(first);
@@ -220,7 +246,9 @@ class AccountTest {
         void deberiaRechazarUnEstadoDestinoEquivocado() {
             Account account = account(AccountStatusEnum.ACTIVE, "0");
 
-            assertThatThrownBy(() -> account.close(status(AccountStatusEnum.BLOCKED), LocalDateTime.now()))
+            AccountStatus blockedStatus = status(AccountStatusEnum.BLOCKED);
+            LocalDateTime now = LocalDateTime.now();
+            assertThatThrownBy(() -> account.close(blockedStatus, now))
                     .isInstanceOf(IllegalArgumentException.class);
             assertThat(account.getClosedAt()).isNull();
         }
@@ -255,7 +283,8 @@ class AccountTest {
         void deberiaRechazarSiNoHaySaldo() {
             Account account = account(AccountStatusEnum.ACTIVE, "100.00");
 
-            assertThatThrownBy(() -> account.debit(new BigDecimal("100.01")))
+            BigDecimal excessAmount = new BigDecimal("100.01");
+            assertThatThrownBy(() -> account.debit(excessAmount))
                     .isInstanceOf(InsufficientFundsException.class)
                     .hasMessageContaining("123456789012");
             assertThat(account.getBalance()).isEqualByComparingTo("100.00");
@@ -288,8 +317,9 @@ class AccountTest {
         void deberiaExigirUnMontoPositivo(String amount) {
             Account account = account(AccountStatusEnum.ACTIVE, "100.00");
 
-            assertThatThrownBy(() -> account.debit(new BigDecimal(amount))).isInstanceOf(IllegalArgumentException.class);
-            assertThatThrownBy(() -> account.credit(new BigDecimal(amount))).isInstanceOf(IllegalArgumentException.class);
+            BigDecimal invalidAmount = new BigDecimal(amount);
+            assertThatThrownBy(() -> account.debit(invalidAmount)).isInstanceOf(IllegalArgumentException.class);
+            assertThatThrownBy(() -> account.credit(invalidAmount)).isInstanceOf(IllegalArgumentException.class);
             assertThat(account.getBalance()).isEqualByComparingTo("100.00");
         }
     }

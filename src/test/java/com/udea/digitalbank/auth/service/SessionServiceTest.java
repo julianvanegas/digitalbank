@@ -14,9 +14,10 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -41,7 +42,7 @@ class SessionServiceTest {
 
     @BeforeEach
     void setUp() {
-        sessionService = new SessionService(sessionRepository, jwtUtil, 5);
+        sessionService = new SessionService(sessionRepository, jwtUtil, 5, Clock.systemDefaultZone());
     }
 
     private static Role buildRole(String code) {
@@ -77,7 +78,7 @@ class SessionServiceTest {
 
             when(jwtUtil.getExpirationMs()).thenReturn(3_600_000L); // tope del token: 1 hora
             when(jwtUtil.generateJti()).thenReturn(jti);
-            when(jwtUtil.generateToken(eq(userId), eq("CUSTOMER"), eq(jti), any(Date.class), any(Date.class)))
+            when(jwtUtil.generateToken(eq(userId), eq("CUSTOMER"), eq(jti), any(Instant.class), any(Instant.class)))
                     .thenReturn("token-firmado");
 
             LocalDateTime before = LocalDateTime.now();
@@ -98,9 +99,9 @@ class SessionServiceTest {
             assertThat(saved.getExpiresAt()).isCloseTo(before.plusMinutes(5), within(2, ChronoUnit.SECONDS));
 
             // El token lleva como exp el tope de 1 hora, independiente de la inactividad
-            ArgumentCaptor<Date> tokenExp = ArgumentCaptor.forClass(Date.class);
-            verify(jwtUtil).generateToken(eq(userId), eq("CUSTOMER"), eq(jti), any(Date.class), tokenExp.capture());
-            assertThat(tokenExp.getValue().getTime())
+            ArgumentCaptor<Instant> tokenExp = ArgumentCaptor.forClass(Instant.class);
+            verify(jwtUtil).generateToken(eq(userId), eq("CUSTOMER"), eq(jti), any(Instant.class), tokenExp.capture());
+            assertThat(tokenExp.getValue().toEpochMilli())
                     .isCloseTo(System.currentTimeMillis() + 3_600_000L, within(2_000L));
         }
     }

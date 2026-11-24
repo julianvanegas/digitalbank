@@ -43,17 +43,21 @@ public final class OpenApiExamples {
     public static final String RECEIVER_ACCOUNT_NUMBER = "200000000002";
     public static final String ACCOUNT_KEY = "@AN1001";
     public static final String AMOUNT = "150000.00";
+    public static final String NEGATIVE_AMOUNT = "-150000.00";
     public static final String BALANCE = "850000.00";
 
     // ---- Segundo factor y transacciones
     public static final String CODE = "123456";
     public static final String REFERENCE = "TRF-20261017-7Xk2Pq9RmZ4tNvB8cHdWeA";
+    public static final String WITHDRAWAL_REFERENCE = "RET-20261017-7Xk2Pq9RmZ4tNvB8cHdWeA";
     public static final String REASON = "Actividad sospechosa reportada por el titular";
     public static final String UNBLOCK_REASON = "Revisión completada sin actividad irregular";
     public static final String REMAINING_RESENDS = "1";
     public static final String RETRY_AFTER_SECONDS = "60";
 
     // ---- Fechas
+    public static final String DATE_FROM = "2026-10-01";
+    public static final String DATE_TO = "2026-10-31";
     public static final String TIMESTAMP = "2026-10-17T10:15:30";
     public static final String EXPIRES_AT = "2026-10-17T10:18:30";
     public static final String CLOSED_AT = "2026-12-01T09:00:00";

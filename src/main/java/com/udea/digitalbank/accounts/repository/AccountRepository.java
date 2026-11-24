@@ -7,12 +7,12 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-public interface AccountRepository extends JpaRepository<Account, UUID> {
+/** Acceso a las cuentas. El bloqueo para mover dinero ({@code findAllByIdForUpdate}) está en {@link AccountLocking}. */
+public interface AccountRepository extends JpaRepository<Account, UUID>, AccountLocking {
 
     /**
      * Siguiente valor de la secuencia {@code account_number_seq}. Es único y se entrega de forma atómica sin consultar
@@ -36,15 +36,21 @@ public interface AccountRepository extends JpaRepository<Account, UUID> {
     Optional<Account> findByAccountNumberForUpdate(@Param("accountNumber") String accountNumber);
 
     /**
-     * Cuentas con la fila bloqueada para escritura, siempre ordenadas por id. Dos transferencias cruzadas entre las
-     * mismas cuentas piden los bloqueos en el mismo orden y se serializan, en lugar de quedar en un interbloqueo.
-     *
-     * @param ids identificadores de las cuentas a bloquear
-     * @return las cuentas encontradas, ordenadas por id
+     * Titular de la cuenta, sin cargar la entidad. El cierre lo necesita antes de bloquear las cuentas del cliente:
+     * una entidad leída sin bloqueo quedaría en caché con un estado que otra transacción puede cambiar mientras se
+     * espera el bloqueo.
+     */
+    @Query("select a.customerId from Account a where a.accountNumber = :accountNumber")
+    Optional<UUID> findCustomerIdByAccountNumber(@Param("accountNumber") String accountNumber);
+
+    /**
+     * Todas las cuentas del cliente, cerradas incluidas, con las filas bloqueadas y ordenadas por id. Dos cierres
+     * simultáneos de cuentas del mismo cliente se turnan, y el segundo ve el cierre del primero: así, el que cierra
+     * la última cuenta lo sabe, aunque los dos cierres lleguen a la vez.
      */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("select a from Account a where a.id in :ids order by a.id")
-    List<Account> findAllByIdForUpdate(@Param("ids") Collection<UUID> ids);
+    @Query("select a from Account a where a.customerId = :customerId order by a.id")
+    List<Account> findByCustomerIdForUpdate(@Param("customerId") UUID customerId);
 
     // Un cliente tiene como máximo tres cuentas, así que la lista completa sirve tanto para
     // consultarlas como para decidir si queda cupo, sin una consulta de conteo aparte
