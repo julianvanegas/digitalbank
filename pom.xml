@@ -12,9 +12,9 @@
 	</parent>
 	<groupId>com.udea</groupId>
 	<artifactId>digitalbank</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
-	<name/>
-	<description/>
+	<version>1.0.0</version>
+	<name>Digital Bank</name>
+	<description>API stateless of a digital banking system</description>
 	<url/>
 	<licenses>
 		<license/>
@@ -72,7 +72,6 @@
 			<groupId>org.flywaydb</groupId>
 			<artifactId>flyway-database-postgresql</artifactId>
 		</dependency>
-
 		<dependency>
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>
@@ -113,7 +112,6 @@
 			<artifactId>spring-boot-starter-webmvc-test</artifactId>
 			<scope>test</scope>
 		</dependency>
-
 		<!-- Pruebas de integración en PostgreSQL real en un contenedor (clases *IT ejecutadas con Failsafe) -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -130,7 +128,6 @@
 			<artifactId>testcontainers-junit-jupiter</artifactId>
 			<scope>test</scope>
 		</dependency>
-
 		<!-- JWT: generar y validar tokens -->
 		<dependency>
 			<groupId>io.jsonwebtoken</groupId>
@@ -147,7 +144,6 @@
 			<artifactId>jjwt-jackson</artifactId>
 			<version>0.13.0</version>
 		</dependency>
-
 		<!-- MapStruct: mapeo Entity <-> DTO -->
 		<dependency>
 			<groupId>org.mapstruct</groupId>
@@ -159,22 +155,19 @@
 			<artifactId>mapstruct-processor</artifactId>
 			<version>1.6.3</version>
 		</dependency>
-		<!-- Lombok + MapStruct juntos, evita conflictos del compilador -->
+		<!-- Lombok y MapStruct juntos, evita conflictos del compilador -->
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok-mapstruct-binding</artifactId>
 			<version>0.2.0</version>
 		</dependency>
-
 		<!-- Documentación de API (Swagger UI) -->
 		<dependency>
 			<groupId>org.springdoc</groupId>
 			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
 			<version>3.2.0</version>
 		</dependency>
-
 	</dependencies>
-
 	<build>
 		<finalName>digitalbank</finalName>
 		<plugins>
@@ -283,5 +276,4 @@
 			</plugin>
 		</plugins>
 	</build>
-
 </project>
