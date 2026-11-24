@@ -1,23 +1,23 @@
 # DigitalBank
 
-DigitalBank es una API stateless para gestionar clientes, cuentas y transacciones financieras de clientes y empleados con trazabilidad.
-
 [![Latest Release](https://img.shields.io/github/v/release/julianvanegas/digitalbank?sort=semver)](https://github.com/julianvanegas/digitalbank/releases/latest)
 [![GHCR Package](https://img.shields.io/badge/GHCR-digitalbank-2496ED?logo=docker&logoColor=white)](https://github.com/julianvanegas/digitalbank/pkgs/container/digitalbank)
+
+DigitalBank es una API stateless para gestionar clientes, cuentas y transacciones financieras de clientes y empleados con trazabilidad.
 
 [![CI Pipeline](https://github.com/julianvanegas/digitalbank/actions/workflows/build.yml/badge.svg)](https://github.com/julianvanegas/digitalbank/actions/workflows/build.yml)
 [![CodeQL](https://github.com/julianvanegas/digitalbank/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/julianvanegas/digitalbank/actions/workflows/github-code-scanning/codeql)
 [![Quality gate status](https://sonarcloud.io/api/project_badges/measure?project=julianvanegas_digitalbank&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=julianvanegas_digitalbank)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=julianvanegas_digitalbank&metric=coverage)](https://sonarcloud.io/summary/new_code?id=julianvanegas_digitalbank)
 
-[![Lines of code](https://sonarcloud.io/api/project_badges/measure?project=julianvanegas_digitalbank&metric=ncloc)](https://sonarcloud.io/summary/new_code?id=julianvanegas_digitalbank)
-[![Duplicated Lines (%)](https://sonarcloud.io/api/project_badges/measure?project=julianvanegas_digitalbank&metric=duplicated_lines_density)](https://sonarcloud.io/summary/new_code?id=julianvanegas_digitalbank)
 [![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=julianvanegas_digitalbank&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=julianvanegas_digitalbank)
 [![Security issues](https://sonarcloud.io/api/project_badges/measure?project=julianvanegas_digitalbank&metric=software_quality_security_issues)](https://sonarcloud.io/summary/new_code?id=julianvanegas_digitalbank)
 [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=julianvanegas_digitalbank&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=julianvanegas_digitalbank)
 [![Maintainability issues](https://sonarcloud.io/api/project_badges/measure?project=julianvanegas_digitalbank&metric=software_quality_maintainability_issues)](https://sonarcloud.io/summary/new_code?id=julianvanegas_digitalbank)
 [![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=julianvanegas_digitalbank&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=julianvanegas_digitalbank)
 [![Reliability issues](https://sonarcloud.io/api/project_badges/measure?project=julianvanegas_digitalbank&metric=software_quality_reliability_issues)](https://sonarcloud.io/summary/new_code?id=julianvanegas_digitalbank)
+[![Lines of code](https://sonarcloud.io/api/project_badges/measure?project=julianvanegas_digitalbank&metric=ncloc)](https://sonarcloud.io/summary/new_code?id=julianvanegas_digitalbank)
+[![Duplicated Lines (%)](https://sonarcloud.io/api/project_badges/measure?project=julianvanegas_digitalbank&metric=duplicated_lines_density)](https://sonarcloud.io/summary/new_code?id=julianvanegas_digitalbank)
 
 ## Contenido
 
