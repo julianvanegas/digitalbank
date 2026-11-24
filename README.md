@@ -30,6 +30,7 @@ DigitalBank es una API stateless para gestionar clientes, cuentas y transaccione
 - [Ejecución local](#ejecución-local)
 - [Documentación de la API](#documentación-de-la-api)
 - [Pruebas y calidad](#pruebas-y-calidad)
+- [Observabilidad](#observabilidad)
 - [Despliegue mediante contenedor](#despliegue-mediante-contenedor)
 - [CI/CD](#cicd)
 - [Contribuir](#contribuir)
@@ -74,6 +75,7 @@ Las reglas de dependencia y el razonamiento detrás de cada decisión están doc
 .
 ├── .github/              Workflows de CI/CD, plantilla de PR y CODEOWNERS
 ├── docs/adr/             Registros de decisiones de arquitectura
+├── observability/        Prometheus y Grafana
 ├── src/main/java/com/udea/digitalbank/
 │   ├── accounts/         Cuentas bancarias
 │   ├── auth/             Identidad, sesiones y verificación
@@ -116,6 +118,7 @@ Toda la configuración llega por variables de entorno (ver [`.env.example`](.env
 | `ACCOUNT_NUMBER_SECRET` | Secreto que reparte la secuencia de números de cuenta (mínimo 32 caracteres) |
 | `RESEND_API_KEY`, `RESEND_FROM` | Servicio de correo |
 | `SWAGGER_ENABLED` | Publica la documentación de la API |
+| `METRICS_USER`, `METRICS_PASSWORD` | Credenciales Basic con que se leen las métricas en `/actuator/prometheus`; vacías, el endpoint responde siempre 401 |
 
 ## Ejecución local
 
@@ -208,6 +211,58 @@ Para ejecutar solo una prueba de integración:
 ```bash
 ./mvnw verify -Dtest=NONE -Dsurefire.failIfNoSpecifiedTests=false -Dit.test=TransferFlowIT
 ```
+
+## Observabilidad
+
+La aplicación publica sus métricas (HTTP, JVM, pool de conexiones) en formato Prometheus en `/actuator/prometheus`, mediante Actuator y Micrometer. Esa ruta no usa el JWT de la API, la protege la cadena de [`MetricsSecurityConfig`](src/main/java/com/udea/digitalbank/shared/security/MetricsSecurityConfig.java) con autenticación Basic, con las credenciales `METRICS_USER` y `METRICS_PASSWORD`. Si no están definidas, el endpoint responde siempre 401, nunca queda abierto. Un token de la API no sirve para leer las métricas.
+
+El código de la aplicación es el mismo en todos los entornos; solo cambia quién lee las métricas:
+
+| Entorno | Quién las lee | Dónde se configura |
+| --- | --- | --- |
+| Local | Prometheus y Grafana en contenedores | [`observability/`](observability) |
+| Producción | Grafana Cloud, con su Prometheus gestionado | Grafana Cloud y variables de entorno del servicio |
+
+### Local con Prometheus y Grafana
+
+[`observability/compose.yaml`](observability/compose.yaml) levanta Prometheus `v3.13.5` (versión LTS) y Grafana `13.3.1`, con el data source de Prometheus ya provisionado. Solo escuchan en `127.0.0.1`.
+
+1. Define `METRICS_USER` y `METRICS_PASSWORD` en tu `.env` (la plantilla trae valores de desarrollo) y levanta la aplicación como se indica en [Ejecución local](#ejecución-local). El usuario debe coincidir con el de [`prometheus.yml`](observability/prometheus/prometheus.yml) (`prometheus-local`).
+
+2. Guarda la contraseña en el archivo que lee Prometheus (está ignorado por Git, porque Prometheus no expande variables de entorno en su configuración):
+
+   ```bash
+   set -a && source .env && set +a
+   printf '%s' "$METRICS_PASSWORD" > observability/prometheus/metrics-password
+   ```
+
+3. Levanta Prometheus y Grafana:
+
+   ```bash
+   cd observability
+   podman compose up -d
+   ```
+
+   Con Docker, usa `docker compose up -d` y cambia el destino de `prometheus.yml` de `host.containers.internal` a `host.docker.internal`.
+
+4. Comprueba cada tramo:
+
+   | Qué | Cómo | Resultado esperado |
+   | --- | --- | --- |
+   | La aplicación publica las métricas | `curl -u "$METRICS_USER:$METRICS_PASSWORD" http://localhost:8080/actuator/prometheus` | Líneas como `jvm_memory_used_bytes{...}` |
+   | La ruta está protegida | `curl -i http://localhost:8080/actuator/prometheus` | `401` |
+   | Prometheus las recolecta | [http://localhost:9090/targets](http://localhost:9090/targets) | El destino `digitalbank` en estado `UP` |
+   | Grafana las muestra | [http://localhost:3000](http://localhost:3000) (`admin` / `admin`), *Dashboards → New → Import* con el ID `4701` | Panel de la JVM con datos |
+
+5. Para detenerlos: `podman compose down`. No guardan datos entre ejecuciones.
+
+### Producción con Grafana Cloud
+
+Grafana Cloud incluye un Prometheus gestionado, así que no hay ningún servidor que mantener, lee `/actuator/prometheus` de la aplicación mediante HTTPS.
+
+1. En la plataforma donde se despliega la aplicación, define `METRICS_USER` y `METRICS_PASSWORD` en el entorno del servicio. La contraseña debe ser larga y aleatoria, y guardarse como secreto. Despliega la versión con este cambio.
+2. En Grafana Cloud, crea un *scrape job* con la integración **Metrics Endpoint** (*Connections*; los nombres de los menús pueden variar) con la URL `https://<dominio-de-la-app>/actuator/prometheus` y autenticación Basic con esas credenciales.
+3. Comprueba en *Explore*, con el data source de Prometheus de tu stack, que `up` devuelve `1` para tu job, e importa el dashboard `4701`.
 
 ## Despliegue mediante contenedor
 
