@@ -1,0 +1,25 @@
+# Observabilidad con Prometheus y Grafana
+# Prometheus lee las métricas de la aplicación en /actuator/prometheus y las guarda; Grafana las consulta y dibuja
+# Solo para desarrollo: no conserva datos entre ejecuciones y usa la contraseña por defecto de Grafana
+services:
+  prometheus:
+    image: docker.io/prom/prometheus:v3.13.5
+    ports:
+      - "127.0.0.1:9090:9090" # solo accesible desde el entorno local
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      # Archivo con la contraseña de lectura (METRICS_PASSWORD del .env)
+      - ./prometheus/metrics-password:/etc/prometheus/metrics-password:ro
+
+  grafana:
+    image: docker.io/grafana/grafana:13.3.1
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin # solo para uso local; en cualquier otro entorno se define como secreto
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      - prometheus

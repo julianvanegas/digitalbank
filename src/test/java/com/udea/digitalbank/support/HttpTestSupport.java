@@ -14,6 +14,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
+import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
 
@@ -44,6 +45,11 @@ public final class HttpTestSupport {
 
     public static void clearAuthentication() {
         SecurityContextHolder.clearContext();
+    }
+
+    /** Valor del header Authorization para autenticación Basic con ese usuario y contraseña. */
+    public static String basicAuth(String user, String password) {
+        return "Basic " + Base64.getEncoder().encodeToString((user + ":" + password).getBytes(StandardCharsets.UTF_8));
     }
 
     public static MockHttpServletRequestBuilder json(MockHttpServletRequestBuilder builder, String body) {
