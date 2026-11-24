@@ -46,8 +46,9 @@ class CustomerRepositoryIT extends RepositoryTest {
     @DisplayName("La base rechaza repetir tipo y número de documento")
     void rejectsDuplicatedDocument() {
         data.customer(data.customerUser("a@example.com"), CEDULA, "1020304050");
+        var otherUser = data.customerUser("b@example.com");
 
-        assertThatThrownBy(() -> data.customer(data.customerUser("b@example.com"), CEDULA, "1020304050"))
+        assertThatThrownBy(() -> data.customer(otherUser, CEDULA, "1020304050"))
                 .isInstanceOf(ConstraintViolationException.class)
                 .extracting("constraintName").isEqualTo("uk_customers_document");
     }
