@@ -7,12 +7,12 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-public interface AccountRepository extends JpaRepository<Account, UUID> {
+/** Acceso a las cuentas. El bloqueo para mover dinero ({@code findAllByIdForUpdate}) está en {@link AccountLocking}. */
+public interface AccountRepository extends JpaRepository<Account, UUID>, AccountLocking {
 
     /**
      * Siguiente valor de la secuencia {@code account_number_seq}. Es único y se entrega de forma atómica sin consultar
@@ -34,17 +34,6 @@ public interface AccountRepository extends JpaRepository<Account, UUID> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select a from Account a where a.accountNumber = :accountNumber")
     Optional<Account> findByAccountNumberForUpdate(@Param("accountNumber") String accountNumber);
-
-    /**
-     * Cuentas con la fila bloqueada para escritura, siempre ordenadas por id. Dos transferencias cruzadas entre las
-     * mismas cuentas piden los bloqueos en el mismo orden y se serializan, en lugar de quedar en un interbloqueo.
-     *
-     * @param ids identificadores de las cuentas a bloquear
-     * @return las cuentas encontradas, ordenadas por id
-     */
-    @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("select a from Account a where a.id in :ids order by a.id")
-    List<Account> findAllByIdForUpdate(@Param("ids") Collection<UUID> ids);
 
     /**
      * Titular de la cuenta, sin cargar la entidad. El cierre lo necesita antes de bloquear las cuentas del cliente:
