@@ -67,3 +67,6 @@ build/
 *.env
 
 .DStore
+
+# Contraseña local con que Prometheus lee las métricas (se crea a partir de METRICS_PASSWORD)
+observability/prometheus/metrics-password
