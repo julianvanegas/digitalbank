@@ -1,23 +1,23 @@
 # DigitalBank
 
-DigitalBank es una API stateless para gestionar clientes, cuentas y transacciones financieras de clientes y empleados con trazabilidad.
-
 [![Latest Release](https://img.shields.io/github/v/release/julianvanegas/digitalbank?sort=semver)](https://github.com/julianvanegas/digitalbank/releases/latest)
 [![GHCR Package](https://img.shields.io/badge/GHCR-digitalbank-2496ED?logo=docker&logoColor=white)](https://github.com/julianvanegas/digitalbank/pkgs/container/digitalbank)
+
+DigitalBank es una API stateless para gestionar clientes, cuentas y transacciones financieras de clientes y empleados con trazabilidad.
 
 [![CI Pipeline](https://github.com/julianvanegas/digitalbank/actions/workflows/build.yml/badge.svg)](https://github.com/julianvanegas/digitalbank/actions/workflows/build.yml)
 [![CodeQL](https://github.com/julianvanegas/digitalbank/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/julianvanegas/digitalbank/actions/workflows/github-code-scanning/codeql)
 [![Quality gate status](https://sonarcloud.io/api/project_badges/measure?project=julianvanegas_digitalbank&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=julianvanegas_digitalbank)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=julianvanegas_digitalbank&metric=coverage)](https://sonarcloud.io/summary/new_code?id=julianvanegas_digitalbank)
 
-[![Lines of code](https://sonarcloud.io/api/project_badges/measure?project=julianvanegas_digitalbank&metric=ncloc)](https://sonarcloud.io/summary/new_code?id=julianvanegas_digitalbank)
-[![Duplicated Lines (%)](https://sonarcloud.io/api/project_badges/measure?project=julianvanegas_digitalbank&metric=duplicated_lines_density)](https://sonarcloud.io/summary/new_code?id=julianvanegas_digitalbank)
 [![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=julianvanegas_digitalbank&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=julianvanegas_digitalbank)
 [![Security issues](https://sonarcloud.io/api/project_badges/measure?project=julianvanegas_digitalbank&metric=software_quality_security_issues)](https://sonarcloud.io/summary/new_code?id=julianvanegas_digitalbank)
 [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=julianvanegas_digitalbank&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=julianvanegas_digitalbank)
 [![Maintainability issues](https://sonarcloud.io/api/project_badges/measure?project=julianvanegas_digitalbank&metric=software_quality_maintainability_issues)](https://sonarcloud.io/summary/new_code?id=julianvanegas_digitalbank)
 [![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=julianvanegas_digitalbank&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=julianvanegas_digitalbank)
 [![Reliability issues](https://sonarcloud.io/api/project_badges/measure?project=julianvanegas_digitalbank&metric=software_quality_reliability_issues)](https://sonarcloud.io/summary/new_code?id=julianvanegas_digitalbank)
+[![Lines of code](https://sonarcloud.io/api/project_badges/measure?project=julianvanegas_digitalbank&metric=ncloc)](https://sonarcloud.io/summary/new_code?id=julianvanegas_digitalbank)
+[![Duplicated Lines (%)](https://sonarcloud.io/api/project_badges/measure?project=julianvanegas_digitalbank&metric=duplicated_lines_density)](https://sonarcloud.io/summary/new_code?id=julianvanegas_digitalbank)
 
 ## Contenido
 
@@ -83,7 +83,7 @@ Las reglas de dependencia y el razonamiento detrás de cada decisión están doc
 │   └── shared/           Seguridad, excepciones, OpenAPI y utilidades transversales
 ├── src/main/resources/
 │   └── db/migration/     Migraciones Flyway
-├── src/test/java/        Pruebas unitarias por módulo
+├── src/test/java/        Pruebas unitarias (*Test) y de integración (*IT) por módulo
 ├── Containerfile         Imagen OCI de la aplicación
 └── .env.example          Plantilla de configuración
 ```
@@ -94,7 +94,7 @@ Las reglas de dependencia y el razonamiento detrás de cada decisión están doc
 - JDK 25 instalado y disponible en el `PATH`.
 - PostgreSQL 14 o superior, en ejecución y con permisos para crear la base de datos `bank`.
 - Una cuenta de [Resend](https://resend.com) y una API key válida para enviar notificaciones por correo.
-- Docker o Podman, únicamente si vas a construir y ejecutar la imagen del contenedor localmente.
+- Docker o Podman, para las pruebas de integración (`./mvnw verify`) y para construir la imagen del contenedor.
 - No necesitas instalar Maven, el repositorio incluye el Maven Wrapper (`mvnw`).
 
 ## Configuración
@@ -184,12 +184,29 @@ Authorization: Bearer <token>
 ./mvnw verify
 ```
 
-Ejecuta las pruebas automatizadas, genera el reporte de cobertura en `target/site/jacoco/index.html` y falla si la cobertura de líneas es inferior al 80%. El mismo comando corre en el pipeline de CI, seguido del análisis de SonarCloud.
+Ejecuta las pruebas unitarias y las de integración, genera el reporte de cobertura de ambas en `target/site/jacoco/index.html` y falla si la cobertura de líneas es inferior al 80%. El mismo comando corre en el pipeline de CI, seguido del análisis de SonarCloud.
 
-Para ejecutar solo las pruebas:
+| Tipo | Clases | Plugin | Qué prueba |
+| --- | --- | --- | --- |
+| Unitarias | `*Test` | Surefire (`test`) | Cada clase por separado, con dependencias simuladas |
+| Integración | `*IT` | Failsafe (`integration-test`) | Repositorios, flujos HTTP completos, concurrencia y trabajos programados contra PostgreSQL real |
+
+Las pruebas de integración levantan un PostgreSQL temporal con [Testcontainers](https://testcontainers.com), así que necesitan Docker o Podman en ejecución; no usan tu base local ni tu `.env`. Con Podman en macOS, basta con encender la máquina virtual, que expone el socket de Docker:
+
+```bash
+podman machine start
+```
+
+Para ejecutar solo las pruebas unitarias (no necesita Docker ni Podman):
 
 ```bash
 ./mvnw test
+```
+
+Para ejecutar solo una prueba de integración:
+
+```bash
+./mvnw verify -Dtest=NONE -Dsurefire.failIfNoSpecifiedTests=false -Dit.test=TransferFlowIT
 ```
 
 ## Despliegue mediante contenedor
@@ -212,7 +229,22 @@ docker run --rm -p 8080:8080 --env-file .env digitalbank
 
 ## CI/CD
 
-Los workflows de [GitHub Actions](.github/workflows) ejecutan las pruebas automatizadas y el análisis de SonarCloud como validación previa a la publicación de imágenes. El flujo completo es:
+Los workflows de [GitHub Actions](.github/workflows) ejecutan las pruebas automatizadas y el análisis de SonarCloud como validación previa a la publicación de imágenes.
+
+### Validación en cada push y pull request
+
+El workflow [`build.yml`](.github/workflows/build.yml) corre en cada push a `main`, `develop`, `quality`, `feature/**`, `task/**`, `bugfix/**` y `hotfix/**`, y en cada pull request hacia `main`, `develop` o `quality`:
+
+1. **Automated tests**:
+   1. Levanta el servicio de Podman con un socket propio y lo expone a Testcontainers con `DOCKER_HOST`. Si el runner no trae Podman, primero lo instala.
+   2. Ejecuta `mvn -B verify`: pruebas unitarias, pruebas de integración contra PostgreSQL y control de cobertura.
+   3. Si alguna prueba falla, publica el artefacto `test-reports` con los reportes de Surefire y Failsafe, que se descarga desde la página de la ejecución.
+   4. Publica el artefacto `build-artifacts` (la carpeta `target`) para el siguiente job.
+2. **SonarCloud analysis** descarga `build-artifacts` y analiza el código con la cobertura combinada de JaCoCo y los resultados de ambos tipos de prueba.
+
+### Publicación y despliegue
+
+El flujo completo es:
 
 1. Crea un pull request desde `quality` hacia `main`.
 2. Fusiona el pull request después de que las validaciones finalicen correctamente.
