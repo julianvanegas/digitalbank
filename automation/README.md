@@ -33,12 +33,6 @@ tiene frontend, las pruebas se ejecutan **a nivel de API**. Usa el patrón **Scr
    | `VERIFICATION_HMAC_SECRET` | Debe ser **el mismo** que usa el backend; sirve para recuperar los códigos 2FA | **obligatoria** |
    | `QA_ADMIN_EMAIL` | Correo del admin de pruebas | `admin.qa@example.com` |
    | `QA_ADMIN_PASSWORD` | Contraseña del admin de pruebas | `Admin#2026qa` |
-   | `ACCEPTANCE_CLIENT_EMAIL` | Cliente activo con cuentas para HU21 | **obligatoria para HU21** |
-   | `ACCEPTANCE_CLIENT_PASSWORD` | Contraseña del cliente de HU21 | **obligatoria para HU21** |
-   | `ACCEPTANCE_ORIGIN_ACCOUNT` | Cuenta de origen activa y con fondos | **obligatoria para HU21** |
-   | `ACCEPTANCE_DESTINATION_ACCOUNT` | Cuenta destino activa para transferencias | **obligatoria para transferencias** |
-   | `ACCEPTANCE_TRANSFER_AMOUNT` | Monto a transferir | `1.00` |
-   | `ACCEPTANCE_WITHDRAWAL_AMOUNT` | Monto a retirar | `1.00` |
    | `ACCEPTANCE_INACTIVITY_WAIT_MS` | Espera de HU04 CA02 en milisegundos | `301000` |
 
    En Windows, desde `automation/`, puedes cargar el `.env` de la raíz en la sesión actual con
@@ -55,16 +49,18 @@ tiene frontend, las pruebas se ejecutan **a nivel de API**. Usa el patrón **Scr
    ./gradlew test -Dcucumber.filter.tags="@HU03"
    ./gradlew test -Dcucumber.filter.tags="@HU04"
    ./gradlew test -Dcucumber.filter.tags="@HU21"
+   ./gradlew test -Dcucumber.filter.tags="@HU19 or @HU20"
    ./gradlew test --tests "*AutenticacionSesionTransaccionesRunner" -Dcucumber.execution.dry-run=true
    ./gradlew test -Dcucumber.filter.tags="@E2E"
    ```
 
-   En Windows usa `gradlew.bat`. Al terminar, la tarea `aggregate` genera el reporte automáticamente.
+   En Windows usa `gradlew.bat` y pon el filtro entre comillas simples, porque PowerShell corta el argumento en
+   el punto: `.\gradlew.bat test '-Dcucumber.filter.tags=@HU19'`. Al terminar, la tarea `aggregate` genera el reporte automáticamente.
 
 > Los códigos 2FA se recuperan leyendo `verification_challenges` en la base de QA y recalculando el HMAC.
 > Eso solo funciona en el ambiente local de pruebas; no apuntes la suite a un ambiente real.
-> HU21 usa el cliente y las cuentas indicadas por las variables `ACCEPTANCE_*`; las pruebas hacen movimientos
-> reales sobre la base de QA. Restablece el saldo entre ejecuciones si necesitas repetir el mismo flujo.
+> HU19, HU20, HU21 y el E2E crean su propio cliente y sus cuentas, y el saldo lo consigna el administrador; no
+> necesitan datos preparados a mano.
 > HU04 CA02 requiere iniciar el backend con `SESSION_INACTIVITY_TIMEOUT_MINUTES=5`; el escenario espera cinco
 > minutos y un segundo por defecto. No hagas peticiones protegidas durante esa espera.
 
@@ -92,12 +88,16 @@ automation/
     ├── main/java/co/edu/udea/certificacion/digitalbank
     │   ├── tasks/          Acciones de negocio: RegistrarCliente, ConfirmarCorreo, AprobarCliente,
     │   │                   CambiarEstadoDelCliente, IniciarSesion, ConfirmarSegundoFactor, CerrarSesion,
-    │   │                   IniciarRetiro, IniciarTransferencia, ConfirmarTransaccionCon2FA,
     │   │                   AutenticarseConDobleFactor, ConsultarCliente, ConsultarMiPerfil,
-    │   │                   PrepararClienteActivo (compuesta: cliente Activo listo para operar)
+    │   │                   RetirarDinero, TransferirFondos, ConfirmarTransaccion, ConsultarTransaccion,
+    │   │                   BloquearCuenta; compuestas: PrepararClienteActivo, RetirarConDobleFactor,
+    │   │                   TransferirConDobleFactor
+    │   │   └── provisional/ AbrirCuenta, RealizarConsignacion (se reemplazan por las de HU10 y HU18)
     │   ├── interactions/   Peticiones HTTP base: Get, Post, Patch (sobre PeticionHttp)
     │   ├── questions/      Verificaciones: CodigoDeRespuesta, MensajeDeError, EstadoDelCliente,
-    │   │                   ResultadoDelLogin, CampoDeLaRespuesta, CodigoDeVerificacion
+    │   │                   ResultadoDelLogin, CampoDeLaRespuesta, CodigoDeVerificacion,
+    │   │                   EstadoDeLaTransaccion, ComprobanteDeLaTransaccion
+    │   │   └── provisional/ SaldoDeLaCuenta (se reemplaza por la de HU12)
     │   ├── models/         DatosCliente (datos de prueba únicos)
     │   ├── integrations/   CodigosVerificacion (lee el código 2FA de la base de QA)
     │   └── utils/          ConfiguracionQa, Json, CodigoHmac
@@ -107,6 +107,7 @@ automation/
         └── resources
             ├── features/identidad/    registro_cliente, cambio_estado_cliente, inicio_sesion
             ├── features/seguridad-transacciones/ autenticacion_2fa, sesion, 2fa_transaccional
+            ├── features/transacciones/ retiros, transferencias, flujo_e2e
             └── sql/seed-admin.sql
 ```
 
@@ -116,8 +117,13 @@ automation/
 - "Cliente Activo listo para operar": `cliente.attemptsTo(PrepararClienteActivo.aprobadoPor(administrador))`
   registra al cliente, confirma su correo y lo aprueba. El administrador debe haber iniciado sesión antes.
 - Login completo con 2FA: `AutenticarseConDobleFactor` (deja el token en el actor).
+- Retiros y transferencias: `RetirarDinero` y `TransferirFondos` solo inician la operación y guardan su
+  referencia (`referenciaTransaccion`); `ConfirmarTransaccion` la confirma con el código recibido o con uno dado.
+  `RetirarConDobleFactor` y `TransferirConDobleFactor` hacen las dos cosas.
+- Cierre de sesión: `CerrarSesion` guarda el token que se usaba como `tokenAnterior`, para comprobar que el
+  backend lo rechaza.
 
-## Cobertura actual (identidad y acceso)
+## Cobertura actual
 
 | Historia | Criterios automatizados | Feature |
 |---|---|---|
@@ -126,11 +132,10 @@ automation/
 | HU02 Iniciar sesión | CA01, CA02, CA04, CA05, CA06, CA07, CA12 | `inicio_sesion.feature` |
 | HU03 Verificar identidad mediante 2FA | CA02, CA05, CA06 | `autenticacion_2fa.feature` |
 | HU04 Gestionar sesión | CA01, CA02 | `sesion.feature` |
+| HU19 Realizar retiro | CA01, CA02, CA04, CA05, CA07, CA08, CA09 | `retiros.feature` |
+| HU20 Realizar transferencia | CA01, CA02, CA03, CA04, CA07 | `transferencias.feature` |
 | HU21 2FA de transacciones | CA01, CA02, CA03 | `2fa_transaccional.feature` |
-
-Las descripciones detalladas de los criterios HU21 no venían en la guía compartida; esos escenarios reflejan el
-contrato actual de la API para código correcto, código incorrecto y agotamiento de intentos. Confirma su asignación
-a CA01/CA02/CA03 con el integrante responsable antes de considerarlos como aceptación final.
+| Flujo E2E | HU01 → HU08 → HU02/HU03 → HU10 → HU18 → HU12 → HU19 → HU20 → HU12 → HU04 | `flujo_e2e.feature` |
 
 ## Resultados y defectos conocidos
 

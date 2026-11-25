@@ -5,14 +5,14 @@ import static org.hamcrest.Matchers.equalTo;
 
 import co.edu.udea.certificacion.digitalbank.questions.CodigoDeRespuesta;
 import co.edu.udea.certificacion.digitalbank.tasks.ConsultarMiPerfil;
-import co.edu.udea.certificacion.digitalbank.tasks.CerrarSesion;
 import co.edu.udea.certificacion.digitalbank.tasks.provisional.RealizarConsignacion;
 import io.cucumber.java.es.Cuando;
 import io.cucumber.java.es.Entonces;
 import net.serenitybdd.screenplay.Actor;
 
 /**
- * Pasos propios del flujo E2E (@E2E). El resto del flujo reutiliza los pasos de HU01, HU02, HU08, HU19 y HU20.
+ * Pasos propios del flujo E2E (@E2E). El resto del flujo reutiliza los pasos de HU01, HU02, HU04, HU08, HU19 y
+ * HU20 (el cierre de sesión y el rechazo del token anterior son los de HU04).
  */
 public class FlujoE2EStepDefinitions {
 
@@ -29,20 +29,6 @@ public class FlujoE2EStepDefinitions {
         String cuenta = Actores.cliente().recall(TransaccionesStepDefinitions.CUENTA_ORIGEN);
         administrador.attemptsTo(RealizarConsignacion.enLaCuenta(cuenta, monto));
         administrador.should(seeThat(CodigoDeRespuesta.delServidor(), equalTo(201)));
-    }
-
-    @Cuando("cierra la sesión")
-    public void cierraLaSesion() {
-        Actor cliente = Actores.cliente();
-        cliente.attemptsTo(CerrarSesion.ahora());
-        cliente.should(seeThat(CodigoDeRespuesta.delServidor(), equalTo(204)));
-    }
-
-    @Entonces("su token anterior es rechazado")
-    public void tokenAnteriorRechazado() {
-        Actor cliente = Actores.cliente();
-        cliente.attemptsTo(ConsultarMiPerfil.conToken(cliente.recall("tokenAnterior")));
-        cliente.should(seeThat(CodigoDeRespuesta.delServidor(), equalTo(401)));
     }
 
     @Entonces("para volver a entrar debe autenticarse de nuevo")

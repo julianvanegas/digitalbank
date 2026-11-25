@@ -38,5 +38,5 @@ Característica: Flujo E2E del cliente del banco digital
     Y el saldo de la cuenta de destino es 300000 pesos
     # HU04: cierre de sesión
     Cuando cierra la sesión
-    Entonces su token anterior es rechazado
+    Entonces el token anterior es rechazado
     Y para volver a entrar debe autenticarse de nuevo
