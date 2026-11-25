@@ -1,19 +1,22 @@
 package co.edu.udea.certificacion.digitalbank.stepdefinitions;
 
 import static net.serenitybdd.screenplay.GivenWhenThen.seeThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.hamcrest.Matchers.nullValue;
 
 import co.edu.udea.certificacion.digitalbank.integrations.CodigosVerificacion.Proposito;
 import co.edu.udea.certificacion.digitalbank.models.DatosCliente;
+import co.edu.udea.certificacion.digitalbank.questions.CampoDeLaRespuesta;
 import co.edu.udea.certificacion.digitalbank.questions.CodigoDeRespuesta;
 import co.edu.udea.certificacion.digitalbank.questions.CodigoDeVerificacion;
 import co.edu.udea.certificacion.digitalbank.questions.EstadoDeLaTransaccion;
+import co.edu.udea.certificacion.digitalbank.questions.MensajeDeError;
 import co.edu.udea.certificacion.digitalbank.tasks.CerrarSesion;
 import co.edu.udea.certificacion.digitalbank.tasks.ConfirmarSegundoFactor;
 import co.edu.udea.certificacion.digitalbank.tasks.ConfirmarTransaccion;
 import co.edu.udea.certificacion.digitalbank.tasks.ConsultarMiPerfil;
+import co.edu.udea.certificacion.digitalbank.tasks.ConsultarMisCuentas;
 import co.edu.udea.certificacion.digitalbank.tasks.ConsultarTransaccion;
 import co.edu.udea.certificacion.digitalbank.tasks.IniciarSesion;
 import co.edu.udea.certificacion.digitalbank.tasks.RetirarDinero;
@@ -35,6 +38,9 @@ public class AutenticacionSesionTransaccionesStepDefinitions {
     /** Monto de las transacciones pendientes de HU21: basta con que sea menor que el saldo preparado. */
     private static final long MONTO_TRANSACCION = 10000;
 
+    private static final String CODIGO_INVALIDO = "Código de verificación inválido o expirado";
+    private static final String SESION_INVALIDA = "Autenticación requerida";
+
     // ---------- HU03: segundo factor del login ----------
 
     @Dado("que el cliente activo inició sesión y recibió el código 2FA")
@@ -53,14 +59,31 @@ public class AutenticacionSesionTransaccionesStepDefinitions {
         cliente.attemptsTo(ConfirmarSegundoFactor.conCodigo(cliente.recall("codigoLogin")));
     }
 
-    @Cuando("ingresa tres códigos incorrectos y luego intenta verificar de nuevo")
+    @Cuando("ingresa un código incorrecto de acceso")
+    public void ingresaCodigoIncorrecto() {
+        Actor cliente = Actores.cliente();
+        cliente.attemptsTo(ConfirmarSegundoFactor.conCodigo(codigoIncorrecto(0, cliente.recall("codigoLogin"))));
+    }
+
+    @Cuando("ingresa tres códigos incorrectos de acceso")
     public void agotarIntentosLogin() {
         Actor cliente = Actores.cliente();
         String codigoValido = cliente.recall("codigoLogin");
-        for (int intento = 0; intento < 4; intento++) {
+        for (int intento = 0; intento < 3; intento++) {
             cliente.attemptsTo(ConfirmarSegundoFactor.conCodigo(codigoIncorrecto(intento, codigoValido)));
             cliente.should(seeThat(CodigoDeRespuesta.delServidor(), equalTo(400)));
         }
+    }
+
+    @Cuando("intenta verificar con el código correcto")
+    public void verificaConElCodigoCorrecto() {
+        Actor cliente = Actores.cliente();
+        cliente.attemptsTo(ConfirmarSegundoFactor.conCodigo(cliente.recall("codigoLogin")));
+    }
+
+    @Cuando("intenta consultar su perfil sin completar el segundo factor")
+    public void consultaPerfilSinSegundoFactor() {
+        Actores.cliente().attemptsTo(ConsultarMiPerfil.conToken(""));
     }
 
     @Cuando("intenta utilizar por segunda vez el mismo código de acceso")
@@ -71,25 +94,24 @@ public class AutenticacionSesionTransaccionesStepDefinitions {
 
     @Entonces("el cliente puede acceder a sus cuentas")
     public void clientePuedeAcceder() {
-        Actor cliente = Actores.cliente();
-        assertNotNull("El login no dejó un token de sesión", cliente.recall("token"));
-        cliente.attemptsTo(ConsultarMiPerfil.conToken(cliente.recall("token")));
-        cliente.should(seeThat(CodigoDeRespuesta.delServidor(), equalTo(200)));
+        Preparacion.verificarQueSuSesionEsValida(Actores.cliente());
     }
 
-    @Entonces("el código de acceso queda invalidado y no se crea una sesión")
+    @Entonces("el código de acceso es rechazado y no se crea una sesión")
     public void codigoLoginInvalidado() {
-        Actor cliente = Actores.cliente();
-        cliente.should(seeThat(CodigoDeRespuesta.delServidor(), equalTo(400)));
-        assertNull("No debió crearse una sesión", cliente.recall("token"));
+        Actores.cliente().should(
+                seeThat(CodigoDeRespuesta.delServidor(), equalTo(400)),
+                seeThat(MensajeDeError.delServidor(), containsString(CODIGO_INVALIDO)),
+                seeThat(CampoDeLaRespuesta.llamado("token"), nullValue()));
     }
 
     @Entonces("el segundo uso del código es rechazado sin invalidar la sesión ya creada")
     public void codigoReutilizadoRechazado() {
         Actor cliente = Actores.cliente();
-        cliente.should(seeThat(CodigoDeRespuesta.delServidor(), equalTo(400)));
-        cliente.attemptsTo(ConsultarMiPerfil.conToken(cliente.recall("token")));
-        cliente.should(seeThat(CodigoDeRespuesta.delServidor(), equalTo(200)));
+        cliente.should(
+                seeThat(CodigoDeRespuesta.delServidor(), equalTo(400)),
+                seeThat(MensajeDeError.delServidor(), containsString(CODIGO_INVALIDO)));
+        Preparacion.verificarQueSuSesionEsValida(cliente);
     }
 
     // ---------- HU04: sesión ----------
@@ -116,11 +138,45 @@ public class AutenticacionSesionTransaccionesStepDefinitions {
         }
     }
 
+    @Cuando("inicia sesión de nuevo con doble factor")
+    public void iniciaSesionDeNuevo() {
+        Preparacion.iniciarSesion(Actores.cliente());
+    }
+
+    @Cuando("consulta su perfil con su sesión")
+    public void consultaPerfilConSuSesion() {
+        Actor cliente = Actores.cliente();
+        cliente.attemptsTo(ConsultarMiPerfil.conToken(cliente.recall("token")));
+    }
+
+    @Cuando("intenta consultar sus cuentas con la sesión anterior")
+    public void consultaCuentasConSesionAnterior() {
+        Actor cliente = Actores.cliente();
+        cliente.attemptsTo(ConsultarMisCuentas.conToken(cliente.recall("tokenAnterior")));
+    }
+
+    @Entonces("recibe los datos de su propio perfil")
+    public void recibeSuPerfil() {
+        Actor cliente = Actores.cliente();
+        DatosCliente datos = cliente.recall("cliente");
+        cliente.should(
+                seeThat(CodigoDeRespuesta.delServidor(), equalTo(200)),
+                seeThat(CampoDeLaRespuesta.llamado("email"), equalTo(datos.correo())),
+                seeThat(CampoDeLaRespuesta.llamado("documentNumber"), equalTo(datos.numeroDocumento())));
+    }
+
+    @Entonces("su sesión es válida")
+    public void suSesionEsValida() {
+        Preparacion.verificarQueSuSesionEsValida(Actores.cliente());
+    }
+
     @Entonces("el token anterior es rechazado")
     public void tokenAnteriorRechazado() {
         Actor cliente = Actores.cliente();
         cliente.attemptsTo(ConsultarMiPerfil.conToken(cliente.recall("tokenAnterior")));
-        cliente.should(seeThat(CodigoDeRespuesta.delServidor(), equalTo(401)));
+        cliente.should(
+                seeThat(CodigoDeRespuesta.delServidor(), equalTo(401)),
+                seeThat(MensajeDeError.delServidor(), containsString(SESION_INVALIDA)));
     }
 
     // ---------- HU21: segundo factor de retiros y transferencias ----------

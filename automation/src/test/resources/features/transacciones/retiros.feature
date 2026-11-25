@@ -17,8 +17,7 @@ Característica: HU19 Realizar retiro
   Escenario: CA01 Retiro exitoso
     Dado tiene una cuenta con saldo de 500000 pesos
     Cuando retira 100000 pesos y confirma con el código de verificación
-    Entonces recibe el comprobante de la operación
-    Y la transacción queda en estado "COMPLETED"
+    Entonces recibe el comprobante del retiro por 100000 pesos
     Y el saldo de la cuenta de origen es 400000 pesos
 
   @CA02

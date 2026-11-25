@@ -8,11 +8,9 @@ import net.serenitybdd.screenplay.Task;
 import net.serenitybdd.screenplay.Tasks;
 
 /**
- * HU10: el cliente autenticado abre una cuenta de ahorros.
- *
- * La apertura del cliente no requiere cuerpo en la petición.
- * Cuando la creación es exitosa, se conservan en la memoria del actor
- * los datos de la cuenta para reutilizarlos en otros escenarios y en el E2E.
+ * HU10: el cliente autenticado abre una cuenta de ahorros; la petición no lleva cuerpo. Si se crea (201), el número
+ * queda en la memoria del actor como {@code ultimaCuenta} para usarla en los pasos siguientes. Lo demás de la cuenta
+ * (llave, estado) se verifica con preguntas sobre la respuesta.
  */
 public class AbrirCuenta implements Task {
 
@@ -25,31 +23,9 @@ public class AbrirCuenta implements Task {
     @Override
     @Step("{0} abre una cuenta de ahorros")
     public <T extends Actor> void performAs(T actor) {
-
-        actor.attemptsTo(
-                Post.en(ENDPOINT, "", actor.recall("token"))
-        );
-
+        actor.attemptsTo(Post.en(ENDPOINT, "", actor.recall("token")));
         if (SerenityRest.lastResponse().statusCode() == 201) {
-
-            String numeroCuenta =
-                    SerenityRest.lastResponse()
-                            .jsonPath()
-                            .getString("accountNumber");
-
-            String llaveCuenta =
-                    SerenityRest.lastResponse()
-                            .jsonPath()
-                            .getString("accountKey");
-
-            String estadoCuenta =
-                    SerenityRest.lastResponse()
-                            .jsonPath()
-                            .getString("status");
-
-            actor.remember("ultimaCuenta", numeroCuenta);
-            actor.remember("ultimaLlaveCuenta", llaveCuenta);
-            actor.remember("ultimoEstadoCuenta", estadoCuenta);
+            actor.remember("ultimaCuenta", SerenityRest.lastResponse().jsonPath().getString("accountNumber"));
         }
     }
 }
