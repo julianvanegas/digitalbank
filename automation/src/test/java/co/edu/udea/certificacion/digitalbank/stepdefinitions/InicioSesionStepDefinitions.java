@@ -1,6 +1,7 @@
 package co.edu.udea.certificacion.digitalbank.stepdefinitions;
 
 import static net.serenitybdd.screenplay.GivenWhenThen.seeThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
@@ -97,14 +98,13 @@ public class InicioSesionStepDefinitions {
         Actor cliente = Actores.cliente();
         String tokenAnterior = cliente.recall("tokenAnterior");
         cliente.attemptsTo(ConsultarMiPerfil.conToken(tokenAnterior));
-        cliente.should(seeThat(CodigoDeRespuesta.delServidor(), equalTo(401)));
+        cliente.should(
+                seeThat(CodigoDeRespuesta.delServidor(), equalTo(401)),
+                seeThat(MensajeDeError.delServidor(), containsString("Autenticación requerida")));
     }
 
     @Entonces("la nueva sesión sigue vigente")
     public void laNuevaSesionSigueVigente() {
-        Actor cliente = Actores.cliente();
-        String token = cliente.recall("token");
-        cliente.attemptsTo(ConsultarMiPerfil.conToken(token));
-        cliente.should(seeThat(CodigoDeRespuesta.delServidor(), equalTo(200)));
+        Preparacion.verificarQueSuSesionEsValida(Actores.cliente());
     }
 }
