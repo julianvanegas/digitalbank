@@ -12,7 +12,7 @@ import net.serenitybdd.screenplay.Tasks;
 
 /**
  * HU21: confirma la transacción pendiente (retiro o transferencia) que está en la memoria del actor
- * ({@code referencia}). El backend usa el mismo endpoint para los dos tipos.
+ * ({@code referenciaTransaccion}). El backend usa el mismo endpoint para los dos tipos.
  *
  * <p>{@link #conElCodigoRecibido()} lee de la base de QA el código enviado al correo del actor;
  * {@link #conElCodigo(String)} envía el código indicado, para probar códigos incorrectos.
@@ -38,7 +38,7 @@ public class ConfirmarTransaccion implements Task {
     @Override
     @Step("{0} confirma la transacción con el código de verificación")
     public <T extends Actor> void performAs(T actor) {
-        String referencia = actor.recall("referencia");
+        String referencia = actor.recall("referenciaTransaccion");
         String codigoAEnviar = codigo.isBlank()
                 ? actor.asksFor(CodigoDeVerificacion.enviadoA(actor.recall("correoSesion"), Proposito.TRANSACTION))
                 : codigo;

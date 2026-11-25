@@ -40,7 +40,7 @@ public class TransferirFondos implements Task {
         cuerpo.put("amount", monto);
         actor.attemptsTo(Post.en("/api/v1/transactions/transfers", Json.objeto(cuerpo), actor.recall("token")));
         if (SerenityRest.lastResponse().statusCode() == 201) {
-            actor.remember("referencia", SerenityRest.lastResponse().jsonPath().getString("reference"));
+            actor.remember("referenciaTransaccion", SerenityRest.lastResponse().jsonPath().getString("reference"));
         }
     }
 }

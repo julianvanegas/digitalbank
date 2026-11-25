@@ -5,7 +5,7 @@ Característica: Gestionar la sesión autenticada
   Antecedentes:
     Dado que el administrador inició sesión en el banco
     Y que existe un cliente activo
-    Y que el cliente activo completó la autenticación de doble factor
+    Y el cliente inició sesión con doble factor
 
   @CA01
   Escenario: Rechazar el token después del cierre manual de sesión
