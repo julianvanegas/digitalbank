@@ -61,6 +61,9 @@ tasks.named('test') {
     if (System.getProperty('cucumber.filter.tags')) {
         systemProperty 'cucumber.filter.tags', System.getProperty('cucumber.filter.tags')
     }
+    if (System.getProperty('cucumber.execution.dry-run') != null) {
+        systemProperty 'cucumber.execution.dry-run', System.getProperty('cucumber.execution.dry-run')
+    }
     testLogging { events 'passed', 'failed', 'skipped' }
     finalizedBy 'aggregate'
 }
