@@ -7,7 +7,7 @@ tiene frontend, las pruebas se ejecutan **a nivel de API**. Usa el patrón **Scr
 
 ## Requisitos
 
-- Java 17 o superior.
+- JDK 17 a 22 (validado con JDK 21; Gradle Wrapper 8.9 no funciona con JDK 27).
 - No hace falta instalar Gradle: se usa el wrapper (`gradlew` / `gradlew.bat`).
 - PostgreSQL con la base de QA (`bank_qa`), la misma que usa el backend.
 - El backend de DigitalBank en ejecución (por defecto en `http://localhost:8080`).
@@ -33,6 +33,13 @@ tiene frontend, las pruebas se ejecutan **a nivel de API**. Usa el patrón **Scr
    | `VERIFICATION_HMAC_SECRET` | Debe ser **el mismo** que usa el backend; sirve para recuperar los códigos 2FA | **obligatoria** |
    | `QA_ADMIN_EMAIL` | Correo del admin de pruebas | `admin.qa@example.com` |
    | `QA_ADMIN_PASSWORD` | Contraseña del admin de pruebas | `Admin#2026qa` |
+   | `ACCEPTANCE_CLIENT_EMAIL` | Cliente activo con cuentas para HU21 | **obligatoria para HU21** |
+   | `ACCEPTANCE_CLIENT_PASSWORD` | Contraseña del cliente de HU21 | **obligatoria para HU21** |
+   | `ACCEPTANCE_ORIGIN_ACCOUNT` | Cuenta de origen activa y con fondos | **obligatoria para HU21** |
+   | `ACCEPTANCE_DESTINATION_ACCOUNT` | Cuenta destino activa para transferencias | **obligatoria para transferencias** |
+   | `ACCEPTANCE_TRANSFER_AMOUNT` | Monto a transferir | `1.00` |
+   | `ACCEPTANCE_WITHDRAWAL_AMOUNT` | Monto a retirar | `1.00` |
+   | `ACCEPTANCE_INACTIVITY_WAIT_MS` | Espera de HU04 CA02 en milisegundos | `301000` |
 
    En Windows, desde `automation/`, puedes cargar el `.env` de la raíz en la sesión actual con
    `.\cargar-env.ps1`.
@@ -45,6 +52,10 @@ tiene frontend, las pruebas se ejecutan **a nivel de API**. Usa el patrón **Scr
    # Solo una historia, un criterio o el E2E (por etiqueta)
    ./gradlew test -Dcucumber.filter.tags="@HU02"
    ./gradlew test -Dcucumber.filter.tags="@HU02 and @CA05"
+   ./gradlew test -Dcucumber.filter.tags="@HU03"
+   ./gradlew test -Dcucumber.filter.tags="@HU04"
+   ./gradlew test -Dcucumber.filter.tags="@HU21"
+   ./gradlew test --tests "*AutenticacionSesionTransaccionesRunner" -Dcucumber.execution.dry-run=true
    ./gradlew test -Dcucumber.filter.tags="@E2E"
    ```
 
@@ -52,6 +63,10 @@ tiene frontend, las pruebas se ejecutan **a nivel de API**. Usa el patrón **Scr
 
 > Los códigos 2FA se recuperan leyendo `verification_challenges` en la base de QA y recalculando el HMAC.
 > Eso solo funciona en el ambiente local de pruebas; no apuntes la suite a un ambiente real.
+> HU21 usa el cliente y las cuentas indicadas por las variables `ACCEPTANCE_*`; las pruebas hacen movimientos
+> reales sobre la base de QA. Restablece el saldo entre ejecuciones si necesitas repetir el mismo flujo.
+> HU04 CA02 requiere iniciar el backend con `SESSION_INACTIVITY_TIMEOUT_MINUTES=5`; el escenario espera cinco
+> minutos y un segundo por defecto. No hagas peticiones protegidas durante esa espera.
 
 ## Reporte de resultados
 
@@ -76,7 +91,8 @@ automation/
 └── src
     ├── main/java/co/edu/udea/certificacion/digitalbank
     │   ├── tasks/          Acciones de negocio: RegistrarCliente, ConfirmarCorreo, AprobarCliente,
-    │   │                   CambiarEstadoDelCliente, IniciarSesion, ConfirmarSegundoFactor,
+    │   │                   CambiarEstadoDelCliente, IniciarSesion, ConfirmarSegundoFactor, CerrarSesion,
+    │   │                   IniciarRetiro, IniciarTransferencia, ConfirmarTransaccionCon2FA,
     │   │                   AutenticarseConDobleFactor, ConsultarCliente, ConsultarMiPerfil,
     │   │                   PrepararClienteActivo (compuesta: cliente Activo listo para operar)
     │   ├── interactions/   Peticiones HTTP base: Get, Post, Patch (sobre PeticionHttp)
@@ -90,6 +106,7 @@ automation/
         ├── java/.../stepdefinitions/  Actores, Hooks, pasos comunes y pasos por historia
         └── resources
             ├── features/identidad/    registro_cliente, cambio_estado_cliente, inicio_sesion
+            ├── features/seguridad-transacciones/ autenticacion_2fa, sesion, 2fa_transaccional
             └── sql/seed-admin.sql
 ```
 
@@ -107,6 +124,13 @@ automation/
 | HU01 Registrar cliente | CA01, CA03, CA05, CA07, CA09, CA10 | `registro_cliente.feature` |
 | HU08 Cambiar estado de cliente | CA01, CA02, CA05, CA06 | `cambio_estado_cliente.feature` |
 | HU02 Iniciar sesión | CA01, CA02, CA04, CA05, CA06, CA07, CA12 | `inicio_sesion.feature` |
+| HU03 Verificar identidad mediante 2FA | CA02, CA05, CA06 | `autenticacion_2fa.feature` |
+| HU04 Gestionar sesión | CA01, CA02 | `sesion.feature` |
+| HU21 2FA de transacciones | CA01, CA02, CA03 | `2fa_transaccional.feature` |
+
+Las descripciones detalladas de los criterios HU21 no venían en la guía compartida; esos escenarios reflejan el
+contrato actual de la API para código correcto, código incorrecto y agotamiento de intentos. Confirma su asignación
+a CA01/CA02/CA03 con el integrante responsable antes de considerarlos como aceptación final.
 
 ## Resultados y defectos conocidos
 
