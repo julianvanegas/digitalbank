@@ -1,4 +1,4 @@
-package co.edu.udea.certificacion.digitalbank.tasks.provisional;
+package co.edu.udea.certificacion.digitalbank.tasks;
 
 import co.edu.udea.certificacion.digitalbank.interactions.Post;
 import co.edu.udea.certificacion.digitalbank.utils.Json;
@@ -10,10 +10,12 @@ import net.serenitybdd.screenplay.Task;
 import net.serenitybdd.screenplay.Tasks;
 
 /**
- * PROVISIONAL (HU18, de C): el administrador consigna un monto en una cuenta. No pide segundo factor ni tiene topes.
- * Cuando C integre su tarea RealizarConsignacion, se borra este paquete y se cambian los imports.
+ * HU18: consigna un monto en una cuenta con el token de quien la ejecuta (debe ser un administrador para que el
+ * backend la acepte). El comprobante se verifica con preguntas sobre la respuesta.
  */
 public class RealizarConsignacion implements Task {
+
+    private static final String ENDPOINT = "/api/v1/transactions/deposits";
 
     private final String cuenta;
     private final long monto;
@@ -33,6 +35,6 @@ public class RealizarConsignacion implements Task {
         Map<String, Object> cuerpo = new LinkedHashMap<>();
         cuerpo.put("receiverAccountNumber", cuenta);
         cuerpo.put("amount", monto);
-        actor.attemptsTo(Post.en("/api/v1/transactions/deposits", Json.objeto(cuerpo), actor.recall("token")));
+        actor.attemptsTo(Post.en(ENDPOINT, Json.objeto(cuerpo), actor.recall("token")));
     }
 }

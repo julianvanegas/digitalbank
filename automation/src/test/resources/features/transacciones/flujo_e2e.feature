@@ -25,14 +25,15 @@ Característica: Flujo E2E del cliente del banco digital
     Y abre dos cuentas de ahorros
     # HU18 y HU12: consignación del administrador y verificación del saldo
     Y el administrador consigna 1000000 pesos en la cuenta de origen
-    Entonces el saldo de la cuenta de origen es 1000000 pesos
+    Entonces recibe el comprobante de la consignación por 1000000 pesos
+    Y el saldo de la cuenta de origen es 1000000 pesos
     # HU19 y HU21: retiro con segundo factor
     Cuando retira 200000 pesos y confirma con el código de verificación
-    Entonces la transacción queda en estado "COMPLETED"
+    Entonces recibe el comprobante del retiro por 200000 pesos
     Y el saldo de la cuenta de origen es 800000 pesos
     # HU20 y HU21: transferencia con segundo factor
     Cuando transfiere 300000 pesos a su otra cuenta y confirma con el código de verificación
-    Entonces la transacción queda en estado "COMPLETED"
+    Entonces recibe el comprobante de la transferencia por 300000 pesos
     # HU12: saldos finales
     Y el saldo de la cuenta de origen es 500000 pesos
     Y el saldo de la cuenta de destino es 300000 pesos

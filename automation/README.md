@@ -33,7 +33,7 @@ tiene frontend, las pruebas se ejecutan **a nivel de API**. Usa el patrón **Scr
    | `VERIFICATION_HMAC_SECRET` | Debe ser **el mismo** que usa el backend; sirve para recuperar los códigos 2FA | **obligatoria** |
    | `QA_ADMIN_EMAIL` | Correo del admin de pruebas | `admin.qa@example.com` |
    | `QA_ADMIN_PASSWORD` | Contraseña del admin de pruebas | `Admin#2026qa` |
-   | `ACCEPTANCE_INACTIVITY_WAIT_MS` | Espera de HU04 CA02 en milisegundos | `301000` |
+   | `ACCEPTANCE_INACTIVITY_WAIT_MS` | Espera de HU04 CA06 en milisegundos | `301000` |
 
    En Windows, desde `automation/`, puedes cargar el `.env` de la raíz en la sesión actual con
    `.\cargar-env.ps1`.
@@ -49,6 +49,7 @@ tiene frontend, las pruebas se ejecutan **a nivel de API**. Usa el patrón **Scr
    ./gradlew test -Dcucumber.filter.tags="@HU03"
    ./gradlew test -Dcucumber.filter.tags="@HU04"
    ./gradlew test -Dcucumber.filter.tags="@HU21"
+   ./gradlew test -Dcucumber.filter.tags="@HU10 or @HU12 or @HU18"
    ./gradlew test -Dcucumber.filter.tags="@HU19 or @HU20"
    ./gradlew test --tests "*AutenticacionSesionTransaccionesRunner" -Dcucumber.execution.dry-run=true
    ./gradlew test -Dcucumber.filter.tags="@E2E"
@@ -61,7 +62,7 @@ tiene frontend, las pruebas se ejecutan **a nivel de API**. Usa el patrón **Scr
 > Eso solo funciona en el ambiente local de pruebas; no apuntes la suite a un ambiente real.
 > HU19, HU20, HU21 y el E2E crean su propio cliente y sus cuentas, y el saldo lo consigna el administrador; no
 > necesitan datos preparados a mano.
-> HU04 CA02 requiere iniciar el backend con `SESSION_INACTIVITY_TIMEOUT_MINUTES=5`; el escenario espera cinco
+> HU04 CA06 requiere iniciar el backend con `SESSION_INACTIVITY_TIMEOUT_MINUTES=5`; el escenario espera cinco
 > minutos y un segundo por defecto. No hagas peticiones protegidas durante esa espera.
 
 ## Reporte de resultados
@@ -77,6 +78,12 @@ escenarios por historia (`@HUxx`) y por criterio (`@CAxx`), y cada petición HTT
 - **Cada tarea hace una sola acción de negocio**; las verificaciones van en **preguntas**, no dentro de las
   tareas. Las tareas compuestas solo encadenan otras tareas.
 - Cada escenario crea sus propios datos (documento y correo únicos), por lo que no depende de otros.
+- **Se valida el contenido, no solo que algo exista**: código HTTP exacto y mensaje en los rechazos; tipo, monto,
+  cuentas, estado y referencia en los comprobantes; correo en el perfil; formato en el número y la llave de cuenta.
+  Nunca `not(equalTo(201))` ni un texto genérico como "cuenta".
+- Todas las verificaciones usan `seeThat` con preguntas, para que aparezcan como pasos en el reporte de Serenity.
+- Las preparaciones que se repiten (cliente activo, inicio de sesión, cuenta con saldo) están en `Preparacion` y las
+  usan todas las clases de pasos.
 
 ## Estructura
 
@@ -90,23 +97,27 @@ automation/
     │   │                   CambiarEstadoDelCliente, IniciarSesion, ConfirmarSegundoFactor, CerrarSesion,
     │   │                   AutenticarseConDobleFactor, ConsultarCliente, ConsultarMiPerfil,
     │   │                   RetirarDinero, TransferirFondos, ConfirmarTransaccion, ConsultarTransaccion,
-    │   │                   BloquearCuenta; compuestas: PrepararClienteActivo, RetirarConDobleFactor,
-    │   │                   TransferirConDobleFactor
-    │   │   └── provisional/ AbrirCuenta, RealizarConsignacion (se reemplazan por las de HU10 y HU18)
+    │   │                   BloquearCuenta, AbrirCuenta, RealizarConsignacion, ConsultarSaldo,
+    │   │                   ConsultarCuentasDelCliente; compuestas: PrepararClienteActivo, CuentaAbiertaConSaldo,
+    │   │                   RetirarConDobleFactor, TransferirConDobleFactor
     │   ├── interactions/   Peticiones HTTP base: Get, Post, Patch (sobre PeticionHttp)
     │   ├── questions/      Verificaciones: CodigoDeRespuesta, MensajeDeError, EstadoDelCliente,
     │   │                   ResultadoDelLogin, CampoDeLaRespuesta, CodigoDeVerificacion,
-    │   │                   EstadoDeLaTransaccion, ComprobanteDeLaTransaccion
-    │   │   └── provisional/ SaldoDeLaCuenta (se reemplaza por la de HU12)
+    │   │                   EstadoDeLaTransaccion, ComprobanteDeLaTransaccion, MontoDeLaTransaccion,
+    │   │                   SaldoDeLaCuenta, NumeroDeCuenta, LlaveDeLaCuenta, CantidadDeCuentas
     │   ├── models/         DatosCliente (datos de prueba únicos)
     │   ├── integrations/   CodigosVerificacion (lee el código 2FA de la base de QA)
-    │   └── utils/          ConfiguracionQa, Json, CodigoHmac
+    │   └── utils/          ConfiguracionQa, EntornoQa, Json, CodigoHmac, RespuestaJson (campos de la respuesta,
+    │                       con números exactos)
     └── test
         ├── java/.../runners/          Runners por etiqueta
-        ├── java/.../stepdefinitions/  Actores, Hooks, pasos comunes y pasos por historia
+        ├── java/.../stepdefinitions/  Actores, Hooks, Preparacion (preparaciones compartidas), pasos comunes y
+        │                              pasos por historia
+        ├── java/.../matchers/         CoincideCon (formato con expresión regular)
         └── resources
             ├── features/identidad/    registro_cliente, cambio_estado_cliente, inicio_sesion
             ├── features/seguridad-transacciones/ autenticacion_2fa, sesion, 2fa_transaccional
+            ├── features/cuentas/      abrir_cuenta, consultar_saldo, realizar_consignacion
             ├── features/transacciones/ retiros, transferencias, flujo_e2e
             └── sql/seed-admin.sql
 ```
@@ -130,8 +141,11 @@ automation/
 | HU01 Registrar cliente | CA01, CA03, CA05, CA07, CA09, CA10 | `registro_cliente.feature` |
 | HU08 Cambiar estado de cliente | CA01, CA02, CA05, CA06 | `cambio_estado_cliente.feature` |
 | HU02 Iniciar sesión | CA01, CA02, CA04, CA05, CA06, CA07, CA12 | `inicio_sesion.feature` |
-| HU03 Verificar identidad mediante 2FA | CA02, CA05, CA06 | `autenticacion_2fa.feature` |
-| HU04 Gestionar sesión | CA01, CA02 | `sesion.feature` |
+| HU03 Verificar identidad mediante 2FA | CA02, CA05, CA06, CA09, CA13 | `autenticacion_2fa.feature` |
+| HU04 Gestionar sesión | CA01, CA02, CA06 (`@lento`), CA07, CA09, CA11 | `sesion.feature` |
+| HU10 Abrir cuenta de ahorros | CA01, CA03, CA05, CA06, CA07 | `abrir_cuenta.feature` |
+| HU12 Consultar saldo | CA01, CA03, CA05 | `consultar_saldo.feature` |
+| HU18 Realizar consignación | CA01, CA02, CA03, CA05, CA07 | `realizar_consignacion.feature` |
 | HU19 Realizar retiro | CA01, CA02, CA04, CA05, CA07, CA08, CA09 | `retiros.feature` |
 | HU20 Realizar transferencia | CA01, CA02, CA03, CA04, CA07 | `transferencias.feature` |
 | HU21 2FA de transacciones | CA01, CA02, CA03 | `2fa_transaccional.feature` |
@@ -139,8 +153,11 @@ automation/
 
 ## Resultados y defectos conocidos
 
-Última ejecución de identidad y acceso (22-nov-2026): 17 escenarios, 21 casos de prueba; 20 pasan y 1 falla.
+Última ejecución de la suite completa: ver el reporte de Serenity. Fallas esperadas, todas por defectos del backend
+(la prueba sigue lo que pide la historia y no se ajusta al código):
 
 | Criterio | Resultado | Detalle |
 |---|---|---|
 | HU02 CA04 | Falla | Tras 3 contraseñas incorrectas, el login con la contraseña correcta responde 403. El backend bloquea al **tercer** intento fallido (`UserStatusService`, `MAX_FAILED_ATTEMPTS = 3` con `>=`); la historia pide bloquear al **cuarto**. Registrado en el informe de defectos como HU02 CA04 y CA05. |
+| HU10 CA01 y CA05 | Falla | La historia exige un número de cuenta de **11** dígitos; el backend genera **12**. |
+| HU10 CA01 (llave) | Falla oculta | La historia pide la llave en minúsculas; el backend la genera en mayúsculas. CA01 se detiene antes, en el número; esta verificación fallará cuando se corrija el número. |

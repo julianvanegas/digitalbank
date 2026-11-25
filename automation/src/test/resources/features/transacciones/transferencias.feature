@@ -18,8 +18,7 @@ Característica: HU20 Realizar transferencia entre cuentas
   @CA01
   Escenario: CA01 Transferencia exitosa entre cuentas del mismo banco
     Cuando transfiere 200000 pesos a su otra cuenta y confirma con el código de verificación
-    Entonces recibe el comprobante de la operación
-    Y la transacción queda en estado "COMPLETED"
+    Entonces recibe el comprobante de la transferencia por 200000 pesos
     Y el saldo de la cuenta de origen es 300000 pesos
     Y el saldo de la cuenta de destino es 200000 pesos
 
