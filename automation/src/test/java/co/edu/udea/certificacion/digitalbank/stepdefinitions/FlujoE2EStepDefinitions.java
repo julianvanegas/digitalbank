@@ -5,7 +5,7 @@ import static org.hamcrest.Matchers.equalTo;
 
 import co.edu.udea.certificacion.digitalbank.questions.CodigoDeRespuesta;
 import co.edu.udea.certificacion.digitalbank.tasks.ConsultarMiPerfil;
-import co.edu.udea.certificacion.digitalbank.tasks.provisional.RealizarConsignacion;
+import co.edu.udea.certificacion.digitalbank.tasks.RealizarConsignacion;
 import io.cucumber.java.es.Cuando;
 import io.cucumber.java.es.Entonces;
 import net.serenitybdd.screenplay.Actor;

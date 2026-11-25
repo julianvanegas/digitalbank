@@ -49,6 +49,7 @@ tiene frontend, las pruebas se ejecutan **a nivel de API**. Usa el patrón **Scr
    ./gradlew test -Dcucumber.filter.tags="@HU03"
    ./gradlew test -Dcucumber.filter.tags="@HU04"
    ./gradlew test -Dcucumber.filter.tags="@HU21"
+   ./gradlew test -Dcucumber.filter.tags="@HU10 or @HU12 or @HU18"
    ./gradlew test -Dcucumber.filter.tags="@HU19 or @HU20"
    ./gradlew test --tests "*AutenticacionSesionTransaccionesRunner" -Dcucumber.execution.dry-run=true
    ./gradlew test -Dcucumber.filter.tags="@E2E"
@@ -90,14 +91,13 @@ automation/
     │   │                   CambiarEstadoDelCliente, IniciarSesion, ConfirmarSegundoFactor, CerrarSesion,
     │   │                   AutenticarseConDobleFactor, ConsultarCliente, ConsultarMiPerfil,
     │   │                   RetirarDinero, TransferirFondos, ConfirmarTransaccion, ConsultarTransaccion,
-    │   │                   BloquearCuenta; compuestas: PrepararClienteActivo, RetirarConDobleFactor,
-    │   │                   TransferirConDobleFactor
-    │   │   └── provisional/ AbrirCuenta, RealizarConsignacion (se reemplazan por las de HU10 y HU18)
+    │   │                   BloquearCuenta, AbrirCuenta, RealizarConsignacion; compuestas: PrepararClienteActivo,
+    │   │                   CuentaAbiertaConSaldo, RetirarConDobleFactor, TransferirConDobleFactor
     │   ├── interactions/   Peticiones HTTP base: Get, Post, Patch (sobre PeticionHttp)
     │   ├── questions/      Verificaciones: CodigoDeRespuesta, MensajeDeError, EstadoDelCliente,
     │   │                   ResultadoDelLogin, CampoDeLaRespuesta, CodigoDeVerificacion,
-    │   │                   EstadoDeLaTransaccion, ComprobanteDeLaTransaccion
-    │   │   └── provisional/ SaldoDeLaCuenta (se reemplaza por la de HU12)
+    │   │                   EstadoDeLaTransaccion, ComprobanteDeLaTransaccion, SaldoDeLaCuenta,
+    │   │                   NumeroDeCuenta, LlaveDeLaCuenta, EstadoDeLaCuenta, ReferenciaDeConsignacion
     │   ├── models/         DatosCliente (datos de prueba únicos)
     │   ├── integrations/   CodigosVerificacion (lee el código 2FA de la base de QA)
     │   └── utils/          ConfiguracionQa, Json, CodigoHmac
@@ -107,6 +107,7 @@ automation/
         └── resources
             ├── features/identidad/    registro_cliente, cambio_estado_cliente, inicio_sesion
             ├── features/seguridad-transacciones/ autenticacion_2fa, sesion, 2fa_transaccional
+            ├── features/cuentas/      abrir_cuenta, consultar_saldo, realizar_consignacion
             ├── features/transacciones/ retiros, transferencias, flujo_e2e
             └── sql/seed-admin.sql
 ```
@@ -132,6 +133,9 @@ automation/
 | HU02 Iniciar sesión | CA01, CA02, CA04, CA05, CA06, CA07, CA12 | `inicio_sesion.feature` |
 | HU03 Verificar identidad mediante 2FA | CA02, CA05, CA06 | `autenticacion_2fa.feature` |
 | HU04 Gestionar sesión | CA01, CA02 | `sesion.feature` |
+| HU10 Abrir cuenta de ahorros | CA01, CA03, CA05, CA06, CA07 | `abrir_cuenta.feature` |
+| HU12 Consultar saldo | CA01, CA03, CA05 | `consultar_saldo.feature` |
+| HU18 Realizar consignación | CA01, CA02, CA03, CA05, CA07 | `realizar_consignacion.feature` |
 | HU19 Realizar retiro | CA01, CA02, CA04, CA05, CA07, CA08, CA09 | `retiros.feature` |
 | HU20 Realizar transferencia | CA01, CA02, CA03, CA04, CA07 | `transferencias.feature` |
 | HU21 2FA de transacciones | CA01, CA02, CA03 | `2fa_transaccional.feature` |
