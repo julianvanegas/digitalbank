@@ -71,7 +71,7 @@ public class SessionService {
     /**
      * Un token solo vale si su jti es el de la fila del usuario, la sesión no ha vencido y el usuario está ACTIVE.
      * expires_at es "última actividad + inactividad": si vale, la petición cuenta como actividad y lo desplaza.
-     * Todo en una sola sentencia: la petición autenticada no hace otra consulta para el estado del usuario.
+     * Se resuelve en una sola sentencia: la petición autenticada no hace otra consulta para el estado del usuario.
      */
     @Transactional
     public boolean validateAndTouch(UUID userId, String jti) {

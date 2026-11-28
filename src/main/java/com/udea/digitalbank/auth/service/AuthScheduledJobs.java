@@ -4,7 +4,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 /**
- * Todo lo que auth ejecuta por reloj. Solo decide cuándo: la lógica vive en los servicios,
+ * Las tareas que auth ejecuta por reloj. Solo decide cuándo: la lógica vive en los servicios,
  * igual que un controller solo recibe la petición y delega.
  */
 @Service

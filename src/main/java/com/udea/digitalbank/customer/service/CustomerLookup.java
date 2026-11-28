@@ -49,7 +49,7 @@ class CustomerLookup {
         return userApi.getUser(customer.getUserId());
     }
 
-    // Una sola consulta a auth para todo el listado, indexada por id de usuario
+    // Una sola consulta a auth para el listado completo, indexada por id de usuario
     Map<UUID, UserView> usersOf(Collection<Customer> customers) {
         return userApi.getUsers(customers.stream().map(Customer::getUserId).toList())
                 .stream().collect(Collectors.toMap(UserView::id, Function.identity()));
