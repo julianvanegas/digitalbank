@@ -17,7 +17,7 @@ import java.util.List;
 
 /**
  * Reglas comunes a toda la API. Las rutas públicas, las rutas por rol y el mecanismo de autenticación los aporta
- * cada módulo mediante SecurityModule; todo lo demás se deniega.
+ * cada módulo mediante SecurityModule; lo demás se deniega.
  */
 @Configuration
 @EnableWebSecurity
@@ -33,7 +33,7 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, List<SecurityModule> modules,
-                                                   SecurityErrorHandler errorHandler) throws Exception {
+                                                   SecurityErrorHandler errorHandler) {
         http
                 .csrf(csrf -> csrf.disable()) // API stateless, sin sesión de navegador que proteger con CSRF
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))

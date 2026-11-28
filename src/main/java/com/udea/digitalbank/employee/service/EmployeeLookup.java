@@ -42,7 +42,7 @@ class EmployeeLookup {
         return userApi.getUser(employee.getUserId());
     }
 
-    // Una sola consulta a auth para todo el listado, indexada por id de usuario
+    // Una sola consulta a auth para el listado completo, indexada por id de usuario
     Map<UUID, UserView> usersOf(Collection<Employee> employees) {
         return userApi.getUsers(employees.stream().map(Employee::getUserId).toList())
                 .stream().collect(Collectors.toMap(UserView::id, Function.identity()));

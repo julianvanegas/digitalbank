@@ -26,6 +26,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Sort;
 
+import java.time.Clock;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -61,7 +62,7 @@ class CustomerServiceTest {
     @BeforeEach
     void setUp() {
         customerService = new CustomerService(customerRepository, documentTypeRepository, userApi, customerMapper,
-                new CustomerLookup(customerRepository, userApi));
+                new CustomerLookup(customerRepository, userApi), Clock.systemDefaultZone());
     }
 
     private CreateCustomerRequest buildValidRequest() {

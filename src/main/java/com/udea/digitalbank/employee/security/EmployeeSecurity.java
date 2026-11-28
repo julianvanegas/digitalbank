@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 
-/** Todo /api/v1/employees/** es de administradores. */
+/** /api/v1/employees/** es solo de administradores. */
 @Component
 public class EmployeeSecurity implements SecurityModule {
 
