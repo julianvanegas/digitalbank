@@ -225,7 +225,7 @@ El código de la aplicación es el mismo en todos los entornos; solo cambia qui�
 
 ### Local con Prometheus y Grafana
 
-[`observability/compose.yaml`](observability/compose.yaml) levanta Prometheus `v3.13.5` (versión LTS) y Grafana `13.3.1`, con el data source de Prometheus ya provisionado. Solo escuchan en `127.0.0.1`.
+[`observability/compose.yaml`](observability/compose.yaml) levanta Prometheus `v3.13.5` (versión LTS) y Grafana `13.3.1`, con el data source de Prometheus y el dashboard [JVM (Micrometer)](observability/grafana/dashboards/jvm-micrometer-4701.json) (ID 4701 de grafana.com) ya provisionados. Solo escuchan en `127.0.0.1`.
 
 1. Define `METRICS_USER` y `METRICS_PASSWORD` en tu `.env` (la plantilla trae valores de desarrollo) y levanta la aplicación como se indica en [Ejecución local](#ejecución-local). El usuario debe coincidir con el de [`prometheus.yml`](observability/prometheus/prometheus.yml) (`prometheus-local`).
 
@@ -252,7 +252,7 @@ El código de la aplicación es el mismo en todos los entornos; solo cambia qui�
    | La aplicación publica las métricas | `curl -u "$METRICS_USER:$METRICS_PASSWORD" http://localhost:8080/actuator/prometheus` | Líneas como `jvm_memory_used_bytes{...}` |
    | La ruta está protegida | `curl -i http://localhost:8080/actuator/prometheus` | `401` |
    | Prometheus las recolecta | [http://localhost:9090/targets](http://localhost:9090/targets) | El destino `digitalbank` en estado `UP` |
-   | Grafana las muestra | [http://localhost:3000](http://localhost:3000) (`admin` / `admin`), *Dashboards → New → Import* con el ID `4701` | Panel de la JVM con datos |
+   | Grafana las muestra | [http://localhost:3000](http://localhost:3000) (`admin` / `admin`), Dashboards > JVM (Micrometer), con `application = digitalbank` | Panel de la JVM con datos |
 
 5. Para detenerlos: `podman compose down`. No guardan datos entre ejecuciones.
 
