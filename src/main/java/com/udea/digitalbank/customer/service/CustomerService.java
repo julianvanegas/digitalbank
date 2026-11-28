@@ -20,6 +20,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.time.LocalDate;
 import java.time.Period;
 import java.util.List;
@@ -36,23 +37,26 @@ public class CustomerService {
     private final UserApi userApi;
     private final CustomerMapper customerMapper;
     private final CustomerLookup customerLookup;
+    private final Clock clock;
 
     public CustomerService(CustomerRepository customerRepository,
                            DocumentTypeRepository documentTypeRepository,
                            UserApi userApi,
                            CustomerMapper customerMapper,
-                           CustomerLookup customerLookup) {
+                           CustomerLookup customerLookup,
+                           Clock clock) {
         this.customerRepository = customerRepository;
         this.documentTypeRepository = documentTypeRepository;
         this.userApi = userApi;
         this.customerMapper = customerMapper;
         this.customerLookup = customerLookup;
+        this.clock = clock;
     }
 
     /** Usuario y perfil en una sola transacción: si algo falla no quedan usuarios sin perfil ni al revés. */
     @Transactional
     public CustomerResponse create(CreateCustomerRequest request) {
-        int age = Period.between(request.getBirthDate(), LocalDate.now()).getYears();
+        int age = Period.between(request.getBirthDate(), LocalDate.now(clock)).getYears();
         if (age < MINIMUM_AGE) {
             throw new InvalidRequestException("El cliente debe ser mayor de " + MINIMUM_AGE + " años");
         }

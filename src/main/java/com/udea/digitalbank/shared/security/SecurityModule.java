@@ -21,7 +21,7 @@ public interface SecurityModule {
      * llevan anotaciones de rol. Se comprueban en la cadena de seguridad, antes de que Spring resuelva los argumentos
      * del controller, así quien no tiene permiso recibe un 403 y nunca un 400 que revele las reglas de validación.
      * <p>
-     * Todo lo que ninguna regla declara se deniega (SecurityConfig cierra con denyAll): olvidar una ruta la deja
+     * Lo que ninguna regla declara se deniega (SecurityConfig cierra con denyAll): olvidar una ruta la deja
      * cerrada, no abierta. El orden importa: gana la primera ruta que coincide, así que las más específicas van antes.
      */
     default List<RoleRoute> roleRoutes() {
@@ -63,7 +63,7 @@ public interface SecurityModule {
             return new RoleRoute(method, pattern, List.of());
         }
 
-        // Una ruta de roles sin ningún rol sería, sin querer, una ruta abierta a todo usuario autenticado
+        // Una ruta de roles sin ningún rol sería, sin querer, una ruta abierta a cualquier usuario autenticado
         private static RoleRoute of(HttpMethod method, String pattern, String[] roles) {
             if (roles.length == 0) {
                 throw new IllegalArgumentException("La ruta " + pattern + " necesita al menos un rol; "

@@ -88,7 +88,7 @@ class JwtUtilTest {
         @DisplayName("Transversal - Se miden bytes UTF-8, no caracteres: 20 letras ñ son 40 bytes y bastan")
         void deberiaMedirBytesYNoCaracteres() {
             String secret = "ñ".repeat(20);
-            assertThat(secret.length()).isEqualTo(20);
+            assertThat(secret).hasSize(20);
 
             JwtUtil util = withSecret(secret);
             util.init();

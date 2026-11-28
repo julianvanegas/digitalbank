@@ -15,6 +15,7 @@ import org.mapstruct.factory.Mappers;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Clock;
 import java.time.LocalDate;
 import java.util.Optional;
 import java.util.UUID;
@@ -46,7 +47,7 @@ class CustomerProfileQueryTest {
     void setUp() {
         CustomerMapper mapper = Mappers.getMapper(CustomerMapper.class);
         customerService = new CustomerService(customerRepository, documentTypeRepository, userApi, mapper,
-                new CustomerLookup(customerRepository, userApi));
+                new CustomerLookup(customerRepository, userApi), Clock.systemDefaultZone());
     }
 
     @Test
