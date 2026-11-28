@@ -19,8 +19,22 @@ import net.serenitybdd.screenplay.Tasks;
  */
 public class ConfirmarSegundoFactor implements Task {
 
+    private final String codigo;
+
+    public ConfirmarSegundoFactor() {
+        this.codigo = null;
+    }
+
+    public ConfirmarSegundoFactor(String codigo) {
+        this.codigo = codigo;
+    }
+
     public static ConfirmarSegundoFactor ahora() {
         return Tasks.instrumented(ConfirmarSegundoFactor.class);
+    }
+
+    public static ConfirmarSegundoFactor conCodigo(String codigo) {
+        return Tasks.instrumented(ConfirmarSegundoFactor.class, codigo);
     }
 
     @Override
@@ -28,11 +42,13 @@ public class ConfirmarSegundoFactor implements Task {
     public <T extends Actor> void performAs(T actor) {
         String correo = actor.recall("correoSesion");
         String challengeId = actor.recall("challengeId");
-        String codigo = actor.asksFor(CodigoDeVerificacion.enviadoA(correo, Proposito.LOGIN));
+        String codigoVerificacion = codigo == null
+                ? actor.asksFor(CodigoDeVerificacion.enviadoA(correo, Proposito.LOGIN))
+                : codigo;
 
         Map<String, Object> cuerpo = new LinkedHashMap<>();
         cuerpo.put("challengeId", challengeId);
-        cuerpo.put("code", codigo);
+        cuerpo.put("code", codigoVerificacion);
         actor.attemptsTo(Post.sinSesion("/api/v1/auth/verify-2fa", Json.objeto(cuerpo)));
 
         Response respuesta = SerenityRest.lastResponse();

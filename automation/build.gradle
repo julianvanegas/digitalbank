@@ -61,6 +61,17 @@ tasks.named('test') {
     if (System.getProperty('cucumber.filter.tags')) {
         systemProperty 'cucumber.filter.tags', System.getProperty('cucumber.filter.tags')
     }
+    if (System.getProperty('cucumber.execution.dry-run') != null) {
+        systemProperty 'cucumber.execution.dry-run', System.getProperty('cucumber.execution.dry-run')
+    }
     testLogging { events 'passed', 'failed', 'skipped' }
     finalizedBy 'aggregate'
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+tasks.withType(Test).configureEach {
+    systemProperty 'file.encoding', 'UTF-8'
 }

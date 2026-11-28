@@ -13,6 +13,7 @@ Característica: HU08 Cambiar estado de un cliente
     Dado que existe un cliente activo
     Cuando el administrador cambia el estado del cliente a "BLOCKED"
     Entonces el cambio de estado es aceptado
+    Y el estado del cliente es "BLOCKED"
 
   @CA02
   Escenario: CA02 Un usuario sin rol de administrador no puede cambiar estados
