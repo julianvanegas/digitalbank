@@ -15,7 +15,7 @@ public class UpdateEmployeeProfileRequest {
      * clases disjuntas, y el tramo final es posesivo, para que no haya backtracking.
      */
     private static final String NAME_PATTERN =
-            "[^\\S\\r\\n\\u0085\\u2028\\u2029]*\\S[^\\r\\n\\u0085\\u2028\\u2029]*+";
+            "[^\\S\\r\\n]*\\S[^\\r\\n\\u0085\\u2028\\u2029]*+";
 
     /** Todos los campos son opcionales, pero uno presente no puede estar en blanco. */
     @Schema(example = OpenApiExamples.EMPLOYEE_FIRST_NAMES)

@@ -84,7 +84,7 @@ public class JwtUtil {
     public Optional<Claims> tryParse(String token) {
         try {
             return Optional.of(parseClaims(token));
-        } catch (Exception e) {
+        } catch (Exception _) {
             return Optional.empty();
         }
     }
