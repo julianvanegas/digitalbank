@@ -155,7 +155,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return body(HttpStatus.BAD_REQUEST, headers, MALFORMED_REQUEST);
     }
 
-    /** Todo lo demás de MVC (404, 405, 406, 415, parámetro faltante...) con un mensaje genérico por código. */
+    /** El resto de errores de MVC (404, 405, 406, 415, parámetro faltante...) con un mensaje genérico por código. */
     @Override
     protected ResponseEntity<Object> handleExceptionInternal(Exception ex, Object body, HttpHeaders headers,
                                                              HttpStatusCode statusCode, WebRequest request) {

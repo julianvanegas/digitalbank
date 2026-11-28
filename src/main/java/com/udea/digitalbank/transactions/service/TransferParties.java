@@ -71,7 +71,7 @@ class TransferParties {
         AccountView receiver;
         try {
             receiver = accountApi.getAccountByNumber(receiverNumber);
-        } catch (AccountNotFoundException e) {
+        } catch (AccountNotFoundException _) {
             throw new InvalidReceiverAccountException("La cuenta de destino no existe");
         }
         if (!receiver.isActive()) {

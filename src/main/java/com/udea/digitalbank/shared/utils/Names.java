@@ -10,7 +10,7 @@ import java.util.regex.Pattern;
 public final class Names {
 
     // Espacios y tabulaciones, sin saltos de línea
-    private static final Pattern HORIZONTAL_SPACES = Pattern.compile("[^\\S\\r\\n\\u0085\\u2028\\u2029]+");
+    private static final Pattern HORIZONTAL_SPACES = Pattern.compile("[^\\S\\r\\n]+");
 
     private Names() {
     }

@@ -73,9 +73,9 @@ public class DepositService {
         AccountView receiver = activeReceiver(receiverNumber);
         try {
             accountApi.applyDeposit(receiver.id(), amount);
-        } catch (AccountNotFoundException e) {
+        } catch (AccountNotFoundException _) {
             throw new InvalidReceiverAccountException("La cuenta no existe");
-        } catch (AccountNotActiveException e) {
+        } catch (AccountNotActiveException _) {
             throw new InvalidReceiverAccountException("La cuenta no permite créditos: no está activa");
         }
 
@@ -98,7 +98,7 @@ public class DepositService {
         AccountView receiver;
         try {
             receiver = accountApi.getAccountByNumber(receiverNumber);
-        } catch (AccountNotFoundException e) {
+        } catch (AccountNotFoundException _) {
             throw new InvalidReceiverAccountException("La cuenta no existe");
         }
         if (!receiver.isActive()) {

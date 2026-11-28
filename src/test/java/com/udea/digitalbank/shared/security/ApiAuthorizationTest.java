@@ -193,7 +193,7 @@ class ApiAuthorizationTest {
                 new Endpoint("PATCH", "/api/v1/customers/status",
                         "{\"documentTypeId\":1,\"documentNumber\":\"1000000001\",\"status\":\"ACTIVE\"}",
                         Access.ADMIN_ONLY),
-                // ---- employees: todo es de administradores
+                // ---- employees: solo administradores
                 new Endpoint("POST", "/api/v1/employees",
                         "{\"firstNames\":\"Ana\",\"lastNames\":\"Gomez\",\"email\":\"ana@example.com\"}",
                         Access.ADMIN_ONLY),
