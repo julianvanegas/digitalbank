@@ -81,7 +81,7 @@ public class SessionService {
         UUID jtiValue;
         try {
             jtiValue = UUID.fromString(jti);
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException _) {
             return false;
         }
         LocalDateTime now = LocalDateTime.now(clock);

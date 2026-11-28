@@ -33,7 +33,7 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, List<SecurityModule> modules,
-                                                   SecurityErrorHandler errorHandler) throws Exception {
+                                                   SecurityErrorHandler errorHandler) {
         http
                 .csrf(csrf -> csrf.disable()) // API stateless, sin sesión de navegador que proteger con CSRF
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
